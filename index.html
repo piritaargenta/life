@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Character Game</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 226, 0.2) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    #game-container {
+      display: flex;
+      flex-direction: row;
+      gap: 30px;
+      align-items: flex-start;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    #viewport {
+      position: relative;
+      width: 480px;
+      height: 480px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      background: linear-gradient(145deg, #1e1e2e, #2a2a3e);
+      box-shadow: 
+        inset 0 2px 10px rgba(0, 0, 0, 0.3),
+        0 10px 30px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    #viewport::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, transparent 49%, rgba(255, 255, 255, 0.03) 50%, transparent 51%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    canvas {
+      width: 512px;
+      height: 512px;
+      background-color: transparent;
+      display: block;
+      border-radius: 13px;
+    }
+
+    .controls {
+      max-height: 100vh;
+      overflow-y: auto;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      display: none;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .control-group {
+      margin-bottom: 2em;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 1.5em;
+      animation: slideInUp 0.3s ease-out;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-top: 0.8em;
+      color: #e0e0e0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, #333, #666);
+      outline: none;
+      border-radius: 3px;
+      appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(238, 90, 36, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 4px 20px rgba(238, 90, 36, 0.5);
+    }
+
+    .info {
+      font-size: 0.85em;
+      color: #888;
+      margin-top: 0.5em;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      border-left: 3px solid #4a9eff;
+    }
+
+    /* Character Creation Screen */
+    #character-creation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .creation-panel {
+      background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(40, 40, 60, 0.9));
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      max-width: 450px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      animation: slideInScale 0.6s ease-out;
+    }
+
+    @keyframes slideInScale {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .creation-panel h2 {
+      margin-bottom: 35px;
+      color: #fff;
+      font-weight: 600;
+      font-size: 2em;
+      background: linear-gradient(45deg, #4a9eff, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .preset-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .preset-btn {
+      padding: 18px 25px;
+      background: linear-gradient(145deg, rgba(60, 60, 80, 0.8), rgba(40, 40, 60, 0.8));
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      cursor: pointer;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preset-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s;
+    }
+
+    .preset-btn:hover {
+      background: linear-gradient(145deg, rgba(80, 80, 100, 0.8), rgba(60, 60, 80, 0.8));
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .preset-btn:hover::before {
+      left: 100%;
+    }
+
+    .preset-btn.selected {
+      background: linear-gradient(145deg, #4a9eff, #357abd);
+      border-color: #6bb6ff;
+      box-shadow: 0 10px 30px rgba(74, 158, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    #name-input {
+      width: 100%;
+      padding: 15px 20px;
+      background: rgba(40, 40, 60, 0.8);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      font-size: 16px;
+      font-weight: 400;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    #name-input:focus {
+      outline: none;
+      border-color: #4a9eff;
+      box-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
+      background: rgba(50, 50, 70, 0.9);
+    }
+
+    #name-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    #confirm-character {
+      padding: 18px 35px;
+      background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 25px rgba(0, 210, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #confirm-character::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    #confirm-character:hover:not(:disabled) {
+      background: linear-gradient(45deg, #00b8e6, #3465c4);
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(0, 210, 255, 0.4);
+    }
+
+    #confirm-character:hover:not(:disabled)::before {
+      left: 100%;
+    }
+
+    #confirm-character:disabled {
+      background: linear-gradient(45deg, #666, #888);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Game Interface */
+    #game-interface {
+      width: 100%;
+      max-width: 1400px;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #character-info {
+      background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(40, 40, 60, 0.8));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      margin-bottom: 25px;
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    #character-info h3 {
+      margin: 0 0 10px 0;
+      font-size: 1.5em;
+      font-weight: 600;
+      background: linear-gradient(45deg, #4a9eff, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #story-panel {
+      background: linear-gradient(145deg, rgba(20, 20, 40, 0.9), rgba(30, 30, 50, 0.9));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 25px;
+      margin-top: 25px;
+      border-radius: 15px;
+      min-height: 250px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #story-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #4a9eff, #ff6b6b, #4a9eff);
+      border-radius: 15px 15px 0 0;
+    }
+
+    #story-panel h3 {
+      margin-top: 0;
+      font-size: 1.3em;
+      font-weight: 600;
+      color: #4a9eff;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      padding: 12px 20px;
+      background: linear-gradient(145deg, rgba(60, 60, 80, 0.8), rgba(40, 40, 60, 0.8));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .action-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      background: linear-gradient(145deg, #4a9eff, #357abd);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(74, 158, 255, 0.3);
+    }
+
+    .action-btn:hover:not(:disabled)::before {
+      left: 100%;
+    }
+
+    .action-btn:disabled {
+      background: linear-gradient(145deg, #333, #222);
+      color: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #debug-controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 999;
+      display: flex;
+      gap: 10px;
+    }
+
+    #debug-controls button {
+      padding: 10px 16px;
+      background: linear-gradient(145deg, rgba(60, 60, 80, 0.9), rgba(40, 40, 60, 0.9));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      cursor: pointer;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    #debug-controls button:hover {
+      background: linear-gradient(145deg, #4a9eff, #357abd);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(74, 158, 255, 0.3);
+    }
+
+    .character-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: linear-gradient(145deg, rgba(30, 30, 50, 0.8), rgba(40, 40, 60, 0.8));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 15px;
+      min-width: 220px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .character-controls h4 {
+      margin: 0 0 15px 0;
+      font-size: 1.1em;
+      font-weight: 600;
+      color: #4a9eff;
+      text-align: center;
+    }
+
+    .char-control-btn {
+      padding: 12px 16px;
+      background: linear-gradient(145deg, rgba(60, 60, 80, 0.8), rgba(40, 40, 60, 0.8));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .char-control-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s;
+    }
+
+    .char-control-btn:hover {
+      background: linear-gradient(145deg, #ff6b6b, #ee5a24);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+    }
+
+    .char-control-btn:hover::before {
+      left: 100%;
+    }
+
+    .weight-display {
+      font-size: 1.0em;
+      font-weight: 600;
+      background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      background-color: rgba(0, 210, 255, 0.1);
+      border: 1px solid rgba(0, 210, 255, 0.2);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(45deg, #4a9eff, #ff6b6b);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(45deg, #357abd, #ee5a24);
+    }
+
+    /* Pulse animation for important elements */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .preset-btn.selected {
+      animation: pulse 2s infinite;
+    }
+
+    /* Glow effect for active elements */
+    .glow {
+      box-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      #game-container {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .character-controls {
+        min-width: auto;
+        width: 100%;
+        max-width: 480px;
+      }
+
+      .creation-panel {
+        margin: 20px;
+        padding: 30px 25px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Character Creation Screen -->
+  <div id="character-creation">
+    <div class="creation-panel">
+      <h2>Create Your Character</h2>
+      
+      <div class="preset-buttons">
+        <div class="preset-btn" data-preset="1">I'm skinny</div>
+        <div class="preset-btn" data-preset="2">I'm pudgy</div>
+        <div class="preset-btn" data-preset="3">I'm chubby</div>
+      </div>
+
+      <input type="text" id="name-input" placeholder="Enter character name..." maxlength="20">
+      
+      <button id="confirm-character" disabled>Start Adventure</button>
+    </div>
+  </div>
+
+  <!-- Debug Controls -->
+  <div id="debug-controls">
+    <button onclick="toggleControls()">Debug</button>
+    <button onclick="showPresets()">Presets</button>
+  </div>
+
+<!-- Game Interface -->
+<div id="game-interface" style="display: none;">
+  
+  <div id="game-container" style="display: flex; align-items: flex-start; gap: 20px;">
+    
+    <!-- Left: Viewport and Character Info -->
+    <div id="left-panel" style="display: flex; flex-direction: column; align-items: center;">
+      <div id="viewport">
+        <canvas id="characterCanvas" width="420" height="420"></canvas>
+      </div>
+      <div id="character-info" style="text-align: center; margin-top: 10px;">
+        <h3 id="character-name">Character Name</h3>
+        <div class="weight-display">Weight: <span id="weight-display">40.00</span> kg</div>
+        <button class="action-btn" onclick="toggleHairStyle()">Change Hairstyle</button>
+      </div>
+    </div>
+
+    <!-- Middle: Story Panel -->
+    <div id="story-panel" style="flex: 1;">
+      <h3>Story</h3>
+      <div id="story-text">
+        Oh my, another lockdown! Last time you got pretty chunky, you'll be luckier this time... Right?
+      </div>
+      <div class="action-buttons" id="story-actions" style="margin-top: 10px;">
+        <button class="action-btn" onclick="storyAPI.startEvent('intro')">Begin</button>
+      </div>
+    </div>
+
+    <!-- Right: Quick Actions -->
+    <div class="character-controls" style="min-width: 200px;">
+      <h4>Quick Actions</h4>
+      <button class="char-control-btn" onclick="adjustWeight(10)">Gain Weight</button>
+      <button class="char-control-btn" onclick="adjustWeight(-1)">Lose Weight</button>
+      <button class="char-control-btn" onclick="gameAPI.changeHair(-50)">Cut Hair</button>
+      <button class="char-control-btn" onclick="gameAPI.changeHair(50)">Hair Growth Pills</button>
+      <button class="char-control-btn" onclick="gameAPI.changeBelly(5)">Stuff Myself</button>
+      <button class="char-control-btn" onclick="gameAPI.changeBreast(10)">Breast Implants</button>
+      <button class="char-control-btn" onclick="gameAPI.changeButt(10)">BBL</button>
+    </div>
+
+  </div>
+
+  <!-- Optional Controls Below Entire Panel -->
+  <div class="controls" id="controls" style="margin-top: 20px;"></div>
+
+</div>
+
+
+  <script>
+    const parts = ["body", "belly", "arm", "butt", "thighs", "breast", "hair"];
+    const bellyVariants = ["Belly", "Belly1", "Belly2", "Belly3", "Belly4"];
+    const hairVariants = ["HairTied", "HairLoose"];
+
+    const defaultPositions = {
+      body: { x: 0, y: 0 },
+      belly: { x: 173, y: 84 },
+      arm: { x: 163, y: 76 },
+      butt: { x: 44, y: 110 },
+      thighs: { x: 115, y: 159 },
+      breast: { x: 184, y: 90 },
+      hair: { x: 143, y: 39 }
+    };
+
+    const stageLimits = {
+      body: 1,
+      belly: 251,
+      arm: 240,
+      butt: 351,
+      thighs: 228,
+      breast: 301,
+      hair: 600
+    };
+
+    const presets = {
+      1: { belly: 10, arm: 20, butt: 60, thighs: 21, breast: 60, hair: 160 },
+      2: { belly: 40, arm: 30, butt: 100, thighs: 41, breast: 80, hair: 160 },
+      3: { belly: 68, arm: 50, butt: 120, thighs: 81, breast: 120, hair: 160 }
+    };
+
+    let state = {};
+    let selectedPreset = null;
+    let characterName = "";
+    let currentHairStyle = 0; // 0 for HairTied, 1 for HairLoose
+
+    // Store loaded Image objects here
+    const imagesCache = {};
+
+    // Get canvas and context
+    const canvas = document.getElementById('characterCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Character Creation Logic
+    document.addEventListener('DOMContentLoaded', function() {
+      setupCharacterCreation();
+      initializeState();
+    });
+
+    function setupCharacterCreation() {
+      const presetButtons = document.querySelectorAll('.preset-btn');
+      const nameInput = document.getElementById('name-input');
+      const confirmButton = document.getElementById('confirm-character');
+
+      presetButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          presetButtons.forEach(b => b.classList.remove('selected'));
+          this.classList.add('selected');
+          selectedPreset = parseInt(this.dataset.preset);
+          applyPreset(selectedPreset);
+          checkCanStart();
+        });
+      });
+
+      nameInput.addEventListener('input', function() {
+        characterName = this.value.trim();
+        checkCanStart();
+      });
+
+      confirmButton.addEventListener('click', startGame);
+    }
+
+    function checkCanStart() {
+      const confirmButton = document.getElementById('confirm-character');
+      confirmButton.disabled = !(selectedPreset && characterName.length > 0);
+    }
+
+    function startGame() {
+      document.getElementById('character-creation').style.display = 'none';
+      document.getElementById('game-interface').style.display = 'block';
+      document.getElementById('character-name').textContent = characterName;
+      recalculateWeight();
+      drawCharacterWithOutline();
+      storyAPI.startEvent('intro');
+    }
+
+    function showPresets() {
+      document.getElementById('character-creation').style.display = 'flex';
+    }
+
+    function initializeState() {
+      for (const part of parts) {
+        state[part] = {
+          stage: 1,
+          x: defaultPositions[part]?.x || 0,
+          y: defaultPositions[part]?.y || 0,
+          variant: part === "belly" ? bellyVariants[0] : part === "hair" ? hairVariants[0] : null
+        };
+      }
+    }
+
+    // Load a single image asynchronously with caching
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        if (imagesCache[src]) {
+          resolve(imagesCache[src]);
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          imagesCache[src] = img;
+          resolve(img);
+        };
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    async function drawCharacterWithOutline() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const offscreen = document.createElement('canvas');
+      offscreen.width = canvas.width;
+      offscreen.height = canvas.height;
+      const offCtx = offscreen.getContext('2d');
+
+      // Draw all parts to offscreen context (no outline yet)
+      for (const part of parts) {
+        const variantFolder = (part === 'belly' || part === 'hair') ? state[part].variant : part;
+        const stage = state[part].stage;
+        const x = state[part].x;
+        const y = state[part].y;
+
+        const src = `/viewport/${variantFolder}/${stage}.png`;
+
+        try {
+          const img = await loadImage(src);
+          offCtx.drawImage(img, x, y);
+        } catch (e) {
+          console.warn(`Failed to load image: ${src}`);
+        }
+      }
+
+      // Apply full-character white outline from offscreen to main canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.shadowColor = 'white';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.drawImage(offscreen, 0, 0);
+
+      // Disable shadow and redraw the combined character
+      ctx.shadowColor = 'transparent';
+      ctx.drawImage(offscreen, 0, 0);
+
+      // Draw arm outline (solid color line)
+      const armVariant = state["arm"].variant || "arm";
+      const armStage = state["arm"].stage;
+      const armX = state["arm"].x;
+      const armY = state["arm"].y;
+      const armSrc = `/viewport/${armVariant}/${armStage}.png`;
+
+      try {
+        const armImg = await loadImage(armSrc);
+
+        // Create a temporary canvas to get arm alpha shape
+        const temp = document.createElement('canvas');
+        temp.width = armImg.width;
+        temp.height = armImg.height;
+        const tempCtx = temp.getContext('2d');
+        tempCtx.drawImage(armImg, 0, 0);
+
+        const imgData = tempCtx.getImageData(0, 0, armImg.width, armImg.height);
+        const data = imgData.data;
+
+        // Create a path around non-transparent pixels
+        const path = new Path2D();
+        for (let y = 0; y < armImg.height; y++) {
+          for (let x = 0; x < armImg.width; x++) {
+            const i = (y * armImg.width + x) * 4 + 3;
+            if (data[i] > 20) { // alpha threshold
+              path.rect(armX + x, armY + y, 1, 1);
+            }
+          }
+        }
+
+        ctx.save();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 1;
+        ctx.stroke(path);
+        ctx.restore();
+      } catch (e) {
+        console.warn(`Failed to outline arm: ${armSrc}`);
+      }
+    }
+
+    function toggleHairStyle() {
+      currentHairStyle = 1 - currentHairStyle; // Toggle between 0 and 1
+      state.hair.variant = hairVariants[currentHairStyle];
+      drawCharacterWithOutline();
+    }
+
+    function adjustWeight(delta) {
+      const adjustableParts = parts.filter(p => p !== "body");
+      adjustableParts.forEach(part => {
+        const step = (part === "thighs") ? 4 : 4;
+        const newStage = state[part].stage + delta * step;
+        const max = stageLimits[part];
+        state[part].stage = Math.max(1, Math.min(max, newStage));
+      });
+      recalculateWeight();
+      drawCharacterWithOutline();
+    }
+
+    function applyPreset(presetNumber) {
+      const preset = presets[presetNumber];
+      for (const part in preset) {
+        if (state[part]) {
+          state[part].stage = preset[part];
+        }
+      }
+      recalculateWeight();
+      drawCharacterWithOutline();
+    }
+
+    function recalculateWeight() {
+      const adjustableParts = parts.filter(p => p !== "body");
+      let total = 0;
+      adjustableParts.forEach(part => {
+        total += state[part].stage;
+      });
+      const weight = total * 0.15;
+      document.getElementById('weight-display').textContent = weight.toFixed(2);
+    }
+
+    // Game API for body part changes
+    const gameAPI = {
+      changeBelly: function(amount) {
+        const newStage = Math.max(1, Math.min(stageLimits.belly, state.belly.stage + amount));
+        state.belly.stage = newStage;
+        recalculateWeight();
+        drawCharacterWithOutline();
+        return newStage;
+      },
+      
+      changeArm: function(amount) {
+        const newStage = Math.max(1, Math.min(stageLimits.arm, state.arm.stage + amount));
+        state.arm.stage = newStage;
+        recalculateWeight();
+        drawCharacterWithOutline();
+        return newStage;
+      },
+      
+      changeButt: function(amount) {
+        const newStage = Math.max(1, Math.min(stageLimits.butt, state.butt.stage + amount));
+        state.butt.stage = newStage;
+        recalculateWeight();
+        drawCharacterWithOutline();
+        return newStage;
+      },
+      
+      changeThighs: function(amount) {
+        // Thighs use increments of 4
+        const step = amount > 0 ? 4 : -4;
+        const newStage = Math.max(1, Math.min(stageLimits.thighs, state.thighs.stage + step));
+        state.thighs.stage = newStage;
+        recalculateWeight();
+        drawCharacterWithOutline();
+        return newStage;
+      },
+      
+      changeBreast: function(amount) {
+        const newStage = Math.max(1, Math.min(stageLimits.breast, state.breast.stage + amount));
+        state.breast.stage = newStage;
+        recalculateWeight();
+        drawCharacterWithOutline();
+        return newStage;
+      },
+      
+      changeHair: function(amount) {
+        const newStage = Math.max(1, Math.min(stageLimits.hair, state.hair.stage + amount));
+        state.hair.stage = newStage;
+        drawCharacterWithOutline();
+        return newStage;
+      },
+      
+      setBellyVariant: function(variantName) {
+        if (bellyVariants.includes(variantName)) {
+          state.belly.variant = variantName;
+          drawCharacterWithOutline();
+          return true;
+        }
+        return false;
+      },
+      
+      getCharacterState: function() {
+        return JSON.parse(JSON.stringify(state));
+      },
+      
+      setCharacterState: function(newState) {
+        state = newState;
+        recalculateWeight();
+        drawCharacterWithOutline();
+      }
+    };
+
+    // Story API Framework
+    const storyAPI = {
+      currentEvent: null,
+      gameData: {
+        flags: {},
+        stats: {},
+        inventory: []
+      },
+      
+      events: {
+        intro: {
+          title: "Welcome to Your Adventure",
+          text: `Hello ${characterName || 'Adventurer'}! You find yourself at the beginning of an incredible journey. The world is full of possibilities and your choices will shape your destiny.`,
+          actions: [
+            { text: "Explore the town", event: "town" },
+            { text: "Visit the tavern", event: "tavern" },
+            { text: "Check your appearance", action: () => storyAPI.showCharacterInfo() }
+          ]
+        },
+        
+        town: {
+          title: "The Bustling Town Square",
+          text: "You walk through the town square, observing the daily life of the citizens. Merchants call out their wares, children play in the streets, and the aroma of fresh bread wafts from the bakery.",
+          actions: [
+            { text: "Visit the bakery", event: "bakery" },
+            { text: "Talk to merchants", event: "merchant" },
+            { text: "Return to start", event: "intro" }
+          ]
+        },
+        
+        tavern: {
+          title: "The Cozy Tavern",
+          text: "The tavern is warm and inviting, filled with the chatter of locals and travelers. The bartender nods at you as you enter.",
+          actions: [
+            { text: "Order a meal", action: () => { gameAPI.changeBelly(3); storyAPI.showText("You enjoy a hearty meal. You feel a bit fuller!"); } },
+            { text: "Listen to gossip", event: "gossip" },
+            { text: "Leave tavern", event: "intro" }
+          ]
+        },
+        
+        bakery: {
+          title: "The Sweet Bakery",
+          text: "The bakery smells absolutely divine. Fresh pastries line the shelves, and the baker greets you with a warm smile.",
+          actions: [
+            { text: "Buy pastries", action: () => { gameAPI.changeBelly(5); storyAPI.showText("The pastries were delicious! Your belly feels rounder."); } },
+            { text: "Just browse", event: "town" },
+            { text: "Ask about recipes", event: "recipes" }
+          ]
+        }
+      },
+      
+      startEvent: function(eventName) {
+        const event = this.events[eventName];
+        if (!event) return;
+        
+        this.currentEvent = eventName;
+        document.getElementById('story-text').innerHTML = `<h4>${event.title}</h4><p>${event.text}</p>`;
+        
+        const actionsDiv = document.getElementById('story-actions');
+        actionsDiv.innerHTML = '';
+        
+        event.actions.forEach(action => {
+          const btn = document.createElement('button');
+          btn.className = 'action-btn';
+          btn.textContent = action.text;
+          
+          if (action.event) {
+            btn.onclick = () => this.startEvent(action.event);
+          } else if (action.action) {
+            btn.onclick = action.action;
+          }
+          
+          actionsDiv.appendChild(btn);
+        });
+      },
+      
+      showText: function(text) {
+        document.getElementById('story-text').innerHTML += `<p><em>${text}</em></p>`;
+      },
+      
+      showCharacterInfo: function() {
+        const weight = document.getElementById('weight-display').textContent;
+        this.showText(`You are ${characterName}, weighing ${weight} kg. You look at yourself and note your current appearance.`);
+      },
+      
+      addEvent: function(eventName, eventData) {
+        this.events[eventName] = eventData;
+      },
+      
+      setFlag: function(flagName, value) {
+        this.gameData.flags[flagName] = value;
+      },
+      
+      getFlag: function(flagName) {
+        return this.gameData.flags[flagName] || false;
+      },
+      
+      addToInventory: function(item) {
+        this.gameData.inventory.push(item);
+      }
+    };
+
+    // Debug functions
+    function toggleControls() {
+      const ctrl = document.getElementById("controls");
+      if (ctrl.innerHTML === '') {
+        createDebugControls();
+      }
+      ctrl.style.display = ctrl.style.display === "none" || ctrl.style.display === "" ? "block" : "none";
+    }
+
+    // Create debug controls (same as original)
+    function createDebugControls() {
+      const controlsDiv = document.getElementById("controls");
+      for (const part of parts) {
+        controlsDiv.appendChild(createControlGroup(part));
+      }
+    }
+
+    function setPartStage(part, stage) {
+      state[part].stage = stage;
+      updateInfo(part);
+      drawCharacterWithOutline();
+      recalculateWeight();
+    }
+
+    function setPartPosition(part, x, y) {
+      state[part].x = x;
+      state[part].y = y;
+      updateInfo(part);
+      drawCharacterWithOutline();
+    }
+
+    function setPartVariant(part, variant) {
+      state[part].variant = variant;
+      updateInfo(part);
+      drawCharacterWithOutline();
+    }
+
+    function updateInfo(part) {
+      const info = document.getElementById(`info-${part}`);
+      if (!info) return;
+      const { stage, x, y, variant } = state[part];
+      const variantInfo = variant ? ` | Variant: ${variant}` : '';
+      info.textContent = `Image: ${stage} | X: ${x} | Y: ${y}${variantInfo}`;
+    }
+
+    function createLabeledControl(labelText, input, minusBtn, plusBtn) {
+      const label = document.createElement("label");
+      label.textContent = labelText;
+
+      const container = document.createElement("div");
+      container.style.display = "flex";
+      container.style.alignItems = "center";
+      container.style.gap = "5px";
+
+      container.appendChild(minusBtn);
+      container.appendChild(input);
+      container.appendChild(plusBtn);
+
+      label.appendChild(container);
+      return label;
+    }
+
+    function createControlGroup(part) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "control-group";
+
+      const title = document.createElement("h3");
+      title.textContent = part.toUpperCase();
+      wrapper.appendChild(title);
+
+      // Variant selector
+      if (part === "belly" || part === "hair") {
+        const variantLabel = document.createElement("label");
+        variantLabel.textContent = part === "belly" ? "Belly Type" : "Hair Style";
+
+        const select = document.createElement("select");
+        const variantList = part === "belly" ? bellyVariants : hairVariants;
+
+        variantList.forEach(v => {
+          const opt = document.createElement("option");
+          opt.value = v;
+          opt.textContent = v;
+          select.appendChild(opt);
+        });
+
+        select.value = state[part].variant;
+        select.addEventListener("change", () => {
+          setPartVariant(part, select.value);
+        });
+
+        variantLabel.appendChild(select);
+        wrapper.appendChild(variantLabel);
+      }
+
+      // Stage slider and buttons
+      const maxStage = stageLimits[part] || 10;
+      const inputStage = document.createElement("input");
+      inputStage.type = "range";
+      inputStage.min = 1;
+      inputStage.max = maxStage;
+      inputStage.step = (part === "thighs") ? 4 : 1;
+      inputStage.value = state[part].stage;
+      inputStage.style.flex = "1";
+
+      const btnStageMinus = document.createElement("button");
+      btnStageMinus.textContent = "–";
+      btnStageMinus.onclick = () => {
+        const step = (part === "thighs") ? 4 : 1;
+        if (parseInt(inputStage.value) > 1) {
+          inputStage.value = Math.max(1, parseInt(inputStage.value) - step);
+          setPartStage(part, parseInt(inputStage.value));
+        }
+      };
+
+      const btnStagePlus = document.createElement("button");
+      btnStagePlus.textContent = "+";
+      btnStagePlus.onclick = () => {
+        const step = (part === "thighs") ? 4 : 1;
+        if (parseInt(inputStage.value) < maxStage) {
+          inputStage.value = Math.min(maxStage, parseInt(inputStage.value) + step);
+          setPartStage(part, parseInt(inputStage.value));
+        }
+      };
+
+      inputStage.addEventListener("input", () => {
+        setPartStage(part, parseInt(inputStage.value));
+      });
+
+      wrapper.appendChild(createLabeledControl("Image Stage", inputStage, btnStageMinus, btnStagePlus));
+
+      // X and Y position controls (same as original)
+      const inputX = document.createElement("input");
+      inputX.type = "range";
+      inputX.min = -200;
+      inputX.max = 200;
+      inputX.value = state[part].x;
+      inputX.style.flex = "1";
+
+      const btnXMinus = document.createElement("button");
+      btnXMinus.textContent = "–";
+      btnXMinus.onclick = () => {
+        if (parseInt(inputX.value) > -200) {
+          inputX.value = parseInt(inputX.value) - 1;
+          setPartPosition(part, parseInt(inputX.value), state[part].y);
+        }
+      };
+
+      const btnXPlus = document.createElement("button");
+      btnXPlus.textContent = "+";
+      btnXPlus.onclick = () => {
+        if (parseInt(inputX.value) < 200) {
+          inputX.value = parseInt(inputX.value) + 1;
+          setPartPosition(part, parseInt(inputX.value), state[part].y);
+        }
+      };
+
+      inputX.addEventListener("input", () => {
+        setPartPosition(part, parseInt(inputX.value), state[part].y);
+      });
+
+      wrapper.appendChild(createLabeledControl("X Position", inputX, btnXMinus, btnXPlus));
+
+      const inputY = document.createElement("input");
+      inputY.type = "range";
+      inputY.min = -200;
+      inputY.max = 200;
+      inputY.value = state[part].y;
+      inputY.style.flex = "1";
+
+      const btnYMinus = document.createElement("button");
+      btnYMinus.textContent = "–";
+      btnYMinus.onclick = () => {
+        if (parseInt(inputY.value) > -200) {
+          inputY.value = parseInt(inputY.value) - 1;
+          setPartPosition(part, state[part].x, parseInt(inputY.value));
+        }
+      };
+
+      const btnYPlus = document.createElement("button");
+      btnYPlus.textContent = "+";
+      btnYPlus.onclick = () => {
+        if (parseInt(inputY.value) < 200) {
+          inputY.value = parseInt(inputY.value) + 1;
+          setPartPosition(part, state[part].x, parseInt(inputY.value));
+        }
+      };
+
+      inputY.addEventListener("input", () => {
+        setPartPosition(part, state[part].x, parseInt(inputY.value));
+      });
+
+      wrapper.appendChild(createLabeledControl("Y Position", inputY, btnYMinus, btnYPlus));
+
+      // Info line
+      const info = document.createElement("div");
+      info.id = `info-${part}`;
+      info.className = "info";
+      wrapper.appendChild(info);
+
+      updateInfo(part);
+
+      return wrapper;
+    }
+
+    // Make gameAPI and storyAPI globally accessible
+    window.gameAPI = gameAPI;
+    window.storyAPI = storyAPI;
+
+  </script>
+</body>
+</html>
