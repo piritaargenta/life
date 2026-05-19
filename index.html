@@ -1,899 +1,1377 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
-<title>Life Sim</title>
+<title>Life — A Realistic Simulator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+/* ═══════════════════════════════════════════════════
+   THEME VARIABLES
+═══════════════════════════════════════════════════ */
 :root {
-  --bg:        #f5f0e8;
-  --bg2:       #ede7d9;
-  --bg3:       #e4dccb;
-  --ink:       #1c1a17;
-  --ink2:      #5a5448;
-  --ink3:      #9a9080;
-  --accent:    #c0392b;
-  --accent2:   #e8a87c;
-  --accent3:   #7a9e7e;
-  --gold:      #b8860b;
-  --line:      #d4cbba;
-  --panel:     #faf7f2;
-  --shadow:    rgba(28,26,23,0.08);
-  --r:         4px;
+  --bg:       #f4f0e8;
+  --bg2:      #ebe5d8;
+  --bg3:      #e0d9c8;
+  --panel:    #faf8f3;
+  --ink:      #1a1814;
+  --ink2:     #4a4540;
+  --ink3:     #8a8278;
+  --line:     #d4ccbc;
+  --line2:    #c8bfae;
+  --acc:      #8b1a1a;
+  --acc2:     #c0602a;
+  --acc3:     #4a7c5e;
+  --acc4:     #3a5f8a;
+  --gold:     #a07820;
+  --shadow:   rgba(26,24,20,.10);
+  --shadow2:  rgba(26,24,20,.20);
+  --red:      #c0392b;
+  --amber:    #d4850a;
+  --green:    #2e7d52;
+  --blue:     #2563a0;
+}
+[data-theme="dark"] {
+  --bg:       #111009;
+  --bg2:      #181610;
+  --bg3:      #201e16;
+  --panel:    #161410;
+  --ink:      #e8e0d0;
+  --ink2:     #a89f90;
+  --ink3:     #60594e;
+  --line:     #2a2820;
+  --line2:    #343028;
+  --acc:      #c05050;
+  --acc2:     #d4804a;
+  --acc3:     #5a9e74;
+  --acc4:     #4a80b8;
+  --gold:     #c09830;
+  --shadow:   rgba(0,0,0,.4);
+  --shadow2:  rgba(0,0,0,.6);
+  --red:      #e05050;
+  --amber:    #d4950a;
+  --green:    #4a9e6a;
+  --blue:     #4a90d0;
 }
 
+/* ═══════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0;}
-
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 300;
-  min-height: 100vh;
-  overflow-x: hidden;
+html,body{height:100%;overflow:hidden;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:300; font-size:14px;
+  transition:background .3s,color .3s;
 }
+button,select,input{font-family:'IBM Plex Sans',sans-serif;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px;}
 
-/* ── CREATION SCREEN ─────────────────────────── */
-#creation-screen {
-  position: fixed; inset: 0; z-index: 200;
-  background: var(--bg);
-  display: flex; align-items: center; justify-content: center;
-  animation: fadeIn .4s ease;
+/* ═══════════════════════════════════════════════════
+   CREATION SCREEN
+═══════════════════════════════════════════════════ */
+#creation-screen{
+  position:fixed;inset:0;z-index:500;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  overflow-y:auto;padding:40px 20px;
 }
+.cc-wrap{
+  width:600px;max-width:100%;
+  background:var(--panel);border:1px solid var(--line);
+  padding:40px;box-shadow:0 20px 60px var(--shadow2);
+}
+.cc-wrap h1{
+  font-family:'Lora',serif;font-size:2rem;font-weight:400;
+  color:var(--ink);margin-bottom:4px;
+}
+.cc-subtitle{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:32px;}
 
-.creation-inner {
-  width: 420px;
-  padding: 48px 40px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  box-shadow: 0 24px 64px var(--shadow);
+.cc-section{margin-bottom:24px;}
+.cc-label{
+  font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink3);display:block;margin-bottom:8px;
 }
+.cc-row{display:flex;gap:8px;flex-wrap:wrap;}
 
-.creation-inner h1 {
-  font-family: 'DM Serif Display', serif;
-  font-size: 2.2rem;
-  line-height: 1.1;
-  margin-bottom: 6px;
-  color: var(--ink);
+.cc-input{
+  width:100%;padding:10px 14px;
+  background:var(--bg2);border:1px solid var(--line);
+  color:var(--ink);font-size:.9rem;outline:none;
+  transition:border-color .2s;
 }
+.cc-input:focus{border-color:var(--ink2);}
+.cc-input::placeholder{color:var(--ink3);}
 
-.creation-inner .subtitle {
-  font-size: .85rem;
-  color: var(--ink3);
-  margin-bottom: 32px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+.cc-pill{
+  padding:8px 16px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--ink2);
+  font-size:.78rem;font-weight:400;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
 }
+.cc-pill:hover{border-color:var(--ink2);color:var(--ink);}
+.cc-pill.sel{background:var(--ink);color:var(--bg);border-color:var(--ink);}
 
-.field-label {
-  font-size: .75rem;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--ink3);
-  margin-bottom: 6px;
-  display: block;
+.cc-color-row{display:flex;gap:8px;flex-wrap:wrap;}
+.cc-color{
+  width:32px;height:32px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;transition:border-color .15s;
 }
+.cc-color.sel{border-color:var(--ink);}
 
-.creation-inner input[type=text] {
-  width: 100%;
-  padding: 11px 14px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 1rem;
-  outline: none;
-  margin-bottom: 24px;
-  transition: border-color .2s;
+.cc-trait{
+  padding:8px 12px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--ink2);
+  font-size:.75rem;cursor:pointer;
+  transition:all .15s;display:flex;align-items:center;gap:6px;
 }
-.creation-inner input[type=text]:focus { border-color: var(--ink2); }
+.cc-trait:hover{border-color:var(--ink2);}
+.cc-trait.sel{background:var(--ink3);color:var(--bg);border-color:var(--ink3);}
+.cc-trait-dot{
+  width:8px;height:8px;border-radius:50%;
+  border:1px solid var(--ink3);flex-shrink:0;
+}
+.cc-trait.sel .cc-trait-dot{background:var(--bg);}
 
-.preset-row {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px; margin-bottom: 28px;
+.cc-range-row{display:flex;align-items:center;gap:12px;}
+.cc-range{
+  flex:1;-webkit-appearance:none;height:3px;
+  background:var(--line);border-radius:2px;outline:none;cursor:pointer;
 }
-
-.preset-opt {
-  padding: 12px 6px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  color: var(--ink2);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .8rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  transition: all .2s;
-  letter-spacing: .03em;
+.cc-range::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;
+  border-radius:50%;background:var(--ink);cursor:pointer;
+  transition:background .15s;
 }
-.preset-opt:hover { border-color: var(--ink2); color: var(--ink); }
-.preset-opt.active {
-  background: var(--ink); color: var(--bg); border-color: var(--ink);
-}
-
-.hair-row {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 8px; margin-bottom: 28px;
-}
-
-#btn-start {
-  width: 100%;
-  padding: 14px;
-  background: var(--accent);
-  border: none; color: #fff;
-  font-family: 'DM Serif Display', serif;
-  font-size: 1.1rem;
-  cursor: pointer;
-  letter-spacing: .04em;
-  transition: background .2s;
-}
-#btn-start:hover { background: #a93226; }
-#btn-start:disabled { background: var(--ink3); cursor: not-allowed; }
-
-/* ── MAIN GAME LAYOUT ───────────────────────── */
-#game {
-  display: none;
-  min-height: 100vh;
+.cc-range-val{
+  font-family:'IBM Plex Mono',monospace;font-size:.8rem;
+  color:var(--ink2);min-width:36px;text-align:right;
 }
 
-/* Top bar */
-#topbar {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
-  display: flex; align-items: center;
-  padding: 0 28px; height: 52px; gap: 24px;
+.cc-btn-start{
+  width:100%;padding:14px;
+  background:var(--acc);border:none;color:#fff;
+  font-family:'Lora',serif;font-size:1.05rem;
+  cursor:pointer;transition:background .2s;letter-spacing:.03em;
+  margin-top:8px;
+}
+.cc-btn-start:hover:not(:disabled){background:var(--red);}
+.cc-btn-start:disabled{background:var(--ink3);cursor:not-allowed;}
+
+.cc-two{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* ═══════════════════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════════════════ */
+#game{display:none;height:100vh;display:none;flex-direction:column;}
+#topbar{
+  height:48px;background:var(--panel);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;padding:0 20px;gap:20px;
+  flex-shrink:0;z-index:50;
+}
+.tb-brand{
+  font-family:'Lora',serif;font-size:1.1rem;font-weight:400;
+  color:var(--acc);letter-spacing:.04em;flex-shrink:0;
+}
+.tb-info{font-size:.75rem;color:var(--ink3);}
+.tb-info strong{color:var(--ink);font-weight:500;}
+.tb-date{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.72rem;color:var(--ink3);margin-left:auto;
+}
+.tb-btn{
+  padding:4px 10px;border:1px solid var(--line);
+  background:transparent;color:var(--ink3);
+  font-size:.7rem;cursor:pointer;transition:all .15s;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.tb-btn:hover{border-color:var(--ink3);color:var(--ink);}
+.tb-btn.active{background:var(--ink3);color:var(--bg);}
+
+/* ═══════════════════════════════════════════════════
+   MAIN GRID  (left | center | right)
+═══════════════════════════════════════════════════ */
+#grid{
+  display:grid;
+  grid-template-columns:300px 1fr 280px;
+  flex:1;overflow:hidden;
 }
 
-.topbar-brand {
-  font-family: 'DM Serif Display', serif;
-  font-size: 1.2rem;
-  color: var(--ink);
-  flex-shrink: 0;
+/* ═══════════════════════════════════════════════════
+   LEFT COLUMN — viewport + tabs
+═══════════════════════════════════════════════════ */
+#col-left{
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+  background:var(--panel);overflow:hidden;
 }
 
-.topbar-char {
-  font-size: .8rem; color: var(--ink2);
-  border-left: 1px solid var(--line);
-  padding-left: 20px;
+/* Viewport */
+#viewport-wrap{
+  position:relative;flex-shrink:0;
+  width:300px;height:300px;
+  background:var(--bg2);
+  border-bottom:1px solid var(--line);
+  overflow:hidden;
 }
-.topbar-char strong { color: var(--ink); font-weight: 500; }
+#characterCanvas{
+  position:absolute;
+  width:512px;height:512px;
+  transform:scale(0.5859375); /* 300/512 */
+  transform-origin:top left;
+  image-rendering:pixelated;
+}
+#canvas-fade{
+  position:absolute;inset:0;
+  background:var(--bg2);
+  opacity:0;pointer-events:none;z-index:5;
+  transition:opacity .18s;
+}
+#vp-loader{
+  position:absolute;inset:0;z-index:10;
+  background:var(--bg2);
+  display:flex;align-items:center;justify-content:center;
+}
+.spin{
+  width:22px;height:22px;
+  border:2px solid var(--line);
+  border-top-color:var(--ink2);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-.topbar-date {
-  font-size: .8rem; color: var(--ink3);
-  margin-left: auto;
+/* Left tabs */
+.ltabs{
+  display:flex;border-bottom:1px solid var(--line);
+  flex-shrink:0;
 }
+.ltab{
+  flex:1;padding:8px 4px;font-size:.67rem;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink3);cursor:pointer;text-align:center;
+  border-bottom:2px solid transparent;
+  transition:all .15s;background:transparent;border-top:none;
+  border-left:none;border-right:none;
+}
+.ltab.active{color:var(--ink);border-bottom-color:var(--acc);}
+.ltab:hover:not(.active){color:var(--ink2);}
 
-.topbar-debug {
-  font-size: .75rem;
-  padding: 5px 12px;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink3);
-  cursor: pointer;
-  transition: all .2s;
-  font-family: 'DM Sans', sans-serif;
-}
-.topbar-debug:hover { border-color: var(--ink2); color: var(--ink); }
+.ltab-panel{display:none;flex:1;overflow-y:auto;padding:14px;}
+.ltab-panel.active{display:block;}
 
-/* Main 3-column grid */
-#main-grid {
-  display: grid;
-  grid-template-columns: 260px 1fr 300px;
-  gap: 0;
-  height: calc(100vh - 52px);
+/* Measurements */
+.meas-row{
+  display:flex;align-items:baseline;
+  justify-content:space-between;
+  padding:7px 0;border-bottom:1px solid var(--line);
 }
+.meas-row:last-child{border-bottom:none;}
+.meas-lbl{font-size:.75rem;color:var(--ink2);}
+.meas-val{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.85rem;color:var(--ink);
+}
+.meas-sub{font-size:.65rem;color:var(--ink3);margin-left:3px;}
+.bmi-tag{
+  font-size:.6rem;padding:1px 5px;border-radius:2px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:500;letter-spacing:.04em;margin-left:4px;
+}
+.bmi-u{background:#1a3a5e;color:#7ab5e8;}
+.bmi-n{background:#1a3e2a;color:#6abf8a;}
+.bmi-ow{background:#4a3000;color:#d4a050;}
+.bmi-ob{background:#4a1a10;color:#e08060;}
+.bmi-mo{background:#3a0808;color:#e06060;}
 
-/* ── LEFT: character viewport + measurements ── */
-#col-left {
-  border-right: 1px solid var(--line);
-  display: flex; flex-direction: column;
-  background: var(--panel);
-  overflow-y: auto;
+/* Description tab */
+.desc-block{
+  font-family:'Lora',serif;font-size:.83rem;
+  line-height:1.75;color:var(--ink2);
+  margin-bottom:12px;
 }
+.desc-block p{margin-bottom:.6em;}
+.desc-flag{
+  display:inline-block;font-size:.65rem;
+  padding:1px 6px;border-radius:2px;margin:2px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:500;letter-spacing:.04em;
+}
+.flag-neg{background:#4a1010;color:#e08080;}
+.flag-pos{background:#102a18;color:#6abf8a;}
+.flag-neu{background:#1a1a2a;color:#8090c0;}
 
-#viewport-wrap {
-  position: relative;
-  width: 260px; height: 260px;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: var(--bg2);
-  border-bottom: 1px solid var(--line);
+/* Habits tab */
+.habit-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;border-bottom:1px solid var(--line);font-size:.78rem;
 }
+.habit-row:last-child{border-bottom:none;}
+.habit-name{color:var(--ink2);}
+.habit-val{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.75rem;color:var(--ink);
+}
+.habit-bad{color:var(--red);}
+.habit-warn{color:var(--amber);}
+.habit-ok{color:var(--green);}
 
-#characterCanvas {
-  position: absolute;
-  /* scale 512→260: 260/512 = 0.508 */
-  width: 512px; height: 512px;
-  transform: scale(0.508);
-  transform-origin: top left;
-  image-rendering: pixelated;
+/* ═══════════════════════════════════════════════════
+   CENTER COLUMN — story
+═══════════════════════════════════════════════════ */
+#col-mid{
+  display:flex;flex-direction:column;overflow:hidden;
 }
-
-/* loading spinner over viewport */
-#vp-loading {
-  position: absolute; inset: 0; z-index: 10;
-  background: var(--bg2);
-  display: flex; align-items: center; justify-content: center;
-}
-.spin {
-  width: 24px; height: 24px;
-  border: 2px solid var(--line);
-  border-top-color: var(--ink2);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to{transform:rotate(360deg);} }
-
-/* Measurements panel */
-#measurements {
-  padding: 18px 18px 12px;
-  flex: 1;
-}
-
-.meas-title {
-  font-size: .65rem;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--ink3);
-  margin-bottom: 14px;
-}
-
-.meas-item {
-  display: flex; align-items: baseline;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-}
-.meas-item:last-child { border-bottom: none; }
-
-.meas-label {
-  font-size: .78rem; color: var(--ink2);
-  letter-spacing: .02em;
-}
-
-.meas-val {
-  font-family: 'DM Serif Display', serif;
-  font-size: 1.05rem;
-  color: var(--ink);
-}
-.meas-sub {
-  font-size: .7rem; color: var(--ink3);
-  margin-left: 4px;
-}
-
-.bmi-badge {
-  display: inline-block;
-  font-size: .62rem;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 2px;
-  margin-left: 6px;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 500;
-}
-.bmi-under  { background: #d6eaf8; color: #1a5276; }
-.bmi-normal { background: #d5f5e3; color: #1a5233; }
-.bmi-over   { background: #fdebd0; color: #935116; }
-.bmi-obese  { background: #fadbd8; color: #922b21; }
-.bmi-morbid { background: #f9ebea; color: #641e16; }
-
-/* Hair quick toggle */
-.hair-toggle-row {
-  display: flex; gap: 6px;
-  padding: 14px 18px;
-  border-top: 1px solid var(--line);
-}
-.hair-btn {
-  flex: 1; padding: 7px;
-  font-size: .72rem; font-family: 'DM Sans', sans-serif;
-  letter-spacing: .06em; text-transform: uppercase;
-  border: 1px solid var(--line); background: transparent;
-  color: var(--ink2); cursor: pointer; transition: all .15s;
-}
-.hair-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.hair-btn:not(.active):hover { border-color: var(--ink2); }
-
-/* ── MIDDLE: story / events ─────────────────── */
-#col-mid {
-  display: flex; flex-direction: column;
-  overflow: hidden;
+#story-scroll{
+  flex:1;overflow-y:auto;
+  padding:28px 32px;
+  display:flex;flex-direction:column;gap:0;
 }
 
-#story-area {
-  flex: 1; overflow-y: auto;
-  padding: 32px 36px;
+.story-day-sep{
+  display:flex;align-items:center;gap:10px;
+  margin:20px 0 16px;
+}
+.story-day-sep-line{flex:1;height:1px;background:var(--line);}
+.story-day-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.65rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink3);white-space:nowrap;
 }
 
-.story-date-head {
-  font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--ink3); margin-bottom: 20px;
-  display: flex; align-items: center; gap: 10px;
+.story-entry{
+  margin-bottom:18px;
+  animation:storyIn .35s ease;
 }
-.story-date-head::after {
-  content: ''; flex: 1; height: 1px; background: var(--line);
-}
-
-.story-block {
-  margin-bottom: 28px;
-  animation: slideUp .3s ease;
-}
-@keyframes slideUp {
-  from{opacity:0;transform:translateY(12px);}
+@keyframes storyIn{
+  from{opacity:0;transform:translateY(8px);}
   to{opacity:1;transform:translateY(0);}
 }
+.story-entry h3{
+  font-family:'Lora',serif;font-size:1.05rem;font-weight:600;
+  color:var(--ink);margin-bottom:6px;line-height:1.3;
+}
+.story-entry p{
+  font-size:.87rem;line-height:1.72;color:var(--ink2);
+  margin-bottom:5px;
+}
+.story-entry p em{color:var(--ink3);}
+.story-entry p strong{color:var(--ink);font-weight:500;}
 
-.story-block h2 {
-  font-family: 'DM Serif Display', serif;
-  font-size: 1.5rem; margin-bottom: 10px;
-  line-height: 1.25;
+.fx-tag{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:.68rem;padding:1px 6px;border-radius:2px;
+  font-family:'IBM Plex Sans',sans-serif;font-weight:500;
+  margin:1px 2px;vertical-align:middle;
 }
+.fx-gain{background:#3a1a08;color:#d4904a;}
+.fx-lose{background:#0a2a18;color:#5aaf7a;}
+.fx-stat{background:#0a1a3a;color:#5a90d0;}
+.fx-bad {background:#3a0a0a;color:#d05050;}
+.fx-neu {background:var(--bg3);color:var(--ink3);}
 
-.story-block p {
-  font-size: .95rem; line-height: 1.7;
-  color: var(--ink2); margin-bottom: 10px;
+/* Action bar */
+#action-bar{
+  border-top:1px solid var(--line);
+  padding:14px 32px 16px;
+  background:var(--panel);
+  flex-shrink:0;
 }
+.abar-label{
+  font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:9px;
+}
+.abar-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.a-btn{
+  padding:7px 14px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--ink2);
+  font-size:.78rem;font-weight:400;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.a-btn:hover:not([disabled]){border-color:var(--ink2);color:var(--ink);background:var(--bg3);}
+.a-btn[disabled]{opacity:.35;cursor:default;}
+.a-btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+.a-btn.pri:hover:not([disabled]){background:var(--ink2);}
+.a-btn.warn{border-color:var(--amber);color:var(--amber);}
+.a-btn.warn:hover:not([disabled]){background:#2a1a00;}
+.a-btn.bad{border-color:var(--red);color:var(--red);}
+.a-btn.bad:hover:not([disabled]){background:#2a0808;}
+.a-btn.good{border-color:var(--green);color:var(--green);}
+.a-btn.good:hover:not([disabled]){background:#0a1a10;}
 
-.story-effect {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: .75rem; padding: 3px 9px;
-  border-radius: 2px; margin: 2px 3px 2px 0;
-  font-weight: 500;
-}
-.eff-gain { background: #fdebd0; color: #935116; }
-.eff-lose { background: #d5f5e3; color: #1a5233; }
-.eff-neutral { background: var(--bg2); color: var(--ink2); }
-
-/* Action buttons */
-#action-bar {
-  border-top: 1px solid var(--line);
-  padding: 18px 36px;
-  background: var(--panel);
-}
-.action-bar-label {
-  font-size: .65rem; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--ink3); margin-bottom: 10px;
-}
-.action-grid {
-  display: flex; flex-wrap: wrap; gap: 8px;
-}
-
-.act-btn {
-  padding: 9px 16px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  color: var(--ink2);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .82rem; font-weight: 400;
-  cursor: pointer; transition: all .15s;
-  white-space: nowrap;
-}
-.act-btn:hover:not(:disabled) { border-color: var(--ink2); color: var(--ink); background: var(--bg2); }
-.act-btn:disabled { opacity: .4; cursor: default; }
-.act-btn.primary {
-  background: var(--ink); color: var(--bg); border-color: var(--ink);
-}
-.act-btn.primary:hover { background: #333; }
-.act-btn.danger { border-color: #e8a87c; color: var(--accent); }
-.act-btn.danger:hover { background: #fdf3ec; }
-
-/* ── RIGHT: life stats ──────────────────────── */
-#col-right {
-  border-left: 1px solid var(--line);
-  background: var(--panel);
-  overflow-y: auto;
-  padding: 20px 18px;
-  display: flex; flex-direction: column; gap: 20px;
-}
-
-.stat-section-title {
-  font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--ink3); margin-bottom: 12px;
-  padding-bottom: 8px; border-bottom: 1px solid var(--line);
+/* ═══════════════════════════════════════════════════
+   RIGHT COLUMN — stats
+═══════════════════════════════════════════════════ */
+#col-right{
+  border-left:1px solid var(--line);
+  background:var(--panel);
+  overflow-y:auto;
+  padding:14px;
+  display:flex;flex-direction:column;gap:14px;
 }
 
-.stat-row {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 10px;
+.rsec-title{
+  font-size:.63rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink3);padding-bottom:8px;
+  border-bottom:1px solid var(--line);margin-bottom:10px;
 }
 
-.stat-name {
-  font-size: .8rem; color: var(--ink2);
+.stat-row{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:8px;
+}
+.stat-name{font-size:.75rem;color:var(--ink2);width:64px;flex-shrink:0;}
+.stat-bar-bg{
+  flex:1;height:3px;background:var(--bg3);
+  border-radius:2px;overflow:hidden;
+}
+.stat-bar-fill{
+  height:100%;border-radius:2px;
+  transition:width .6s cubic-bezier(.4,0,.2,1),background .6s;
+}
+.stat-num{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.72rem;color:var(--ink2);
+  width:24px;text-align:right;flex-shrink:0;
 }
 
-.stat-bar-wrap {
-  flex: 1; margin: 0 10px;
-  height: 3px; background: var(--bg3); border-radius: 1px;
-  overflow: hidden;
+.kv-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid var(--line);
+  font-size:.76rem;
 }
-.stat-bar {
-  height: 100%; border-radius: 1px;
-  transition: width .5s cubic-bezier(.4,0,.2,1);
-}
-.bar-green  { background: var(--accent3); }
-.bar-amber  { background: var(--accent2); }
-.bar-red    { background: var(--accent); }
-.bar-blue   { background: #7aace0; }
-.bar-gold   { background: var(--gold); }
-
-.stat-num {
-  font-family: 'DM Serif Display', serif;
-  font-size: .9rem; color: var(--ink);
-  min-width: 28px; text-align: right;
+.kv-row:last-child{border-bottom:none;}
+.kv-key{color:var(--ink2);}
+.kv-val{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:.73rem;color:var(--ink);text-align:right;
 }
 
-/* Quick action buttons in right panel */
-.qaction-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+.rel-entry{
+  padding:8px 0;border-bottom:1px solid var(--line);
+  font-size:.76rem;
 }
-.qact {
-  padding: 8px 6px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  color: var(--ink2);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .72rem; font-weight: 400;
-  cursor: pointer; text-align: center;
-  transition: all .15s; line-height: 1.3;
-}
-.qact:hover { border-color: var(--ink2); color: var(--ink); background: var(--bg2); }
+.rel-entry:last-child{border-bottom:none;}
+.rel-name{color:var(--ink);font-weight:500;margin-bottom:2px;}
+.rel-detail{color:var(--ink3);font-size:.7rem;}
 
-/* ── DEBUG OVERLAY ──────────────────────────── */
-#debug-overlay {
-  display: none;
-  position: fixed; inset: 0; z-index: 300;
-  background: rgba(28,26,23,.6);
-  backdrop-filter: blur(4px);
+/* Weekly actions quick panel */
+.week-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.wk-btn{
+  padding:7px 5px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--ink2);
+  font-size:.69rem;font-weight:400;cursor:pointer;
+  transition:all .15s;text-align:center;line-height:1.35;
 }
-#debug-panel {
-  position: absolute; top: 60px; right: 20px;
-  width: 300px; max-height: 80vh; overflow-y: auto;
-  background: var(--panel); border: 1px solid var(--line);
-  padding: 20px;
-  box-shadow: 0 8px 32px var(--shadow);
+.wk-btn:hover{border-color:var(--ink2);color:var(--ink);}
+
+/* ═══════════════════════════════════════════════════
+   DEBUG OVERLAY
+═══════════════════════════════════════════════════ */
+#dbg-overlay{
+  display:none;position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.5);
 }
-#debug-panel h3 {
-  font-family: 'DM Serif Display', serif;
-  font-size: 1rem; margin-bottom: 14px;
+#dbg-panel{
+  position:absolute;top:56px;right:16px;
+  width:280px;max-height:80vh;overflow-y:auto;
+  background:var(--panel);border:1px solid var(--line);
+  padding:16px;box-shadow:0 8px 32px var(--shadow2);
 }
-.dg { margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
-.dg label { font-size: .72rem; color: var(--ink2); display: block; margin-bottom: 4px; margin-top: 8px; }
-.dg input[type=range] { width: 100%; accent-color: var(--accent); }
-.dg select {
-  width: 100%; padding: 5px 8px;
-  border: 1px solid var(--line); background: var(--bg);
-  font-family: 'DM Sans', sans-serif; font-size: .8rem;
-  color: var(--ink); outline: none;
+#dbg-panel h4{
+  font-family:'Lora',serif;font-size:.95rem;margin-bottom:12px;
+}
+.dbg-group{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+.dbg-group:last-child{border-bottom:none;}
+.dbg-group label{
+  display:block;font-size:.68rem;color:var(--ink3);
+  margin-bottom:3px;margin-top:7px;
+}
+.dbg-group input[type=range]{
+  width:100%;accent-color:var(--acc);cursor:pointer;
+}
+.dbg-group select{
+  width:100%;padding:4px 7px;
+  background:var(--bg2);border:1px solid var(--line);
+  color:var(--ink);font-size:.78rem;outline:none;
 }
 
-@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+/* Misc utils */
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.serif{font-family:'Lora',serif;}
 
-/* scrollbar */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+/* ═══════════════════════════════════════════════════
+   NOTIFICATION TOAST
+═══════════════════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--bg);
+  padding:8px 18px;font-size:.78rem;
+  box-shadow:0 4px 20px var(--shadow2);
+  opacity:0;pointer-events:none;
+  transition:opacity .25s;z-index:600;
+  max-width:400px;text-align:center;line-height:1.4;
+}
+#toast.show{opacity:1;}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
+<!-- ═════════════════════════════════════════════
      CHARACTER CREATION
-════════════════════════════════════════════ -->
+═════════════════════════════════════════════ -->
 <div id="creation-screen">
-  <div class="creation-inner">
-    <h1>Life Sim</h1>
-    <p class="subtitle">A realistic body & life simulator</p>
+<div class="cc-wrap">
+  <h1>Life</h1>
+  <p class="cc-subtitle">A Realistic Life Simulator</p>
 
-    <label class="field-label">Your name</label>
-    <input type="text" id="name-input" placeholder="Enter name…" maxlength="24" autocomplete="off">
-
-    <label class="field-label">Starting body</label>
-    <div class="preset-row">
-      <button class="preset-opt" data-preset="1">Slim</button>
-      <button class="preset-opt" data-preset="2">Average</button>
-      <button class="preset-opt" data-preset="3">Curvy</button>
+  <div class="cc-two">
+    <div class="cc-section">
+      <label class="cc-label">First name</label>
+      <input class="cc-input" id="cc-name" type="text" placeholder="Your name…" maxlength="20" autocomplete="off">
     </div>
-
-    <label class="field-label">Hair style</label>
-    <div class="hair-row">
-      <button class="preset-opt hair-opt active" data-hair="HairTied">Tied</button>
-      <button class="preset-opt hair-opt" data-hair="HairLoose">Loose</button>
+    <div class="cc-section">
+      <label class="cc-label">Starting age</label>
+      <input class="cc-input" id="cc-age" type="number" value="18" min="16" max="30">
     </div>
-
-    <button id="btn-start" disabled>Begin Your Life →</button>
   </div>
+
+  <div class="cc-section">
+    <label class="cc-label">Hair colour</label>
+    <div class="cc-color-row" id="cc-hair-colors">
+      <div class="cc-color sel" data-hc="Blonde" style="background:#d4b060" title="Blonde"></div>
+      <div class="cc-color" data-hc="Brown" style="background:#6b3c1e" title="Brown"></div>
+      <div class="cc-color" data-hc="Black" style="background:#1a1410" title="Black"></div>
+      <div class="cc-color" data-hc="Red" style="background:#9e3a1a" title="Red"></div>
+      <div class="cc-color" data-hc="Auburn" style="background:#7a3010" title="Auburn"></div>
+      <div class="cc-color" data-hc="Grey" style="background:#908880" title="Grey"></div>
+      <div class="cc-color" data-hc="White" style="background:#e8e4dc" title="White"></div>
+    </div>
+  </div>
+
+  <div class="cc-section">
+    <label class="cc-label">Eye colour</label>
+    <div class="cc-color-row" id="cc-eye-colors">
+      <div class="cc-color sel" data-ec="Brown" style="background:#6b3c1e" title="Brown"></div>
+      <div class="cc-color" data-ec="Hazel" style="background:#8a6a30" title="Hazel"></div>
+      <div class="cc-color" data-ec="Blue" style="background:#4a80b0" title="Blue"></div>
+      <div class="cc-color" data-ec="Green" style="background:#3a7a50" title="Green"></div>
+      <div class="cc-color" data-ec="Grey" style="background:#7a8a90" title="Grey"></div>
+    </div>
+  </div>
+
+  <div class="cc-section">
+    <label class="cc-label">Starting body</label>
+    <div class="cc-row" id="cc-presets">
+      <button class="cc-pill" data-p="lean">Very lean</button>
+      <button class="cc-pill sel" data-p="slim">Slim</button>
+      <button class="cc-pill" data-p="average">Average</button>
+      <button class="cc-pill" data-p="chubby">Curvy</button>
+      <button class="cc-pill" data-p="heavy">Heavy</button>
+    </div>
+  </div>
+
+  <div class="cc-two">
+    <div class="cc-section">
+      <label class="cc-label">Hair style</label>
+      <div class="cc-row" id="cc-hairstyle">
+        <button class="cc-pill sel" data-hs="HairTied">Tied up</button>
+        <button class="cc-pill" data-hs="HairLoose">Down</button>
+      </div>
+    </div>
+    <div class="cc-section">
+      <label class="cc-label">Glasses?</label>
+      <div class="cc-row" id="cc-glasses">
+        <button class="cc-pill sel" data-gl="false">No glasses</button>
+        <button class="cc-pill" data-gl="true">Glasses</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cc-section">
+    <label class="cc-label">Breast tendency <span id="cc-bt-label" style="color:var(--ink2);font-size:.7rem;font-style:normal;text-transform:none;letter-spacing:0"> — Average</span></label>
+    <div class="cc-range-row">
+      <span style="font-size:.7rem;color:var(--ink3)">Flat</span>
+      <input class="cc-range" type="range" id="cc-breast-tend" min="0" max="100" value="50">
+      <span style="font-size:.7rem;color:var(--ink3)">Ample</span>
+    </div>
+  </div>
+
+  <div class="cc-section">
+    <label class="cc-label">Starting personality traits <span style="color:var(--ink3);font-size:.68rem">(pick up to 2)</span></label>
+    <div class="cc-row" id="cc-traits" style="gap:6px;">
+      <button class="cc-trait" data-trait="foodie">🍕 Foodie</button>
+      <button class="cc-trait" data-trait="athlete">🏃 Athlete</button>
+      <button class="cc-trait" data-trait="lazy">🛋 Lazy</button>
+      <button class="cc-trait" data-trait="anxious">😟 Anxious</button>
+      <button class="cc-trait" data-trait="social">🗣 Social</button>
+      <button class="cc-trait" data-trait="introvert">📚 Introvert</button>
+      <button class="cc-trait" data-trait="impulsive">⚡ Impulsive</button>
+      <button class="cc-trait" data-trait="disciplined">🎯 Disciplined</button>
+    </div>
+  </div>
+
+  <button class="cc-btn-start" id="cc-start" disabled>Begin your life →</button>
+</div>
 </div>
 
-<!-- ═══════════════════════════════════════════
+<!-- ═════════════════════════════════════════════
      DEBUG OVERLAY
-════════════════════════════════════════════ -->
-<div id="debug-overlay" onclick="closeDebug(event)">
-  <div id="debug-panel">
-    <h3>Debug Controls</h3>
-    <div id="debug-controls-inner"></div>
+═════════════════════════════════════════════ -->
+<div id="dbg-overlay" onclick="if(event.target===this)toggleDebug()">
+  <div id="dbg-panel">
+    <h4>Debug Controls</h4>
+    <div id="dbg-inner"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
+<!-- ═════════════════════════════════════════════
      GAME
-════════════════════════════════════════════ -->
+═════════════════════════════════════════════ -->
 <div id="game">
   <div id="topbar">
-    <div class="topbar-brand">Life Sim</div>
-    <div class="topbar-char"><strong id="tb-name"></strong> · Age <span id="tb-age">18</span></div>
-    <div class="topbar-date" id="tb-date">Monday, 1 January 2007</div>
-    <button class="topbar-debug" onclick="toggleDebug()">Debug ⚙</button>
+    <div class="tb-brand">Life</div>
+    <div class="tb-info"><strong id="tb-name">—</strong> · age <span id="tb-age">18</span></div>
+    <div class="tb-info" id="tb-week-info" style="font-size:.7rem;"></div>
+    <div class="tb-date" id="tb-date">Week 1, 2007</div>
+    <button class="tb-btn" id="btn-theme" onclick="toggleTheme()">☀ Light</button>
+    <button class="tb-btn" onclick="toggleDebug()">⚙ Debug</button>
   </div>
 
-  <div id="main-grid">
-
-    <!-- LEFT: viewport + measurements -->
+  <div id="grid">
+    <!-- LEFT -->
     <div id="col-left">
       <div id="viewport-wrap">
-        <div id="vp-loading"><div class="spin"></div></div>
+        <div id="vp-loader"><div class="spin"></div></div>
+        <div id="canvas-fade"></div>
         <canvas id="characterCanvas" width="512" height="512"></canvas>
       </div>
 
-      <div class="hair-toggle-row">
-        <button class="hair-btn active" id="hbtn-tied"   onclick="setHairStyle('HairTied')">Tied</button>
-        <button class="hair-btn"        id="hbtn-loose"  onclick="setHairStyle('HairLoose')">Loose</button>
+      <div class="ltabs">
+        <button class="ltab active" data-tab="meas">Measurements</button>
+        <button class="ltab" data-tab="desc">Description</button>
+        <button class="ltab" data-tab="habits">Habits</button>
       </div>
 
-      <div id="measurements">
-        <div class="meas-title">Body Measurements</div>
-        <div class="meas-item">
-          <span class="meas-label">Weight</span>
+      <!-- MEASUREMENTS TAB -->
+      <div class="ltab-panel active" id="tab-meas">
+        <div class="meas-row">
+          <span class="meas-lbl">Weight</span>
           <span class="meas-val" id="m-weight">—<span class="meas-sub">kg</span></span>
         </div>
-        <div class="meas-item">
-          <span class="meas-label">BMI</span>
-          <span class="meas-val" id="m-bmi">—<span id="m-bmi-badge"></span></span>
+        <div class="meas-row">
+          <span class="meas-lbl">BMI</span>
+          <span class="meas-val" id="m-bmi">—<span id="m-bmi-tag"></span></span>
         </div>
-        <div class="meas-item">
-          <span class="meas-label">Waist</span>
+        <div class="meas-row">
+          <span class="meas-lbl">Waist</span>
           <span class="meas-val" id="m-waist">—<span class="meas-sub">cm</span></span>
         </div>
-        <div class="meas-item">
-          <span class="meas-label">Bust</span>
+        <div class="meas-row">
+          <span class="meas-lbl">Bust</span>
           <span class="meas-val" id="m-bust">—<span class="meas-sub">cm</span></span>
         </div>
-        <div class="meas-item">
-          <span class="meas-label">Hips</span>
+        <div class="meas-row">
+          <span class="meas-lbl">Hips</span>
           <span class="meas-val" id="m-hips">—<span class="meas-sub">cm</span></span>
         </div>
+        <div class="meas-row">
+          <span class="meas-lbl">Height</span>
+          <span class="meas-val">160<span class="meas-sub">cm</span></span>
+        </div>
+        <div class="meas-row">
+          <span class="meas-lbl">Bra size</span>
+          <span class="meas-val" id="m-bra">—</span>
+        </div>
+      </div>
+
+      <!-- DESCRIPTION TAB -->
+      <div class="ltab-panel" id="tab-desc">
+        <div id="desc-content" class="desc-block">
+          <p><em>Your character has not been created yet.</em></p>
+        </div>
+        <div id="desc-flags" style="margin-top:6px;"></div>
+      </div>
+
+      <!-- HABITS TAB -->
+      <div class="ltab-panel" id="tab-habits">
+        <div id="habits-content"></div>
       </div>
     </div>
 
-    <!-- MIDDLE: story -->
+    <!-- CENTER -->
     <div id="col-mid">
-      <div id="story-area"></div>
+      <div id="story-scroll"></div>
       <div id="action-bar">
-        <div class="action-bar-label">What will you do?</div>
-        <div class="action-grid" id="action-grid"></div>
+        <div class="abar-label">What do you do?</div>
+        <div class="abar-grid" id="abar-grid"></div>
       </div>
     </div>
 
-    <!-- RIGHT: life stats + quick actions -->
+    <!-- RIGHT -->
     <div id="col-right">
       <div>
-        <div class="stat-section-title">Life Stats</div>
-        <div class="stat-row">
-          <span class="stat-name">Health</span>
-          <div class="stat-bar-wrap"><div class="stat-bar bar-green" id="bar-health" style="width:80%"></div></div>
-          <span class="stat-num" id="num-health">80</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-name">Fitness</span>
-          <div class="stat-bar-wrap"><div class="stat-bar bar-blue" id="bar-fitness" style="width:50%"></div></div>
-          <span class="stat-num" id="num-fitness">50</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-name">Happiness</span>
-          <div class="stat-bar-wrap"><div class="stat-bar bar-gold" id="bar-happiness" style="width:70%"></div></div>
-          <span class="stat-num" id="num-happiness">70</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-name">Energy</span>
-          <div class="stat-bar-wrap"><div class="stat-bar bar-amber" id="bar-energy" style="width:90%"></div></div>
-          <span class="stat-num" id="num-energy">90</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-name">Social</span>
-          <div class="stat-bar-wrap"><div class="stat-bar bar-green" id="bar-social" style="width:60%"></div></div>
-          <span class="stat-num" id="num-social">60</span>
-        </div>
+        <div class="rsec-title">Wellbeing</div>
+        <div class="stat-row"><span class="stat-name">Health</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-health"></div></div><span class="stat-num" id="sn-health">—</span></div>
+        <div class="stat-row"><span class="stat-name">Fitness</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-fitness"></div></div><span class="stat-num" id="sn-fitness">—</span></div>
+        <div class="stat-row"><span class="stat-name">Happiness</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-happy"></div></div><span class="stat-num" id="sn-happy">—</span></div>
+        <div class="stat-row"><span class="stat-name">Energy</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-energy"></div></div><span class="stat-num" id="sn-energy">—</span></div>
+        <div class="stat-row"><span class="stat-name">Mood</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-mood"></div></div><span class="stat-num" id="sn-mood">—</span></div>
+        <div class="stat-row"><span class="stat-name">Libido</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-libido"></div></div><span class="stat-num" id="sn-libido">—</span></div>
+        <div class="stat-row"><span class="stat-name">Confidence</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-conf"></div></div><span class="stat-num" id="sn-conf">—</span></div>
+        <div class="stat-row"><span class="stat-name">Appetite</span><div class="stat-bar-bg"><div class="stat-bar-fill" id="sb-app"></div></div><span class="stat-num" id="sn-app">—</span></div>
       </div>
 
       <div>
-        <div class="stat-section-title">Career & Finance</div>
-        <div class="stat-row">
-          <span class="stat-name">Job</span>
-          <span class="stat-num" id="stat-job" style="font-size:.75rem;color:var(--ink2);text-align:right;min-width:120px">Unemployed</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-name">Money</span>
-          <span class="stat-num" id="stat-money">€0</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-name">Salary</span>
-          <span class="stat-num" id="stat-salary">€0/mo</span>
-        </div>
+        <div class="rsec-title">Finances</div>
+        <div class="kv-row"><span class="kv-key">Job</span><span class="kv-val" id="kv-job">Unemployed</span></div>
+        <div class="kv-row"><span class="kv-key">Salary (gross)</span><span class="kv-val" id="kv-gross">€0/mo</span></div>
+        <div class="kv-row"><span class="kv-key">Tax</span><span class="kv-val" id="kv-tax">€0/mo</span></div>
+        <div class="kv-row"><span class="kv-key">Rent/Mortgage</span><span class="kv-val" id="kv-rent">€0/mo</span></div>
+        <div class="kv-row"><span class="kv-key">Net take-home</span><span class="kv-val" id="kv-net">€0/mo</span></div>
+        <div class="kv-row"><span class="kv-key">Savings</span><span class="kv-val" id="kv-save">€0</span></div>
       </div>
 
       <div>
-        <div class="stat-section-title">Quick Actions</div>
-        <div class="qaction-grid">
-          <button class="qact" onclick="doQuickAction('eat_snack')">🍪 Snack<br><small>+belly, +happy</small></button>
-          <button class="qact" onclick="doQuickAction('exercise')">🏃 Exercise<br><small>−weight, +fit</small></button>
-          <button class="qact" onclick="doQuickAction('eat_meal')">🍽 Big meal<br><small>+weight</small></button>
-          <button class="qact" onclick="doQuickAction('diet')">🥗 Diet day<br><small>−belly, +health</small></button>
-          <button class="qact" onclick="doQuickAction('rest')">😴 Rest<br><small>+energy, +health</small></button>
-          <button class="qact" onclick="doQuickAction('socialize')">💬 Go out<br><small>+social, +happy</small></button>
-          <button class="qact" onclick="doQuickAction('hair_grow')">💊 Hair pills<br><small>+hair length</small></button>
-          <button class="qact" onclick="doQuickAction('hair_cut')">✂ Haircut<br><small>−hair length</small></button>
-        </div>
+        <div class="rsec-title">Property &amp; Assets</div>
+        <div class="kv-row"><span class="kv-key">Housing</span><span class="kv-val" id="kv-housing">Renting flat</span></div>
+        <div class="kv-row"><span class="kv-key">Car</span><span class="kv-val" id="kv-car">None</span></div>
+        <div class="kv-row"><span class="kv-key">Licence</span><span class="kv-val" id="kv-licence">None</span></div>
       </div>
 
       <div>
-        <div class="stat-section-title">Appearance Choices</div>
-        <div class="qaction-grid">
-          <button class="qact" onclick="doQuickAction('implants')">⬆ Breast aug.<br><small>surgery</small></button>
-          <button class="qact" onclick="doQuickAction('bbl')">⬆ BBL<br><small>surgery</small></button>
-          <button class="qact" onclick="doQuickAction('liposuction')">⬇ Lipo<br><small>surgery, −fat</small></button>
-          <button class="qact" onclick="doQuickAction('belly_variant')">🔄 Belly shape<br><small>cycle type</small></button>
+        <div class="rsec-title">Relationships</div>
+        <div id="rel-list"><p style="font-size:.72rem;color:var(--ink3);padding:4px 0;">No meaningful relationships yet.</p></div>
+      </div>
+
+      <div>
+        <div class="rsec-title">Weekly Habits</div>
+        <div class="week-grid" id="week-grid">
+          <button class="wk-btn" onclick="weekAction('grocery')">🛒 Groceries</button>
+          <button class="wk-btn" onclick="weekAction('cook')">🍳 Cook at home</button>
+          <button class="wk-btn" onclick="weekAction('takeaway')">📦 Takeaway</button>
+          <button class="wk-btn" onclick="weekAction('bar')">🍺 Night out</button>
+          <button class="wk-btn" onclick="weekAction('gym')">🏋 Gym session</button>
+          <button class="wk-btn" onclick="weekAction('run')">🏃 Go for a run</button>
+          <button class="wk-btn" onclick="weekAction('smoke')">🚬 Buy cigarettes</button>
+          <button class="wk-btn" onclick="weekAction('date')">💌 Go on a date</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<div id="toast"></div>
+
+<!-- ═════════════════════════════════════════════
+     JAVASCRIPT ENGINE
+═════════════════════════════════════════════ -->
 <script>
-// ═══════════════════════════════════════════════════════════
-//  CONSTANTS & CONFIG
-// ═══════════════════════════════════════════════════════════
-const HEIGHT_CM = 160;
-
+// ═══════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════
+const H = 160; // height cm fixed
+const KG_PER_UNIT = 35/(439-171);
+const KG_BASE     = 50 - 171*KG_PER_UNIT;
 const PARTS = ["body","belly","arm","butt","thighs","breast","hair"];
-const BELLY_VARIANTS = ["Belly","Belly1","Belly2","Belly3","Belly4"];
-const HAIR_VARIANTS  = ["HairTied","HairLoose"];
-
-// Capitalized folder names on GitHub
-const PART_FOLDERS = {
-  body:"Body", arm:"Arm", butt:"Butt",
-  thighs:"Thighs", breast:"Breast",
-  belly:null, hair:null  // use variant directly
-};
-
+const BELLY_V = ["Belly","Belly1","Belly2","Belly3","Belly4"];
+const HAIR_V  = ["HairTied","HairLoose"];
+const PART_FOLDER = {body:"Body",arm:"Arm",butt:"Butt",thighs:"Thighs",breast:"Breast"};
 const DEFAULT_POS = {
-  body:  {x:0,   y:0},
-  belly: {x:173, y:84},
-  arm:   {x:163, y:76},
-  butt:  {x:44,  y:110},
-  thighs:{x:115, y:159},
-  breast:{x:184, y:90},
-  hair:  {x:143, y:39}
+  body:{x:0,y:0},belly:{x:173,y:84},arm:{x:163,y:76},
+  butt:{x:44,y:110},thighs:{x:115,y:159},breast:{x:184,y:90},hair:{x:143,y:39}
 };
-
-const STAGE_MAX = {
-  body:1, belly:251, arm:240, butt:351, thighs:228, breast:301, hair:600
-};
-
-// Weight calibration (from user data):
-// Skinny preset sum (excl body+hair) = 10+20+60+21+60 = 171 → 50kg
-// Chubby preset sum                  = 68+50+120+81+120= 439 → 85kg
-// delta: 268 units → 35kg  → 0.1306 kg/unit
-// base: 50 - 171*0.1306 = 27.67kg
-const KG_PER_UNIT = 35 / (439 - 171);
-const KG_BASE     = 50 - 171 * KG_PER_UNIT;
+const STAGE_MAX = {body:1,belly:251,arm:240,butt:351,thighs:228,breast:301,hair:600};
 const WEIGHT_PARTS = ["belly","arm","butt","thighs","breast"];
 
 const PRESETS = {
-  1: {belly:10,  arm:20,  butt:60,  thighs:21,  breast:60,  hair:160},
-  2: {belly:40,  arm:30,  butt:100, thighs:41,  breast:80,  hair:160},
-  3: {belly:68,  arm:50,  butt:120, thighs:81,  breast:120, hair:160}
+  lean:   {belly:5,  arm:10, butt:30, thighs:9,  breast:20, hair:140},
+  slim:   {belly:10, arm:20, butt:60, thighs:21,  breast:50, hair:160},
+  average:{belly:35, arm:30, butt:90, thighs:41,  breast:75, hair:160},
+  chubby: {belly:68, arm:50, butt:120,thighs:81,  breast:110,hair:160},
+  heavy:  {belly:120,arm:90, butt:180,thighs:120, breast:160,hair:160}
 };
 
-// ═══════════════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════════════
-let charName = "";
-let state    = {};
-const imgCache = {};
-
-// Life stats (0–100)
-const life = {
-  health:80, fitness:50, happiness:70, energy:90, social:60,
-  money:0, salary:0, job:"Unemployed",
-  day:1, month:1, year:2007, age:18
-};
-
-const MONTHS = ["January","February","March","April","May","June",
-                "July","August","September","October","November","December"];
-const DAYS   = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-
-// ═══════════════════════════════════════════════════════════
-//  CANVAS
-// ═══════════════════════════════════════════════════════════
-const canvas = document.getElementById('characterCanvas');
-const ctx    = canvas.getContext('2d');
-
-function getFolder(part) {
-  if(part==="belly"||part==="hair") return state[part].variant;
-  return PART_FOLDERS[part];
+// Tax brackets (simplified European-style)
+function calcTax(annualGross){
+  if(annualGross<=12000) return 0;
+  if(annualGross<=25000) return Math.round((annualGross-12000)*0.20);
+  if(annualGross<=50000) return Math.round(2600+(annualGross-25000)*0.30);
+  return Math.round(2600+7500+(annualGross-50000)*0.42);
 }
 
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    if(imgCache[src]) { resolve(imgCache[src]); return; }
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload  = () => { imgCache[src]=img; resolve(img); };
-    img.onerror = () => reject(new Error("404: "+src));
-    img.src = src;
+// ═══════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════
+let S = {}; // body part stages
+let G = {}; // game / life state
+const imgCache={};
+
+function initState(preset,hairStyle,breastTend){
+  S={};
+  for(const p of PARTS){
+    S[p]={
+      stage:1,
+      x:DEFAULT_POS[p].x,
+      y:DEFAULT_POS[p].y,
+      variant:p==="belly"?"Belly":p==="hair"?hairStyle:null
+    };
+  }
+  const pr=PRESETS[preset];
+  for(const [k,v] of Object.entries(pr)) S[k].stage=v;
+  // Apply breast tendency modifier
+  const tendMult = 0.5 + (breastTend/100)*1.5;
+  S.breast.stage = Math.max(1,Math.min(STAGE_MAX.breast, Math.round(S.breast.stage*tendMult)));
+
+  G={
+    // time
+    week:1, year:2007, weekOfYear:1,
+    // character
+    name:"", age:18,
+    hairColor:"Blonde", eyeColor:"Brown",
+    glasses:false, traits:[],
+    // stats 0-100
+    health:78, fitness:45, happy:65, energy:88,
+    mood:60, libido:55, conf:55, appetite:55,
+    // finance
+    job:"Unemployed", jobTier:0, salary:0, savings:200,
+    // housing
+    housing:"Renting (shared flat)", rent:350,
+    housingTier:0,
+    // car
+    car:"None", licence:false,
+    // food / diet tracking (weekly intake scores)
+    weeklyDairy:0, weeklyAlcohol:0, weeklyCarbs:0, weeklyMeat:0,
+    weeklyJunk:0,  weeklyHealthy:0, weeklyCalories:0,
+    // belly state
+    baseBellyVariant:"Belly",
+    bloatWeeks:0,   // temp bloat counter
+    // habits / addictions
+    cigarettesPerDay:0, smokingWeeks:0,
+    drinksPerWeek:0, drinkingWeeks:0,
+    gymVisitsPerWeek:0,
+    // psychology
+    bingeTendency:0,    // 0-100, rises with stress/depression
+    depressionScore:0,  // 0-100
+    eatingDisorder:null,
+    // flags (permanent cosmetic / health)
+    flags:{
+      stretchMarks:false, saggy:false, acne:false,
+      yellowTeeth:false, liversPots:false, drinkingProblem:false,
+      smokingProblem:false, bodyDysmorphia:false,
+      pregnant:false, surgery_breast:0, surgery_bbl:0, surgery_lipo:0
+    },
+    // relationships
+    relationships:[],
+    partnerID:null,
+    // grocery preference (weekly)
+    groceryProfile:{junk:30,healthy:50,dairy:20,alcohol:0},
+    grocerySet:false,
+    // unlocked locations
+    locations:["home","supermarket","street"],
+    // career skills
+    skills:{office:0,manual:0,hospitality:0,driving:0,education:0},
+    // recent weight history (for detecting rapid change)
+    weightHistory:[], // last 4 weeks
+    // counters
+    weeksEmployed:0,
+    // misc
+    breastTend:50,
+    preset:"slim",
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+//  CANVAS / RENDERING
+// ═══════════════════════════════════════════════════════
+const canvas=document.getElementById('characterCanvas');
+const ctx=canvas.getContext('2d');
+let drawPending=false;
+let loaderHidden=false;
+
+function getFolder(part){
+  if(part==="belly"||part==="hair") return S[part].variant;
+  return PART_FOLDER[part];
+}
+function loadImg(src){
+  return new Promise((res,rej)=>{
+    if(imgCache[src]){res(imgCache[src]);return;}
+    const img=new Image();
+    img.crossOrigin="anonymous";
+    img.onload=()=>{imgCache[src]=img;res(img);};
+    img.onerror=()=>rej(src);
+    img.src=src;
   });
 }
 
-async function drawCharacter() {
+async function renderCharacter(animate=true){
+  if(drawPending)return;
+  drawPending=true;
+
+  // Fade out
+  if(animate){
+    const fade=document.getElementById('canvas-fade');
+    fade.style.opacity='0.7';
+    await new Promise(r=>setTimeout(r,150));
+  }
+
+  const off=document.createElement('canvas');
+  off.width=off.height=512;
+  const offCtx=off.getContext('2d');
+
+  for(const part of PARTS){
+    const folder=getFolder(part);
+    const stage=S[part].stage;
+    const {x,y}=S[part];
+    const src=`https://raw.githubusercontent.com/piritaargenta/life/refs/heads/main/viewport/${folder}/${stage}.png`;
+    try{const img=await loadImg(src);offCtx.drawImage(img,x,y);}catch(e){}
+  }
+
   ctx.clearRect(0,0,512,512);
-  const off = document.createElement('canvas');
-  off.width = off.height = 512;
-  const offCtx = off.getContext('2d');
+  ctx.shadowColor='white';ctx.shadowBlur=4;
+  ctx.drawImage(off,0,0);
+  ctx.shadowColor='transparent';
+  ctx.drawImage(off,0,0);
 
-  for(const part of PARTS) {
-    const folder = getFolder(part);
-    const stage  = state[part].stage;
-    const {x,y}  = state[part];
-    const src    = `https://raw.githubusercontent.com/piritaargenta/life/refs/heads/main/viewport/${folder}/${stage}.png`;
-    try {
-      const img = await loadImage(src);
-      offCtx.drawImage(img,x,y);
-    } catch(e) { /* silently skip missing frames */ }
+  // Fade back in
+  if(animate){
+    const fade=document.getElementById('canvas-fade');
+    fade.style.opacity='0';
   }
 
-  ctx.shadowColor="white"; ctx.shadowBlur=6;
-  ctx.drawImage(off,0,0);
-  ctx.shadowColor="transparent";
-  ctx.drawImage(off,0,0);
+  if(!loaderHidden){
+    const ld=document.getElementById('vp-loader');
+    ld.style.opacity='0';
+    setTimeout(()=>ld.style.display='none',400);
+    loaderHidden=true;
+  }
 
-  // Hide loading overlay after first draw
-  const ld = document.getElementById('vp-loading');
-  if(ld) { ld.style.opacity='0'; setTimeout(()=>ld.style.display='none',400); }
-
+  drawPending=false;
   updateMeasurements();
+  updateDesc();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  MEASUREMENTS
-// ═══════════════════════════════════════════════════════════
-function calcWeight() {
-  const sum = WEIGHT_PARTS.reduce((s,p)=>s+state[p].stage, 0);
-  return Math.max(35, KG_BASE + sum * KG_PER_UNIT);
+// ═══════════════════════════════════════════════════════
+//  MEASUREMENTS & BODY CALCS
+// ═══════════════════════════════════════════════════════
+function calcWeight(){
+  const sum=WEIGHT_PARTS.reduce((a,p)=>a+S[p].stage,0);
+  return Math.max(35, KG_BASE+sum*KG_PER_UNIT);
+}
+function calcWaist(){return 50+(S.belly.stage-1)/250*250;}
+function calcBust(){return 75+Math.pow(S.breast.stage/301,0.8)*225;}
+function calcHips(){return 75+Math.pow(S.butt.stage/351,0.75)*225;}
+function calcBMI(){return calcWeight()/(H/100)**2;}
+function bmiCat(bmi){
+  if(bmi<18.5)return{l:"Underweight",c:"bmi-u"};
+  if(bmi<25)  return{l:"Normal",c:"bmi-n"};
+  if(bmi<30)  return{l:"Overweight",c:"bmi-ow"};
+  if(bmi<35)  return{l:"Obese I",c:"bmi-ob"};
+  if(bmi<40)  return{l:"Obese II",c:"bmi-ob"};
+  return            {l:"Morbidly Obese",c:"bmi-mo"};
+}
+function calcBraSize(){
+  const bust=calcBust();
+  const band=Math.round((bust-12)/5)*5;
+  const diff=bust-band;
+  const cups=["AA","A","B","C","D","DD","E","F","FF","G","GG","H","HH","J","JJ","K","KK"];
+  const cupIdx=Math.max(0,Math.min(cups.length-1,Math.floor((diff-1)/2.5)));
+  return `${band}${cups[cupIdx]}`;
+}
+function updateMeasurements(){
+  const w=calcWeight(),bmi=calcBMI(),cat=bmiCat(bmi);
+  setEl('m-weight',`${w.toFixed(1)}<span class="meas-sub">kg</span>`);
+  setEl('m-bmi',`${bmi.toFixed(1)}<span class="bmi-tag ${cat.c}">${cat.l}</span>`);
+  setEl('m-waist',`${calcWaist().toFixed(0)}<span class="meas-sub">cm</span>`);
+  setEl('m-bust',`${calcBust().toFixed(0)}<span class="meas-sub">cm</span>`);
+  setEl('m-hips',`${calcHips().toFixed(0)}<span class="meas-sub">cm</span>`);
+  setEl('m-bra',calcBraSize());
 }
 
-function calcWaist() {
-  // 50cm at stage 1 → 300cm at stage 251, linear
-  return 50 + (state.belly.stage - 1) / 250 * 250;
+// ═══════════════════════════════════════════════════════
+//  DESCRIPTION SYSTEM
+// ═══════════════════════════════════════════════════════
+function updateDesc(){
+  const w=calcWeight(),bmi=calcBMI(),ws=calcWaist(),bs=calcBust(),hs=calcHips();
+  const bst=S.breast.stage,bt=S.butt.stage;
+  const name=G.name;
+  const f=G.flags;
+
+  let paras=[];
+
+  // ── Build & appearance ──
+  let bodyDesc="";
+  if(bmi<17.5) bodyDesc=`${name} is strikingly thin — bones visible at the collarbones and hips, limbs almost fragile.`;
+  else if(bmi<19) bodyDesc=`${name} is lean, with a light, slender frame. Not much to grab hold of.`;
+  else if(bmi<22) bodyDesc=`${name} carries a slim, healthy figure. Toned without being muscular.`;
+  else if(bmi<25) bodyDesc=`${name} has a full, natural shape — soft in the right places, nothing excessive.`;
+  else if(bmi<28) bodyDesc=`${name} has a noticeably fuller figure, soft and rounded. Clothes fit snugly.`;
+  else if(bmi<32) bodyDesc=`${name} is carrying a significant amount of extra weight, which shows in the face, belly, and thighs.`;
+  else if(bmi<38) bodyDesc=`${name} is obese. Movement is slower, breathing heavier. The weight is difficult to ignore.`;
+  else bodyDesc=`${name} is morbidly obese. Getting around is a challenge. The body struggles under its own mass.`;
+
+  paras.push(`<p>${bodyDesc}</p>`);
+
+  // ── Waist/belly specifics ──
+  if(ws<62) paras.push(`<p>The waist is tiny — a hand could almost wrap around it.</p>`);
+  else if(ws<75) paras.push(`<p>The belly is flat and defined.</p>`);
+  else if(ws>100&&ws<140) paras.push(`<p>A pronounced belly protrudes forward, soft and round. Waist measurement: ${ws.toFixed(0)} cm.</p>`);
+  else if(ws>=140) paras.push(`<p>The belly is enormous — cascading forward in heavy folds. The skin strains. Waist at ${ws.toFixed(0)} cm.</p>`);
+
+  // Belly shape flavour
+  const bv=S.belly.variant;
+  if(bv==="Belly1"&&S.belly.stage>30) paras.push(`<p>The stomach is distended and taut — round like a beach ball, stretched from overindulgence or alcohol.</p>`);
+  else if(bv==="Belly2"&&S.belly.stage>40) paras.push(`<p>The belly droops slightly at the front, heavier than it is firm.</p>`);
+  else if(bv==="Belly3"&&S.belly.stage>50) paras.push(`<p>A saggy, pendulous belly hangs low, skin gathering in loose folds.</p>`);
+  else if(bv==="Belly4"&&S.belly.stage>50) paras.push(`<p>A heavy, apron-like flap of fat hangs from the lower abdomen — the result of years of excess and poor diet.</p>`);
+
+  // ── Bust ──
+  if(bs<82) paras.push(`<p>The chest is completely flat.</p>`);
+  else if(bs<92) paras.push(`<p>A modest bust, unassuming and neat.</p>`);
+  else if(bs>=100&&bs<115) paras.push(`<p>A full, heavy bust that attracts its share of attention.</p>`);
+  else if(bs>=115&&bs<140) paras.push(`<p>The breasts are very large — ${calcBraSize()}, difficult to find bras for, strain on the back.</p>`);
+  else if(bs>=140) paras.push(`<p>The chest is extraordinary in size — ${calcBraSize()}. Back pain is a constant companion. Movement is genuinely hindered.</p>`);
+
+  // Surgery notes
+  if(f.surgery_breast>0) paras.push(`<p><em>There are faint scars beneath each breast — the work of a surgeon's hand.</em></p>`);
+  if(f.surgery_bbl>0) paras.push(`<p><em>The shape of the buttocks has been surgically enhanced.</em></p>`);
+
+  // ── Hips/butt ──
+  if(hs>110&&hs<140) paras.push(`<p>Wide hips and a generous rear — the kind of figure that turns heads.</p>`);
+  else if(hs>=140) paras.push(`<p>The hips and buttocks are enormous — ${hs.toFixed(0)} cm around. Moving through narrow spaces is difficult.</p>`);
+
+  // ── Cosmetic flags ──
+  if(f.stretchMarks) paras.push(`<p><em>Faint silvery-purple stretch marks trace the sides of the abdomen, hips, and thighs — the quiet record of rapid weight change.</em></p>`);
+  if(f.saggy)        paras.push(`<p><em>Loose, excess skin hangs where significant weight was lost. It won't bounce back.</em></p>`);
+  if(f.acne)         paras.push(`<p><em>The skin shows persistent breakouts — along the jawline and forehead. Too much junk food has taken its toll.</em></p>`);
+  if(f.yellowTeeth)  paras.push(`<p><em>The teeth have taken on a yellowed tinge. Years of smoking leave their mark.</em></p>`);
+  if(f.liverSpots)   paras.push(`<p><em>Small liver spots have appeared on the hands and forearms.</em></p>`);
+
+  // ── Fitness ──
+  if(G.fitness>70) paras.push(`<p>There's a visible tone beneath the skin — the result of regular exercise.</p>`);
+  else if(G.fitness<25) paras.push(`<p>The muscles are soft and underused. Even minor exertion results in breathlessness.</p>`);
+
+  // ── Glasses ──
+  if(G.glasses) paras.push(`<p>${name} wears glasses — ${G.eyeColor.toLowerCase()} eyes visible behind the lenses.</p>`);
+  else paras.push(`<p>${G.eyeColor} eyes, ${G.hairColor.toLowerCase()} hair.`);
+
+  // ── Psychological state ──
+  if(G.depressionScore>60) paras.push(`<p>There's a heaviness in the expression — a flatness to the eyes that suggests someone not quite at peace with themselves.</p>`);
+  if(G.bingeTendency>70) paras.push(`<p>The relationship with food is complicated. Periods of restraint followed by loss of control — a cycle that's hard to break.</p>`);
+  if(G.eatingDisorder==="restrict") paras.push(`<p><em>There are signs of disordered eating — the way food is avoided, rationed, feared.</em></p>`);
+
+  setEl('desc-content',`<div class="desc-block">${paras.join('')}</div>`);
+
+  // Flags badges
+  const flagHTML=Object.entries(f)
+    .filter(([k,v])=>v===true)
+    .map(([k])=>`<span class="desc-flag flag-neg">${k.replace(/_/g,' ')}</span>`)
+    .join('');
+  const posFlagHTML=(G.fitness>65?'<span class="desc-flag flag-pos">toned</span>':'')
+    +(G.health>80?'<span class="desc-flag flag-pos">healthy</span>':'')
+    +(G.conf>70?'<span class="desc-flag flag-pos">confident</span>':'');
+  setEl('desc-flags',flagHTML+posFlagHTML);
+  updateHabitsTab();
 }
 
-function calcBust() {
-  // stage 1 ≈ 75cm (flat), stage 60 ≈ 92cm, stage 301 → massive
-  const s = state.breast.stage;
-  return 75 + Math.pow(s/301, 0.8) * 225;
+function updateHabitsTab(){
+  const lines=[
+    {name:"Smoking",val:G.cigarettesPerDay>0?`${G.cigarettesPerDay} cigs/day`:"-",cls:G.cigarettesPerDay>10?"habit-bad":G.cigarettesPerDay>0?"habit-warn":"habit-ok"},
+    {name:"Drinking",val:G.drinksPerWeek>0?`${G.drinksPerWeek} drinks/wk`:"-",cls:G.drinksPerWeek>14?"habit-bad":G.drinksPerWeek>7?"habit-warn":"habit-ok"},
+    {name:"Exercise",val:G.gymVisitsPerWeek>0?`${G.gymVisitsPerWeek}×/wk`:"-",cls:G.gymVisitsPerWeek>=3?"habit-ok":G.gymVisitsPerWeek>0?"habit-warn":"habit-bad"},
+    {name:"Diet quality",val:dietQualityLabel(),cls:dietQualityCls()},
+    {name:"Sleep",val:G.energy>70?"Good":"Poor",cls:G.energy>70?"habit-ok":"habit-bad"},
+    {name:"Binge tendency",val:G.bingeTendency>60?"High":G.bingeTendency>30?"Moderate":"Low",cls:G.bingeTendency>60?"habit-bad":G.bingeTendency>30?"habit-warn":"habit-ok"},
+    {name:"Depression",val:G.depressionScore>60?"Severe":G.depressionScore>35?"Moderate":G.depressionScore>10?"Mild":"None",cls:G.depressionScore>60?"habit-bad":G.depressionScore>35?"habit-warn":"habit-ok"},
+    {name:"Junk food intake",val:`${Math.round(G.weeklyJunk)} / week`,cls:G.weeklyJunk>40?"habit-bad":G.weeklyJunk>20?"habit-warn":"habit-ok"},
+  ];
+  setEl('habits-content',lines.map(l=>`<div class="habit-row"><span class="habit-name">${l.name}</span><span class="habit-val ${l.cls}">${l.val}</span></div>`).join(''));
 }
 
-function calcHips() {
-  // stage 1 ≈ 75cm (flat), stage 60 ≈ 85cm, stage 351 → massive
-  const s = state.butt.stage;
-  return 75 + Math.pow(s/351, 0.75) * 225;
+function dietQualityLabel(){
+  const score=G.weeklyHealthy-G.weeklyJunk*0.7-G.weeklyAlcohol*0.5;
+  if(score>20) return "Excellent";
+  if(score>5)  return "Good";
+  if(score>-5) return "Average";
+  if(score>-20)return "Poor";
+  return "Terrible";
+}
+function dietQualityCls(){
+  const score=G.weeklyHealthy-G.weeklyJunk*0.7-G.weeklyAlcohol*0.5;
+  if(score>5)  return "habit-ok";
+  if(score>-10)return "habit-warn";
+  return "habit-bad";
 }
 
-function bmiCategory(bmi) {
-  if(bmi < 18.5) return {label:"Underweight", cls:"bmi-under"};
-  if(bmi < 25)   return {label:"Normal",      cls:"bmi-normal"};
-  if(bmi < 30)   return {label:"Overweight",  cls:"bmi-over"};
-  if(bmi < 40)   return {label:"Obese",       cls:"bmi-obese"};
-  return               {label:"Morbidly obese",cls:"bmi-morbid"};
-}
-
-function updateMeasurements() {
-  const w    = calcWeight();
-  const bmi  = w / (HEIGHT_CM/100)**2;
-  const cat  = bmiCategory(bmi);
-
-  document.getElementById('m-weight').innerHTML =
-    `${w.toFixed(1)}<span class="meas-sub">kg</span>`;
-  document.getElementById('m-bmi').innerHTML =
-    `${bmi.toFixed(1)}<span class="bmi-badge ${cat.cls}">${cat.label}</span>`;
-  document.getElementById('m-waist').innerHTML =
-    `${calcWaist().toFixed(0)}<span class="meas-sub">cm</span>`;
-  document.getElementById('m-bust').innerHTML =
-    `${calcBust().toFixed(0)}<span class="meas-sub">cm</span>`;
-  document.getElementById('m-hips').innerHTML =
-    `${calcHips().toFixed(0)}<span class="meas-sub">cm</span>`;
-}
-
-// ═══════════════════════════════════════════════════════════
-//  LIFE STATS
-// ═══════════════════════════════════════════════════════════
-function clamp(v,mn=0,mx=100){return Math.max(mn,Math.min(mx,v));}
-
-function updateLifeStats() {
-  const bars = {
-    health:"green", fitness:"blue", happiness:"gold",
-    energy:"amber", social:"green"
-  };
-  for(const [k] of Object.entries(bars)) {
-    const v = life[k];
-    const color = v>60?"bar-green":v>30?"bar-amber":"bar-red";
-    const barEl = document.getElementById("bar-"+k);
-    if(barEl) { barEl.style.width=v+"%"; barEl.className="stat-bar "+color; }
-    const numEl = document.getElementById("num-"+k);
-    if(numEl) numEl.textContent = v;
+// ═══════════════════════════════════════════════════════
+//  LIFE STATS UI
+// ═══════════════════════════════════════════════════════
+function updateStats(){
+  const bars=[
+    ["health",G.health],["fitness",G.fitness],["happy",G.happy],
+    ["energy",G.energy],["mood",G.mood],["libido",G.libido],
+    ["conf",G.conf],["app",G.appetite]
+  ];
+  for(const[id,v]of bars){
+    const el=document.getElementById("sb-"+id);
+    const ne=document.getElementById("sn-"+id);
+    if(!el)continue;
+    el.style.width=v+"%";
+    el.style.background=v>60?"var(--green)":v>35?"var(--amber)":"var(--red)";
+    ne.textContent=v;
   }
-  document.getElementById('stat-job').textContent    = life.job;
-  document.getElementById('stat-money').textContent  = "€"+life.money.toLocaleString();
-  document.getElementById('stat-salary').textContent = "€"+life.salary+"/mo";
+  setEl('kv-job',G.job);
+  const gross=G.salary;
+  const annualTax=calcTax(gross*12);
+  const monthlyTax=Math.round(annualTax/12);
+  const net=gross-monthlyTax;
+  setEl('kv-gross',gross?`€${gross.toLocaleString()}/mo`:"—");
+  setEl('kv-tax',gross?`−€${monthlyTax.toLocaleString()}/mo`:"—");
+  setEl('kv-rent',`−€${G.rent.toLocaleString()}/mo`);
+  setEl('kv-net',gross?`€${(net-G.rent).toLocaleString()}/mo`:"—");
+  setEl('kv-save',`€${Math.round(G.savings).toLocaleString()}`);
+  setEl('kv-housing',G.housing);
+  setEl('kv-car',G.car);
+  setEl('kv-licence',G.licence?"Full licence":"None");
+  renderRelationships();
 }
 
-// ═══════════════════════════════════════════════════════════
+function renderRelationships(){
+  const list=document.getElementById('rel-list');
+  if(!G.relationships.length){
+    list.innerHTML=`<p style="font-size:.72rem;color:var(--ink3);padding:4px 0;">No meaningful relationships yet.</p>`;
+    return;
+  }
+  list.innerHTML=G.relationships.map(r=>`
+    <div class="rel-entry">
+      <div class="rel-name">${r.name} <span style="color:var(--ink3);font-weight:400">(${r.type})</span></div>
+      <div class="rel-detail">Closeness ${r.closeness}/100 · ${r.desc}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
 //  DATE / TIME
-// ═══════════════════════════════════════════════════════════
-function formatDate() {
-  const dow = DAYS[(life.day - 1 + (life.month-1)*30) % 7];
-  return `${dow}, ${life.day} ${MONTHS[life.month-1]} ${life.year}`;
+// ═══════════════════════════════════════════════════════
+const MONTH_NAMES=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function weekToDate(week,year){
+  const d=new Date(year,0,1);
+  d.setDate(d.getDate()+(week-1)*7);
+  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${year}`;
 }
-
-function advanceDay(n=1) {
+function updateDateDisplay(){
+  setEl('tb-date',weekToDate(G.weekOfYear,G.year));
+  setEl('tb-age',G.age);
+}
+function advanceWeeks(n=1){
   for(let i=0;i<n;i++){
-    life.day++;
-    if(life.day>30){ life.day=1; life.month++; }
-    if(life.month>12){ life.month=1; life.year++; life.age++; }
+    G.week++; G.weekOfYear++;
+    if(G.weekOfYear>52){G.weekOfYear=1;G.year++;G.age++;}
+    passiveWeeklyEffects();
   }
-  document.getElementById('tb-date').textContent = formatDate();
-  document.getElementById('tb-age').textContent  = life.age;
-  // passive monthly salary
-  if(life.day===1 && life.salary>0){
-    life.money += life.salary;
-    updateLifeStats();
+  updateDateDisplay();
+  updateStats();
+}
+
+// ═══════════════════════════════════════════════════════
+//  PASSIVE WEEKLY EFFECTS
+// ═══════════════════════════════════════════════════════
+function clamp(v,mn=0,mx=100){return Math.max(mn,Math.min(mx,v));}
+function changePart(part,delta){
+  const step=part==="thighs"?Math.sign(delta)*4:delta;
+  S[part].stage=clamp(S[part].stage+step,1,STAGE_MAX[part]);
+}
+function gainFat(amt,profile="balanced"){
+  // profile changes fat distribution
+  const dist={
+    balanced:{belly:.30,arm:.15,butt:.25,thighs:.18,breast:.12},
+    dairy:   {belly:.10,arm:.08,butt:.35,thighs:.35,breast:.12},
+    alcohol: {belly:.65,arm:.10,butt:.10,thighs:.10,breast:.05},
+    carb:    {belly:.45,arm:.15,butt:.20,thighs:.15,breast:.05},
+    meat:    {belly:.40,arm:.20,butt:.20,thighs:.15,breast:.05},
+    overall: {belly:.25,arm:.18,butt:.28,thighs:.18,breast:.11},
+  };
+  const d=dist[profile]||dist.balanced;
+  for(const[p,r]of Object.entries(d)) changePart(p,Math.round(amt*r));
+}
+function loseFat(amt){
+  // Lose from all parts proportionally based on current size
+  const total=WEIGHT_PARTS.reduce((s,p)=>s+S[p].stage,0);
+  for(const p of WEIGHT_PARTS){
+    const frac=S[p].stage/total;
+    changePart(p,-Math.round(amt*frac));
   }
 }
 
-// ═══════════════════════════════════════════════════════════
+function passiveWeeklyEffects(){
+  const w=calcWeight();
+  G.weightHistory.push(w);
+  if(G.weightHistory.length>4) G.weightHistory.shift();
+
+  // Detect rapid weight change
+  if(G.weightHistory.length>=3){
+    const delta=w-G.weightHistory[0];
+    if(delta>8&&!G.flags.stretchMarks){
+      G.flags.stretchMarks=true;
+      storyEntry("Stretch Marks","You notice new stretch marks forming on your skin — telltale signs of rapid weight gain.",["neg"]);
+    }
+    if(delta<-10&&!G.flags.saggy&&w>60){
+      G.flags.saggy=true;
+      storyEntry("Loose Skin","You've lost weight quickly, but the skin hasn't caught up. It hangs loosely in places.",["neg"]);
+    }
+  }
+
+  // Alcohol belly - temp bloat
+  if(G.weeklyAlcohol>12){
+    if(G.bloatWeeks===0){
+      G.bloatWeeks=3;
+      S.belly.variant="Belly1"; // bloat
+    }
+  }
+  if(G.bloatWeeks>0){
+    G.bloatWeeks--;
+    if(G.bloatWeeks===0) S.belly.variant=G.baseBellyVariant;
+  }
+
+  // Long term alcohol → change belly type
+  if(G.drinkingWeeks>26&&G.weeklyAlcohol>14&&G.baseBellyVariant!=="Belly1"){
+    G.baseBellyVariant="Belly2";
+    S.belly.variant="Belly2";
+    storyEntry("Drinker's Belly","Years of heavy drinking have changed the shape of your belly — it droops and sags now.",["neg"]);
+  }
+
+  // Long-term carb diet → belly4
+  if(G.weeklyCarbs>40&&G.week%8===0&&S.belly.stage>80){
+    G.baseBellyVariant="Belly4";
+    S.belly.variant="Belly4";
+  }
+
+  // Long-term meat/high protein → regular belly
+  if(G.weeklyMeat>30&&G.week%8===0){
+    if(G.baseBellyVariant!=="Belly") G.baseBellyVariant="Belly";
+    if(!G.bloatWeeks) S.belly.variant="Belly";
+  }
+
+  // Smoking
+  if(G.cigarettesPerDay>0){
+    G.smokingWeeks++;
+    G.health=clamp(G.health-0.5);
+    G.conf=clamp(G.conf+0.3); // social lubricant
+    if(G.smokingWeeks>52&&!G.flags.yellowTeeth){
+      G.flags.yellowTeeth=true;
+      storyEntry("Yellow Teeth","You notice your teeth have taken on a yellowish tinge from months of smoking.",["neg"]);
+    }
+    if(G.smokingWeeks>104) G.flags.smokingProblem=true;
+  }
+
+  // Drinking
+  if(G.drinksPerWeek>0){
+    G.drinkingWeeks++;
+    if(G.drinksPerWeek>14){
+      G.health=clamp(G.health-1);
+      gainFat(2,"alcohol");
+      if(G.drinkingWeeks>52) G.flags.drinkingProblem=true;
+    }
+    if(G.drinksPerWeek>21&&!G.flags.liverSpots&&G.age>35){
+      G.flags.liverSpots=true;
+    }
+  }
+
+  // Junk food → acne if sustained
+  if(G.weeklyJunk>35&&G.week%6===0&&!G.flags.acne&&G.age<35){
+    G.flags.acne=true;
+    storyEntry("Skin Trouble","All the junk food is showing on your skin. Breakouts along the jaw and forehead.",["neg"]);
+  }
+
+  // Depression mechanics
+  if(G.happy<30) G.depressionScore=clamp(G.depressionScore+4);
+  else if(G.happy>60) G.depressionScore=clamp(G.depressionScore-2);
+  if(G.depressionScore>50){
+    G.appetite=clamp(G.appetite+3); // depression increases appetite
+    G.bingeTendency=clamp(G.bingeTendency+2);
+    G.libido=clamp(G.libido-1);
+  }
+
+  // Binge tendency: trigger random binge event
+  if(G.bingeTendency>65&&Math.random()<0.25){
+    triggerBingeEvent();
+  }
+
+  // Natural mood/energy decay if unemployed
+  if(!G.salary){ G.happy=clamp(G.happy-1); G.conf=clamp(G.conf-1); }
+  else { G.weeksEmployed++; }
+
+  // Monthly salary payment
+  if(G.weekOfYear%4===1&&G.salary>0){
+    const gross=G.salary;
+    const monthlyTax=Math.round(calcTax(gross*12)/12);
+    const net=gross-monthlyTax-G.rent;
+    G.savings+=net;
+    setEl('tb-week-info',`<span style="color:var(--green)">+€${(net>0?net:0).toLocaleString()} salary</span>`);
+    setTimeout(()=>setEl('tb-week-info',''),3000);
+  }
+
+  // Reset weekly food trackers
+  G.weeklyDairy=0;G.weeklyAlcohol=0;G.weeklyCarbs=0;
+  G.weeklyMeat=0;G.weeklyJunk=0;G.weeklyHealthy=0;
+  G.gymVisitsPerWeek=0;
+
+  // Grocery auto-purchase if set
+  if(G.grocerySet) applyGroceryProfile(G.groceryProfile,false);
+
+  // Passive fitness loss
+  G.fitness=clamp(G.fitness-0.5);
+  G.energy=clamp(G.energy+10); // resets each week
+
+  // Random life event ~12% per week
+  if(Math.random()<0.12) triggerRandomEvent();
+}
+
+// ═══════════════════════════════════════════════════════
 //  STORY ENGINE
-// ═══════════════════════════════════════════════════════════
-let storyDepth = 0;
+// ═══════════════════════════════════════════════════════
+let storyCount=0;
+function storyEntry(title,body,fxList=[]){
+  const area=document.getElementById('story-scroll');
+  const dateStr=weekToDate(G.weekOfYear,G.year);
 
-function addStoryBlock(html) {
-  const area = document.getElementById('story-area');
-  const div  = document.createElement('div');
-  div.className = 'story-block';
-  // date heading every few blocks
-  if(storyDepth % 3 === 0) {
-    div.innerHTML = `<div class="story-date-head">${formatDate()}</div>` + html;
-  } else {
-    div.innerHTML = html;
+  // Day separator every few entries
+  if(storyCount%4===0){
+    const sep=document.createElement('div');
+    sep.className='story-day-sep';
+    sep.innerHTML=`<div class="story-day-sep-line"></div><div class="story-day-label">${dateStr}</div><div class="story-day-sep-line"></div>`;
+    area.appendChild(sep);
   }
-  storyDepth++;
-  area.appendChild(div);
-  div.scrollIntoView({behavior:'smooth', block:'nearest'});
+  storyCount++;
+
+  const fxHTML=fxList.map(f=>{
+    if(typeof f==="string"){
+      if(f==="neg") return '';
+      return `<span class="fx-tag fx-neu">${f}</span>`;
+    }
+    const cls=f.type==="gain"?"fx-gain":f.type==="lose"?"fx-lose":f.type==="bad"?"fx-bad":"fx-stat";
+    return `<span class="fx-tag ${cls}">${f.label}</span>`;
+  }).join('');
+
+  const el=document.createElement('div');
+  el.className='story-entry';
+  el.innerHTML=`<h3>${title}</h3><p>${body}</p>${fxHTML?`<p>${fxHTML}</p>`:''}`;
+  area.appendChild(el);
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function tag(type, text) {
-  return `<span class="story-effect eff-${type}">${text}</span>`;
-}
-
-function setActions(acts) {
-  const grid = document.getElementById('action-grid');
-  grid.innerHTML = '';
-  acts.forEach(a => {
-    const btn = document.createElement('button');
-    btn.className = 'act-btn' + (a.primary?' primary':'') + (a.danger?' danger':'');
-    btn.textContent = a.label;
-    btn.disabled = a.disabled || false;
-    btn.onclick = () => {
-      // disable all while processing
+function setActions(acts){
+  const grid=document.getElementById('abar-grid');
+  grid.innerHTML='';
+  acts.forEach(a=>{
+    const btn=document.createElement('button');
+    btn.className='a-btn'+(a.cls?' '+a.cls:'');
+    btn.textContent=a.label;
+    btn.disabled=!!a.disabled;
+    btn.onclick=()=>{
       grid.querySelectorAll('button').forEach(b=>b.disabled=true);
       a.fn();
     };
@@ -901,509 +1379,747 @@ function setActions(acts) {
   });
 }
 
-// ═══════════════════════════════════════════════════════════
-//  BODY CHANGE HELPERS
-// ═══════════════════════════════════════════════════════════
-function changePart(part, delta) {
-  const step  = part==="thighs" ? Math.sign(delta)*4 : delta;
-  state[part].stage = clamp(state[part].stage + step, 1, STAGE_MAX[part]);
+// ═══════════════════════════════════════════════════════
+//  GROCERY SYSTEM
+// ═══════════════════════════════════════════════════════
+function openGroceryMenu(){
+  storyEntry("Supermarket","You browse the aisles. What's in your basket this week?");
+  setActions([
+    {label:"🥗 Clean & healthy",fn:()=>buyGroceries({junk:5,healthy:80,dairy:15,alcohol:0})},
+    {label:"🍞 Mostly carbs",fn:()=>buyGroceries({junk:25,healthy:30,dairy:10,alcohol:0})},
+    {label:"🥩 High protein / meat",fn:()=>buyGroceries({junk:10,healthy:50,dairy:15,alcohol:0,highMeat:true})},
+    {label:"🧀 Dairy heavy",fn:()=>buyGroceries({junk:15,healthy:40,dairy:50,alcohol:0})},
+    {label:"🍕 Mostly junk",fn:()=>buyGroceries({junk:70,healthy:10,dairy:15,alcohol:0})},
+    {label:"🍺 + Alcohol",fn:()=>buyGroceries({junk:25,healthy:30,dairy:10,alcohol:20})},
+    {label:"Set as my default weekly shop →",cls:"pri",fn:()=>openGrocerySetDefault()},
+    {label:"Leave",fn:()=>mainMenu()},
+  ]);
 }
 
-function gainFat(amount) {
-  // distribute weight gain proportionally across belly, arm, butt, thighs, breast
-  const dist = {belly:0.35, arm:0.15, butt:0.25, thighs:0.15, breast:0.10};
-  for(const [p,r] of Object.entries(dist)) changePart(p, Math.round(amount*r));
+function openGrocerySetDefault(){
+  storyEntry("Default Shopping","Choose a weekly diet you'll maintain passively.");
+  setActions([
+    {label:"🥗 Mainly healthy",fn:()=>{G.groceryProfile={junk:5,healthy:80,dairy:15,alcohol:0};G.grocerySet=true;storyEntry("Habit set","You commit to a healthy diet as your default.",[]); mainMenu();}},
+    {label:"🍞 Carb-heavy",fn:()=>{G.groceryProfile={junk:25,healthy:30,dairy:10,alcohol:0,highCarb:true};G.grocerySet=true;storyEntry("Habit set","Bread, pasta, rice — your staples.",[]); mainMenu();}},
+    {label:"🥩 High protein",fn:()=>{G.groceryProfile={junk:10,healthy:50,dairy:15,alcohol:0,highMeat:true};G.grocerySet=true;storyEntry("Habit set","Meat and protein form the basis of your diet.",[]); mainMenu();}},
+    {label:"🍕 Junk / fast food",fn:()=>{G.groceryProfile={junk:70,healthy:10,dairy:15,alcohol:0};G.grocerySet=true;storyEntry("Habit set","Your fridge is full of processed food and ready meals.",[]); mainMenu();}},
+    {label:"🍺 Party lifestyle",fn:()=>{G.groceryProfile={junk:35,healthy:15,dairy:10,alcohol:30};G.grocerySet=true;storyEntry("Habit set","Beer, snacks, and the occasional takeaway.",[]); mainMenu();}},
+    {label:"Back",fn:()=>openGroceryMenu()},
+  ]);
 }
 
-function loseFat(amount) { gainFat(-amount); }
+function buyGroceries(profile){
+  applyGroceryProfile(profile,true);
+  advanceWeeks(1);
+  renderCharacter();
+  mainMenu();
+}
 
-// ═══════════════════════════════════════════════════════════
-//  QUICK ACTIONS
-// ═══════════════════════════════════════════════════════════
-function doQuickAction(type) {
-  let effects = [];
+function applyGroceryProfile(p,story=true){
+  // Accumulate weekly food stats
+  G.weeklyJunk   +=p.junk||0;
+  G.weeklyHealthy+=p.healthy||0;
+  G.weeklyDairy  +=p.dairy||0;
+  G.weeklyAlcohol+=p.alcohol||0;
 
-  switch(type) {
-    case 'eat_snack':
-      changePart('belly', 2);
-      life.happiness = clamp(life.happiness+4);
-      life.energy    = clamp(life.energy+3);
-      effects.push(tag('gain','+belly'), tag('gain','+happy'));
-      addStoryBlock(`<p>You grab a snack. Sometimes the little pleasures are what life's about. ${effects.join('')}</p>`);
-      advanceDay(0);
-      break;
+  const netCal=(p.junk||0)*1.5+(p.dairy||0)*1.2+(p.healthy||0)*0.5-(G.fitness*0.3);
 
-    case 'eat_meal':
-      gainFat(8);
-      life.happiness = clamp(life.happiness+6);
-      life.energy    = clamp(life.energy+8);
-      effects.push(tag('gain','+weight'), tag('gain','+energy'));
-      addStoryBlock(`<p>You eat a big, satisfying meal. The numbers on the scale might not love you for it, but your stomach does. ${effects.join('')}</p>`);
-      advanceDay(1);
-      break;
+  if(netCal>80)       gainFat(Math.round(netCal/60),"balanced");
+  else if(netCal>50&&p.highCarb)  gainFat(2,"carb");
+  else if(netCal>50&&p.dairy>30)  gainFat(2,"dairy");
+  else if(netCal>50&&p.highMeat)  gainFat(2,"meat");
+  else if(netCal>50)  gainFat(1,"balanced");
+  else if(netCal<-20) loseFat(1);
 
-    case 'exercise':
-      loseFat(5);
-      life.fitness  = clamp(life.fitness+6);
-      life.health   = clamp(life.health+4);
-      life.energy   = clamp(life.energy-10);
-      life.happiness= clamp(life.happiness+3);
-      effects.push(tag('lose','−weight'), tag('gain','+fitness'), tag('gain','+health'));
-      addStoryBlock(`<p>You push through a workout session. Sweat, effort, and the satisfying ache of muscles used well. ${effects.join('')}</p>`);
-      advanceDay(1);
-      break;
+  G.weeklyMeat+=(p.highMeat?40:10);
+  G.weeklyCarbs+=(p.highCarb?50:20);
 
-    case 'diet':
-      loseFat(3);
-      changePart('belly', -3);
-      life.health   = clamp(life.health+5);
-      life.happiness= clamp(life.happiness-3);
-      effects.push(tag('lose','−belly'), tag('gain','+health'), tag('lose','−happy'));
-      addStoryBlock(`<p>A day of clean eating. The cravings are real, but so is the discipline. ${effects.join('')}</p>`);
-      advanceDay(1);
-      break;
-
-    case 'rest':
-      life.energy  = clamp(life.energy+25);
-      life.health  = clamp(life.health+5);
-      effects.push(tag('gain','+energy'), tag('gain','+health'));
-      addStoryBlock(`<p>A lazy day. You let your body recover, guilt-free. ${effects.join('')}</p>`);
-      advanceDay(1);
-      break;
-
-    case 'socialize':
-      life.social   = clamp(life.social+12);
-      life.happiness= clamp(life.happiness+8);
-      life.energy   = clamp(life.energy-5);
-      effects.push(tag('gain','+social'), tag('gain','+happy'));
-      addStoryBlock(`<p>You spend time with friends. Good conversation, laughter, and the warmth of connection. ${effects.join('')}</p>`);
-      advanceDay(1);
-      break;
-
-    case 'hair_grow':
-      changePart('hair', 50);
-      effects.push(tag('gain','+hair length'));
-      addStoryBlock(`<p>You've been taking those hair growth supplements. Results are showing. ${effects.join('')}</p>`);
-      advanceDay(30);
-      break;
-
-    case 'hair_cut':
-      changePart('hair', -80);
-      effects.push(tag('neutral','hair trimmed'));
-      addStoryBlock(`<p>Fresh haircut. Sometimes a change of style is all you need to feel like yourself again. ${effects.join('')}</p>`);
-      advanceDay(0);
-      break;
-
-    case 'implants':
-      if(life.money < 8000) {
-        addStoryBlock(`<p>The surgeon's quote is €8,000. You only have €${life.money.toLocaleString()}. <em>Not today.</em></p>`);
-        return;
-      }
-      life.money -= 8000;
-      changePart('breast', 40);
-      life.happiness = clamp(life.happiness+10);
-      effects.push(tag('gain','+bust'), tag('neutral','−€8,000'));
-      addStoryBlock(`<p>The procedure is done. Recovery took a few weeks. When you look in the mirror, you feel a complicated mix of satisfaction and newness. ${effects.join('')}</p>`);
-      advanceDay(30);
-      break;
-
-    case 'bbl':
-      if(life.money < 10000) {
-        addStoryBlock(`<p>A BBL runs about €10,000. You're at €${life.money.toLocaleString()} right now. <em>Keep saving.</em></p>`);
-        return;
-      }
-      life.money -= 10000;
-      changePart('butt', 40);
-      life.happiness = clamp(life.happiness+10);
-      effects.push(tag('gain','+hips'), tag('neutral','−€10,000'));
-      addStoryBlock(`<p>Post-recovery, you notice the results. It's a significant change — one that took a lot of consideration, and quite a lot of money. ${effects.join('')}</p>`);
-      advanceDay(60);
-      break;
-
-    case 'liposuction':
-      if(life.money < 6000) {
-        addStoryBlock(`<p>Liposuction is quoted at €6,000. You have €${life.money.toLocaleString()}. <em>Not yet.</em></p>`);
-        return;
-      }
-      life.money -= 6000;
-      loseFat(40);
-      effects.push(tag('lose','−weight'), tag('neutral','−€6,000'));
-      addStoryBlock(`<p>The procedure targets stubborn fat deposits. After the swelling subsides over weeks, the difference is noticeable. ${effects.join('')}</p>`);
-      advanceDay(45);
-      break;
-
-    case 'belly_variant': {
-      const cur = BELLY_VARIANTS.indexOf(state.belly.variant);
-      state.belly.variant = BELLY_VARIANTS[(cur+1) % BELLY_VARIANTS.length];
-      const names = {Belly:"Round",Belly1:"Beach ball",Belly2:"Droopy",Belly3:"Saggy",Belly4:"Apron"};
-      addStoryBlock(`<p>You notice a change in how your belly carries itself. <em>${names[state.belly.variant]} shape.</em></p>`);
-      break;
-    }
+  if(p.alcohol>15){
+    G.drinksPerWeek=Math.round(p.alcohol*0.6);
+    gainFat(2,"alcohol");
   }
 
-  drawCharacter();
-  updateLifeStats();
+  G.health=clamp(G.health+(p.healthy*0.05-p.junk*0.04-p.alcohol*0.08));
+  G.happy=clamp(G.happy+(p.junk*0.03+p.dairy*0.02-p.healthy*0.01));
+
+  if(story) storyEntry("Shopping done","You come home with a week's worth of groceries.",[
+    p.junk>40?{type:"gain",label:"+weight risk"}:null,
+    p.healthy>50?{type:"stat",label:"+health"}:null,
+    p.alcohol>10?{type:"bad",label:"+alcohol"}:null,
+  ].filter(Boolean));
 }
 
-// ═══════════════════════════════════════════════════════════
-//  HAIR TOGGLE
-// ═══════════════════════════════════════════════════════════
-function setHairStyle(variant) {
-  state.hair.variant = variant;
-  document.getElementById('hbtn-tied').classList.toggle('active', variant==='HairTied');
-  document.getElementById('hbtn-loose').classList.toggle('active', variant==='HairLoose');
-  drawCharacter();
+// ═══════════════════════════════════════════════════════
+//  WEEK ACTION HANDLER (right panel quick buttons)
+// ═══════════════════════════════════════════════════════
+function weekAction(type){
+  switch(type){
+    case 'grocery': openGroceryMenu(); break;
+    case 'cook':
+      G.weeklyHealthy+=30;G.weeklyJunk-=10;
+      G.happy=clamp(G.happy+4);G.health=clamp(G.health+3);
+      storyEntry("Home cooking","You cook proper meals from scratch this week — it's cheaper and surprisingly satisfying.",[{type:"stat",label:"+health"},{type:"stat",label:"+happy"}]);
+      advanceWeeks(1);renderCharacter();mainMenu();break;
+    case 'takeaway':
+      G.weeklyJunk+=50;G.weeklyCarbs+=30;gainFat(3,"carb");
+      G.happy=clamp(G.happy+5);G.health=clamp(G.health-4);
+      storyEntry("Takeaway week","Every night this week ended with a delivery bag at the door.",[{type:"gain",label:"+weight"},{type:"bad",label:"−health"}]);
+      advanceWeeks(1);renderCharacter();mainMenu();break;
+    case 'bar':
+      openBarNight();break;
+    case 'gym':
+      doGym();break;
+    case 'run':
+      doRun();break;
+    case 'smoke':
+      openSmokeMenu();break;
+    case 'date':
+      openDateEvent();break;
+  }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  STORY EVENTS
-// ═══════════════════════════════════════════════════════════
-const Events = {
+// ═══════════════════════════════════════════════════════
+//  EXERCISE
+// ═══════════════════════════════════════════════════════
+function doGym(){
+  loseFat(3);G.fitness=clamp(G.fitness+6);
+  G.health=clamp(G.health+4);G.energy=clamp(G.energy-12);
+  G.conf=clamp(G.conf+3);G.gymVisitsPerWeek++;
+  storyEntry("Gym session","A hard session. Sweat and effort. The mirror is already starting to tell a different story.",[{type:"lose",label:"−fat"},{type:"stat",label:"+fitness"},{type:"stat",label:"+confidence"}]);
+  advanceWeeks(1);renderCharacter();mainMenu();
+}
+function doRun(){
+  loseFat(2);G.fitness=clamp(G.fitness+4);
+  G.mood=clamp(G.mood+8);G.health=clamp(G.health+3);G.energy=clamp(G.energy-8);
+  storyEntry("Morning run","The city is quiet this time of day. Your legs ache, but your head is clearer.",[{type:"lose",label:"−fat"},{type:"stat",label:"+mood"}]);
+  advanceWeeks(1);renderCharacter();mainMenu();
+}
 
-  intro() {
-    addStoryBlock(`
-      <h2>A New Chapter</h2>
-      <p>You're 18. The world is entirely open in the way only 18-year-olds get to experience.
-      You've just moved into a small flat — it smells of fresh paint and quiet possibility.
-      There's a mirror by the door. You look at yourself for a long moment.</p>
-      <p>Where do you go from here?</p>
-    `);
+// ═══════════════════════════════════════════════════════
+//  BAR / DRINKING
+// ═══════════════════════════════════════════════════════
+function openBarNight(){
+  storyEntry("Night out","You head to the bar. What kind of night is it?");
+  setActions([
+    {label:"🍺 A few drinks (4-5)",fn:()=>drinkNight(5)},
+    {label:"🍻 Getting drunk (8-10)",fn:()=>drinkNight(9)},
+    {label:"🥃 Full binge (15+)",fn:()=>drinkNight(16)},
+    {label:"🥤 Sober (juice, socialise)",fn:()=>sobNight()},
+    {label:"Back",fn:()=>mainMenu()},
+  ]);
+}
+function drinkNight(drinks){
+  G.drinksPerWeek+=drinks;G.weeklyAlcohol+=drinks*3;
+  gainFat(drinks*0.3,"alcohol");
+  G.happy=clamp(G.happy+8);G.social=clamp((G.social||50)+10);
+  G.health=clamp(G.health-drinks*0.8);G.energy=clamp(G.energy-15);
+  if(drinks>=15){
+    S.belly.variant="Belly1";G.bloatWeeks=2;
+    storyEntry("Heavy night","You drink far too much. The belly is visibly distended. You spend the next day in bed.",[{type:"bad",label:"bloated"},{type:"gain",label:"+belly"},{type:"bad",label:"−health"}]);
+  } else {
+    storyEntry("Night out","Good conversation, too many rounds. You wake up dehydrated and slightly heavier.",[{type:"gain",label:"+alcohol belly risk"},{type:"bad",label:"−health"}]);
+  }
+  advanceWeeks(1);renderCharacter();mainMenu();
+}
+function sobNight(){
+  G.social=clamp((G.social||50)+8);G.mood=clamp(G.mood+5);
+  storyEntry("Sober night","You stay out late, sober. You notice more. It's a different kind of fun.",[{type:"stat",label:"+social"},{type:"stat",label:"+mood"}]);
+  advanceWeeks(1);mainMenu();
+}
+
+// ═══════════════════════════════════════════════════════
+//  SMOKING
+// ═══════════════════════════════════════════════════════
+function openSmokeMenu(){
+  if(G.cigarettesPerDay>0){
+    storyEntry("Cigarettes","Your usual pack.",[]); 
     setActions([
-      {label:"Look for a job",    primary:true, fn:()=>Events.jobSearch()},
-      {label:"Explore the city",  fn:()=>Events.exploreCity()},
-      {label:"Hit the gym",       fn:()=>Events.firstGym()},
-      {label:"Order takeaway",    fn:()=>Events.firstMeal()}
+      {label:"Keep at same amount",fn:()=>{advanceWeeks(1);mainMenu();}},
+      {label:"Cut down",fn:()=>{G.cigarettesPerDay=Math.max(0,G.cigarettesPerDay-3);storyEntry("Cutting down","You try to smoke less.",[]); advanceWeeks(1);mainMenu();}},
+      {label:"Quit cold turkey",cls:"good",fn:()=>quitSmoking()},
+      {label:"Smoke more",fn:()=>{G.cigarettesPerDay+=5;advanceWeeks(1);mainMenu();}},
     ]);
-  },
-
-  jobSearch() {
-    addStoryBlock(`
-      <h2>Job Hunting</h2>
-      <p>You spend a morning combing through listings. The city has options — none glamorous,
-      all honest. A café near the university is hiring part-time. A warehouse needs night-shift workers.
-      A small office wants an admin assistant.</p>
-    `);
+  } else {
+    storyEntry("Cigarettes","A friend offers you a smoke. Or you can buy a pack.");
     setActions([
-      {label:"Apply: Café (€900/mo)",       fn:()=>Events.takeJob("Café Barista",900)},
-      {label:"Apply: Warehouse (€1,200/mo)",fn:()=>Events.takeJob("Warehouse Worker",1200)},
-      {label:"Apply: Office Admin (€1,400/mo)", fn:()=>Events.takeJob("Office Admin",1400)},
-      {label:"Maybe later…", fn:()=>Events.intro()}
+      {label:"Try one",fn:()=>{G.cigarettesPerDay=2;G.savings-=8;storyEntry("First smoke","You inhale and feel the head rush. The packet is now in your bag.",[]); advanceWeeks(1);mainMenu();}},
+      {label:"Refuse",fn:()=>{storyEntry("Declined","You say no.",[]);mainMenu();}},
     ]);
-  },
+  }
+}
+function quitSmoking(){
+  G.cigarettesPerDay=0;
+  G.bingeTendency=clamp(G.bingeTendency+15); // oral fixation → eating
+  G.depressionScore=clamp(G.depressionScore+10);
+  gainFat(8,"balanced"); // classic quit weight gain
+  storyEntry("Quitting smoking","You quit. The first weeks are brutal — irritable, hungry all the time. You replace cigarettes with snacks. The scale notices.",[{type:"lose",label:"no more cigarettes"},{type:"gain",label:"+binge tendency"},{type:"gain",label:"+weight (quit gain)"}]);
+  advanceWeeks(4);renderCharacter();mainMenu();
+}
 
-  takeJob(jobName, salary) {
-    life.job    = jobName;
-    life.salary = salary;
-    life.happiness = clamp(life.happiness+8);
-    const fx = [tag('gain','+income'), tag('gain','+purpose')];
-    addStoryBlock(`
-      <h2>Hired!</h2>
-      <p>You got the position. <strong>${jobName}</strong> — €${salary}/month, paid at the start of each month.
-      It's not your dream, but it's a start, and it's yours. ${fx.join('')}</p>
-    `);
-    advanceDay(3);
-    updateLifeStats();
+// ═══════════════════════════════════════════════════════
+//  RELATIONSHIPS
+// ═══════════════════════════════════════════════════════
+const NAMES_F=["Mia","Clara","Isabel","Nina","Vera","Sofía","Elise","Petra","Ana","Carmen","Ingrid","Lena"];
+const NAMES_M=["Marco","James","Nico","David","Rafael","Anton","Luca","Felix","Omar","Ryan","Sergio","Ben"];
+
+function generatePerson(forceGender=null){
+  const female=forceGender==="f"||(forceGender===null&&Math.random()>0.5);
+  const names=female?NAMES_F:NAMES_M;
+  const name=names[Math.floor(Math.random()*names.length)];
+  const age=G.age+Math.floor(Math.random()*10)-4;
+
+  // Physical preferences — crude and realistic
+  const prefsBig  =Math.random()>0.5;// attracted to bigger/fuller figures
+  const prefsFlat =Math.random()>0.6; // attracted to thin
+  const prefsBust =Math.random()>0.5;
+  const prefsBum  =Math.random()>0.5;
+
+  return {
+    id:Date.now()+Math.random(),
+    name,age,gender:female?"f":"m",
+    closeness:10,
+    type:"acquaintance",
+    prefsBig,prefsFlat,prefsBust,prefsBum,
+    desc:"Just met.",
+    attracted:null,
+    events:[],
+  };
+}
+
+function assessAttraction(person){
+  const bmi=calcBMI();
+  let score=40;
+  if(person.prefsBig&&bmi>26)  score+=25;
+  if(person.prefsFlat&&bmi<22) score+=25;
+  if(person.prefsBust&&calcBust()>100) score+=20;
+  if(person.prefsBum&&calcHips()>100)  score+=15;
+  if(G.conf>65) score+=10;
+  if(G.flags.acne) score-=8;
+  // randomness
+  score+=Math.floor(Math.random()*20)-10;
+  return clamp(score,0,100);
+}
+
+function openDateEvent(){
+  if(!G.relationships.length||!G.relationships.some(r=>r.attracted>50)){
+    // Meet someone new
+    const p=generatePerson();
+    const att=assessAttraction(p);
+    p.attracted=att;
+    G.relationships.push(p);
+    const attDesc=att>70?"is clearly attracted to you":att>50?"seems interested":att>30?"seems friendly enough":"doesn't seem particularly interested";
+
+    const bodyComment=generateBodyComment(p,att);
+
+    storyEntry(`Meeting ${p.name}`,`You meet ${p.name}, ${p.age}. They ${attDesc}. ${bodyComment}`,[
+      att>60?{type:"stat",label:"flirting"}:{type:"neu",label:"friendly only"}
+    ]);
     setActions([
-      {label:"Go to first day of work", primary:true, fn:()=>Events.firstDayWork()},
-    ]);
-  },
+      att>45?{label:`Flirt with ${p.name}`,fn:()=>flirt(p)}:null,
+      {label:`Exchange numbers`,fn:()=>{p.closeness+=15;p.type="friend";renderRelationships();storyEntry(`${p.name}'s number`,"You exchange numbers.",[]); mainMenu();}},
+      {label:"Just say goodbye",fn:()=>mainMenu()},
+    ].filter(Boolean));
+  } else {
+    // Date with existing interest
+    const interest=G.relationships.find(r=>r.attracted>50&&r.type!=="partner");
+    if(interest) startDate(interest);
+    else mainMenu();
+  }
+}
 
-  firstDayWork() {
-    life.energy    = clamp(life.energy-15);
-    life.happiness = clamp(life.happiness+5);
-    addStoryBlock(`
-      <h2>First Day</h2>
-      <p>Nerves, new faces, systems to learn. You come home tired but with a quiet pride
-      that no one but you can fully understand. ${tag('lose','−energy')} ${tag('gain','+confidence')}</p>
-    `);
-    advanceDay(1);
-    updateLifeStats();
-    setActions([
-      {label:"Settle into routine", primary:true, fn:()=>Events.dailyLife()}
-    ]);
-  },
+function generateBodyComment(person,att){
+  const bmi=calcBMI();
+  const bust=calcBust();
+  if(person.prefsBust&&bust>105&&att>60) return `Their eyes linger on your chest a beat too long.`;
+  if(person.prefsBig&&bmi>27&&att>60)    return `They seem drawn to your fuller figure — there's something unmistakable in how they look at you.`;
+  if(person.prefsFlat&&bmi<22&&att>60)   return `They clearly appreciate your slim figure.`;
+  if(bmi>30&&att<40)                      return `You catch a flicker of something uncomfortable in their expression as they take you in. You've seen it before.`;
+  if(bmi<18)                              return `They seem concerned when they look at you, like they want to ask if you're eating enough.`;
+  return `There's a moment of eye contact that lasts just a little longer than necessary.`;
+}
 
-  exploreCity() {
-    life.social    = clamp(life.social+10);
-    life.happiness = clamp(life.happiness+8);
-    life.energy    = clamp(life.energy-8);
-    changePart('belly', 3);
-    addStoryBlock(`
-      <h2>The City</h2>
-      <p>You wander for hours. Side streets, a market, a park by the river.
-      You stop at a food truck and eat something messy and delicious.
-      ${tag('gain','+social')} ${tag('gain','+happy')} ${tag('gain','+belly')}</p>
-    `);
-    advanceDay(1);
-    updateLifeStats();
-    drawCharacter();
-    setActions([
-      {label:"Look for work", fn:()=>Events.jobSearch()},
-      {label:"Continue exploring", fn:()=>Events.dailyLife()},
-    ]);
-  },
+function flirt(person){
+  person.closeness=clamp(person.closeness+20);
+  G.conf=clamp(G.conf+5);G.happy=clamp(G.happy+8);G.libido=clamp(G.libido+10);
+  storyEntry(`Flirting with ${person.name}`,"The conversation moves from small talk into something that feels more like possibility.",[]); 
+  setActions([
+    person.closeness>50?{label:`Ask ${person.name} out`,cls:"pri",fn:()=>startDate(person)}:null,
+    {label:"Play it cool",fn:()=>{person.closeness+=5;mainMenu();}},
+  ].filter(Boolean));
+}
 
-  firstGym() {
-    loseFat(4);
-    life.fitness   = clamp(life.fitness+8);
-    life.energy    = clamp(life.energy-12);
-    addStoryBlock(`
-      <h2>First Session</h2>
-      <p>The gym is intimidating at first — all those people who seem to know exactly what they're doing.
-      You muddle through. It hurts in the right ways afterward.
-      ${tag('lose','−fat')} ${tag('gain','+fitness')}</p>
-    `);
-    advanceDay(1);
-    updateLifeStats();
-    drawCharacter();
-    setActions([
-      {label:"Make it a habit", primary:true, fn:()=>Events.gymHabit()},
-      {label:"Maybe not…",     fn:()=>Events.dailyLife()},
-    ]);
-  },
+function startDate(person){
+  storyEntry(`Date with ${person.name}`,`You meet up with ${person.name}. ${person.age}, ${person.gender==="f"?"she":"he"}'s charming — the kind of person who makes you feel seen.`,[]);
+  setActions([
+    {label:"Go for dinner 🍽",fn:()=>dateDinner(person)},
+    {label:"Drinks at a bar 🍸",fn:()=>dateBar(person)},
+    {label:"Walk in the park 🌿",fn:()=>dateWalk(person)},
+  ]);
+}
+function dateDinner(person){
+  person.closeness=clamp(person.closeness+25);
+  gainFat(4,"balanced");G.happy=clamp(G.happy+12);
+  if(person.closeness>70&&!G.partnerID){
+    person.type="partner";G.partnerID=person.id;
+    storyEntry("Together","Over dessert the conversation takes a turn. By the end of the night you're together.",[]); 
+  } else {
+    storyEntry("Dinner date","A long, good dinner. Good food, good company.",[{type:"gain",label:"+closeness"},{type:"gain",label:"+food intake"}]);
+  }
+  advanceWeeks(1);renderCharacter();mainMenu();
+}
+function dateBar(person){
+  person.closeness=clamp(person.closeness+20);
+  G.drinksPerWeek+=4;gainFat(2,"alcohol");G.happy=clamp(G.happy+10);
+  storyEntry("Bar date","Cocktails, music, and conversation that stretches past midnight.",[{type:"stat",label:"+closeness"},{type:"gain",label:"+alcohol"}]);
+  advanceWeeks(1);mainMenu();
+}
+function dateWalk(person){
+  person.closeness=clamp(person.closeness+18);
+  G.mood=clamp(G.mood+10);loseFat(1);
+  storyEntry("Walk","A slow walk through the park. You talk about everything and nothing.",[{type:"stat",label:"+mood"},{type:"stat",label:"+closeness"}]);
+  advanceWeeks(1);mainMenu();
+}
 
-  gymHabit() {
-    loseFat(12);
-    life.fitness = clamp(life.fitness+20);
-    life.health  = clamp(life.health+10);
-    addStoryBlock(`
-      <h2>The Habit Sticks</h2>
-      <p>Three weeks in. You've gone four, five times a week. The mirror is starting to tell
-      a different story than it did a month ago.
-      ${tag('lose','−weight')} ${tag('gain','+fitness')} ${tag('gain','+health')}</p>
-    `);
-    advanceDay(21);
-    updateLifeStats();
-    drawCharacter();
-    setActions([
-      {label:"Continue", primary:true, fn:()=>Events.dailyLife()}
-    ]);
-  },
+// ═══════════════════════════════════════════════════════
+//  CAREER SYSTEM
+// ═══════════════════════════════════════════════════════
+const JOBS=[
+  // tier, title, minSkill, salary, type, description
+  {tier:0,title:"Café barista",sal:900,type:"hospitality",req:{hospitality:0},active:true,desc:"On your feet all day. Physically demanding, poorly paid."},
+  {tier:0,title:"Warehouse picker",sal:1100,type:"manual",req:{manual:0},active:true,desc:"Heavy lifting, night shifts. Your body will feel it."},
+  {tier:0,title:"Supermarket cashier",sal:950,type:"hospitality",req:{hospitality:0},active:true,desc:"Soul-sapping but steady."},
+  {tier:1,title:"Office admin",sal:1400,type:"office",req:{office:10},active:false,desc:"Sedentary. You'll spend 8 hours at a desk."},
+  {tier:1,title:"Delivery driver",sal:1300,type:"manual",req:{manual:10,driving:20},active:false,desc:"Requires a licence. Long days in the car."},
+  {tier:1,title:"Waitress",sal:1200,type:"hospitality",req:{hospitality:20},active:false,desc:"Tips can be good. Active job."},
+  {tier:2,title:"Junior accountant",sal:2000,type:"office",req:{office:30,education:20},active:false,desc:"A first serious office career."},
+  {tier:2,title:"Store manager",sal:2200,type:"hospitality",req:{hospitality:40},active:false,desc:"Managing people. More stress, more pay."},
+  {tier:2,title:"Sales executive",sal:2400,type:"office",req:{office:25},active:false,desc:"Commission-based. Hustle required."},
+  {tier:3,title:"Department manager",sal:3500,type:"office",req:{office:50,education:30},active:false,desc:"A real career now."},
+  {tier:4,title:"Senior manager",sal:5000,type:"office",req:{office:70,education:40},active:false,desc:"The grind has paid off."},
+  {tier:4,title:"Business owner",sal:8000,type:"office",req:{office:80,education:50},active:false,desc:"Your own thing. High risk, high reward."},
+];
 
-  firstMeal() {
-    gainFat(10);
-    life.happiness = clamp(life.happiness+10);
-    life.energy    = clamp(life.energy+8);
-    addStoryBlock(`
-      <h2>Takeaway Night</h2>
-      <p>You order way too much from a place around the corner. Eat it on the floor because
-      you haven't unpacked your furniture yet. It's kind of perfect.
-      ${tag('gain','+weight')} ${tag('gain','+happy')}</p>
-    `);
-    advanceDay(1);
-    updateLifeStats();
-    drawCharacter();
-    setActions([
-      {label:"Get on with life", primary:true, fn:()=>Events.intro()}
-    ]);
-  },
+function openJobMenu(){
+  const available=JOBS.filter(j=>{
+    const reqs=Object.entries(j.req);
+    return reqs.every(([sk,min])=>(G.skills[sk]||0)>=min);
+  });
+  storyEntry("Job listings","You look through the available positions.");
+  setActions([
+    ...available.slice(0,5).map(j=>({
+      label:`${j.title} — €${j.sal}/mo`,
+      cls:j.sal>G.salary?"good":undefined,
+      fn:()=>takeJob(j)
+    })),
+    {label:"Study / take a course",fn:()=>openStudyMenu()},
+    {label:"Back",fn:()=>mainMenu()},
+  ]);
+}
+function takeJob(job){
+  G.job=job.title; G.salary=job.salary;
+  G.skills[job.type]=(G.skills[job.type]||0)+5;
+  G.happy=clamp(G.happy+8);G.conf=clamp(G.conf+5);
+  storyEntry(`New job: ${job.title}`,`Starting salary €${job.salary}/mo. ${job.desc} ${job.active?"An active job — your body will reflect that over time.":"A desk job — don't let the sedentary lifestyle catch up with you."}`,[{type:"stat",label:"employed"}]);
+  if(!job.active){
+    // Sedentary warning — passive fat gain
+    G.weeklyCalories=clamp(G.weeklyCalories+5);
+  }
+  advanceWeeks(2);updateStats();mainMenu();
+}
 
-  dailyLife() {
-    advanceDay(7);
-    const w = calcWeight().toFixed(1);
-    const bmi = (calcWeight()/(HEIGHT_CM/100)**2).toFixed(1);
-    addStoryBlock(`
-      <h2>A Week Passes</h2>
-      <p>Life continues in its quiet rhythm. Work, sleep, meals, small decisions that add up.
-      You step on the scale: <strong>${w} kg</strong>. BMI: <strong>${bmi}</strong>.
-      The body keeps score of everything.</p>
-    `);
-    updateLifeStats();
-    // trigger occasional random events
-    const roll = Math.random();
-    if(roll < 0.2)       setTimeout(()=>Events.randomEvent_binge(), 400);
-    else if(roll < 0.35) setTimeout(()=>Events.randomEvent_opportunity(), 400);
-    else {
-      setActions([
-        {label:"Keep going",    primary:true, fn:()=>Events.dailyLife()},
-        {label:"Shake things up", fn:()=>Events.lifeChoice()},
-        {label:"Focus on fitness", fn:()=>Events.firstGym()},
-        {label:"Look for better work", fn:()=>Events.jobSearch()},
-      ]);
+function openStudyMenu(){
+  storyEntry("Evening classes","Investing time in yourself.");
+  setActions([
+    {label:"Business / admin course (3mo, €400)",fn:()=>study("office",15,400,12)},
+    {label:"IT course (3mo, €500)",fn:()=>study("office",20,500,12)},
+    {label:"Driving lessons (6wk, €800)",fn:()=>learnDriving()},
+    {label:"Hospitality cert (6wk, €200)",fn:()=>study("hospitality",15,200,6)},
+    {label:"Personal training cert (3mo, €600)",fn:()=>study("manual",15,600,12)},
+    {label:"University degree (3yr, €8,000)",fn:()=>openUniversityMenu()},
+    {label:"Back",fn:()=>openJobMenu()},
+  ]);
+}
+function study(skill,gain,cost,weeks){
+  if(G.savings<cost){storyEntry("Can't afford it",`You need €${cost} but only have €${Math.round(G.savings)}.`,[]);mainMenu();return;}
+  G.savings-=cost;
+  G.skills[skill]=(G.skills[skill]||0)+gain;
+  G.skills.education=(G.skills.education||0)+5;
+  G.happy=clamp(G.happy+5);G.conf=clamp(G.conf+8);
+  storyEntry("Course completed",`After ${weeks} weeks of evening classes you qualify. New skill unlocked.`,[{type:"stat",label:`+${skill} skill`}]);
+  advanceWeeks(weeks);updateStats();openJobMenu();
+}
+function learnDriving(){
+  if(G.savings<800){storyEntry("Can't afford it","You need €800 for driving lessons.",[]);mainMenu();return;}
+  G.savings-=800;G.licence=true;G.skills.driving=30;
+  storyEntry("Driving licence","You pass your test after six weeks. Full licence.",[{type:"stat",label:"licence obtained"}]);
+  advanceWeeks(6);updateStats();mainMenu();
+}
+function openUniversityMenu(){
+  storyEntry("University","A degree changes your trajectory. Three years, €8,000. Are you committed?");
+  setActions([
+    {label:"Enrol (€8,000 over 3 years)",cls:"pri",disabled:G.savings<1000,fn:()=>{G.savings-=1000;G.skills.education=60;G.skills.office=40;advanceWeeks(156);storyEntry("Degree obtained","Three years of lectures, essays, and late nights. You graduate.",[]); updateStats();mainMenu();}},
+    {label:"Not now",fn:()=>mainMenu()},
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  HOUSING / PROPERTY
+// ═══════════════════════════════════════════════════════
+function openHousingMenu(){
+  storyEntry("Housing","Your living situation. It affects everything.");
+  setActions([
+    G.savings>8000&&G.housingTier<1?{label:"Rent your own flat (€700/mo)",fn:()=>upgradeHousing(1,"Own flat",700)}:null,
+    G.savings>30000&&G.housingTier<2?{label:"Buy a small flat (€120k mortgage, €900/mo)",fn:()=>buyProperty(1,"Small flat",900,120000)}:null,
+    G.savings>80000&&G.housingTier<3?{label:"Buy a house (€280k, €1,400/mo)",fn:()=>buyProperty(2,"House",1400,280000)}:null,
+    G.car==="None"&&G.licence&&G.savings>5000?{label:"Buy a used car (€4,000)",fn:()=>buyCar("Second-hand hatchback",4000)}:null,
+    G.car!=="None"&&G.savings>20000?{label:"Upgrade car (€18,000)",fn:()=>buyCar("New family car",18000)}:null,
+    {label:"Back",fn:()=>mainMenu()},
+  ].filter(Boolean));
+}
+function upgradeHousing(tier,name,rent){
+  G.housingTier=tier;G.housing=name;G.rent=rent;
+  G.happy=clamp(G.happy+15);G.conf=clamp(G.conf+8);
+  storyEntry("New home",`You move into your own ${name.toLowerCase()}. A real sense of independence.`,[]);
+  updateStats();mainMenu();
+}
+function buyProperty(tier,name,mortgage,price){
+  if(G.savings<price*0.1){storyEntry("Can't afford the deposit","You need a 10% deposit.",[]);mainMenu();return;}
+  G.savings-=Math.round(price*0.1);
+  G.housingTier=tier;G.housing=`Owner-occupied ${name}`;G.rent=mortgage;
+  G.happy=clamp(G.happy+20);G.conf=clamp(G.conf+15);
+  storyEntry("Property purchased",`You own it. Well — you and the bank. But it's yours.`,[]);
+  updateStats();mainMenu();
+}
+function buyCar(name,price){
+  if(G.savings<price){storyEntry("Not enough savings",`You need €${price.toLocaleString()}.`,[]);mainMenu();return;}
+  G.savings-=price;G.car=name;
+  G.happy=clamp(G.happy+10);
+  storyEntry("New car",`You drive home in your new ${name}.`,[]);
+  updateStats();mainMenu();
+}
+
+// ═══════════════════════════════════════════════════════
+//  PLASTIC SURGERY
+// ═══════════════════════════════════════════════════════
+function openSurgeryMenu(){
+  storyEntry("Surgery consultation","You walk into a private clinic.");
+  setActions([
+    {label:"Breast augmentation (€8,000)",disabled:G.savings<8000,fn:()=>doSurgery("breast",50,8000,"breast_aug")},
+    {label:"Breast reduction (€6,000)",disabled:G.savings<6000||S.breast.stage<100,fn:()=>doSurgery("breast",-60,6000,"breast_red")},
+    {label:"BBL — Brazilian butt lift (€10,000)",disabled:G.savings<10000,fn:()=>doSurgery("butt",50,10000,"bbl")},
+    {label:"Liposuction — belly (€6,000)",disabled:G.savings<6000,fn:()=>doSurgeryLipo(6000)},
+    {label:"Back",fn:()=>mainMenu()},
+  ]);
+}
+function doSurgery(part,delta,cost,flag){
+  G.savings-=cost;changePart(part,delta);
+  G.flags["surgery_"+flag.split("_")[0]]=true;
+  G.happy=clamp(G.happy+delta>0?12:-5);
+  storyEntry("Surgery complete",`Weeks of recovery. But the results are undeniable.`,[{type:delta>0?"gain":"lose",label:`${part} changed`}]);
+  advanceWeeks(6);renderCharacter();mainMenu();
+}
+function doSurgeryLipo(cost){
+  G.savings-=cost;loseFat(50);
+  G.flags.surgery_lipo=true;
+  // Check for saggy aftermath
+  if(!G.flags.saggy){G.flags.saggy=true;}
+  storyEntry("Liposuction","The procedure removes significant fat deposits. The recovery is hard. Your skin hasn't quite caught up.",[]); 
+  advanceWeeks(8);renderCharacter();mainMenu();
+}
+
+// ═══════════════════════════════════════════════════════
+//  BINGE EVENT
+// ═══════════════════════════════════════════════════════
+function triggerBingeEvent(){
+  const trigger=G.depressionScore>50?"depression":G.stress?"stress":"impulse";
+  const foods=[
+    {label:"Entire pizza",gain:6,profile:"carb",desc:"a whole pizza, straight from the box, standing at the kitchen counter."},
+    {label:"Ice cream binge",gain:5,profile:"dairy",desc:"two tubs of ice cream and a bag of sweets, alone on the sofa."},
+    {label:"Fast food run",gain:7,profile:"carb",desc:"three burgers and a large fries at 1am."},
+    {label:"Everything in the fridge",gain:9,profile:"balanced",desc:"methodically working through every edible thing in the flat."},
+  ];
+  const f=foods[Math.floor(Math.random()*foods.length)];
+  gainFat(f.gain,f.profile);
+  G.happy=clamp(G.happy-5);G.depressionScore=clamp(G.depressionScore+5);
+  storyEntry("Binge",`The ${trigger} gets the better of you. You eat ${f.desc} Afterwards comes the shame — quiet, familiar, heavy.`,[{type:"gain",label:"+weight"},{type:"bad",label:"−mood"}]);
+  renderCharacter();
+}
+
+// ═══════════════════════════════════════════════════════
+//  RANDOM EVENTS
+// ═══════════════════════════════════════════════════════
+const RANDOM_EVENTS=[
+  ()=>{
+    const bonus=500+Math.floor(Math.random()*2000);
+    G.savings+=bonus;
+    storyEntry("Unexpected windfall",`A forgotten rebate, a birthday gift from a relative, a small freelance job. €${bonus.toLocaleString()} you didn't plan for.`,[{type:"stat",label:`+€${bonus.toLocaleString()}`}]);
+    updateStats();
+  },
+  ()=>{
+    const cost=200+Math.floor(Math.random()*600);
+    G.savings=Math.max(0,G.savings-cost);
+    storyEntry("Unexpected expense",`Your phone screen shatters. A parking fine. Something breaks. €${cost} you didn't need to spend.`,[{type:"bad",label:`−€${cost}`}]);
+    updateStats();
+  },
+  ()=>{
+    G.depressionScore=clamp(G.depressionScore+8);G.happy=clamp(G.happy-10);
+    storyEntry("A bad week","Nothing specific — everything just feels harder than it should. You're not sure why.",[]); 
+  },
+  ()=>{
+    G.happy=clamp(G.happy+15);G.mood=clamp(G.mood+12);
+    storyEntry("A genuinely good week","For no particular reason, everything clicks. You feel like yourself.",[]);
+  },
+  ()=>{
+    if(!G.relationships.length) return;
+    const r=G.relationships[0];
+    r.closeness=clamp(r.closeness-20);
+    if(r.closeness<20&&r.type==="partner"){
+      G.partnerID=null;r.type="ex";
+      G.depressionScore=clamp(G.depressionScore+20);
+      G.bingeTendency=clamp(G.bingeTendency+25);
+      G.happy=clamp(G.happy-25);
+      storyEntry("Breakup",`${r.name} ends things. You don't fight it — you could see it coming. But knowing doesn't make it easier.`,[{type:"bad",label:"−happiness"},{type:"bad",label:"+binge risk"}]);
+      renderCharacter();
+    } else {
+      storyEntry("Falling out",`A disagreement with ${r.name}. Things feel strained.`,[]);
     }
   },
-
-  lifeChoice() {
-    addStoryBlock(`
-      <h2>A Crossroads</h2>
-      <p>You feel it — that restless sense that something needs to change. 
-      Or maybe everything is fine and you just need to commit to it.</p>
-    `);
-    setActions([
-      {label:"Sign up for night classes", fn:()=>Events.nightClasses()},
-      {label:"Start a strict diet plan",  fn:()=>Events.strictDiet()},
-      {label:"Just carry on",             fn:()=>Events.dailyLife()},
-    ]);
+  ()=>{
+    gainFat(3,"balanced");G.happy=clamp(G.happy+6);
+    storyEntry("Work birthday cake","Someone brought in a massive cake. You had three slices.",[]); 
+    renderCharacter();
   },
-
-  nightClasses() {
-    life.energy    = clamp(life.energy-20);
-    life.happiness = clamp(life.happiness+12);
-    life.money    += 0;
-    addStoryBlock(`
-      <h2>Night Classes</h2>
-      <p>Tuesday and Thursday evenings, you study. It's exhausting but the sense of progress
-      is intoxicating. Three months later, you have a certificate that opens a door.
-      ${tag('gain','+skills')} ${tag('lose','−energy')}</p>
-    `);
-    advanceDay(90);
-    const newSalary = Math.round(life.salary * 1.3);
-    life.salary = newSalary;
-    addStoryBlock(`<p>You land a better position: <strong>${life.job} (Senior)</strong>, now earning €${newSalary}/month. ${tag('gain','+salary')}</p>`);
-    life.job += " (Senior)";
-    updateLifeStats();
-    setActions([{label:"Continue", primary:true, fn:()=>Events.dailyLife()}]);
+  ()=>{
+    if(G.salary>0){
+      const raise=Math.round(G.salary*0.08);
+      G.salary+=raise;
+      storyEntry("Pay rise",`Your manager calls you in. €${raise}/mo more. You accept without negotiating.`,[{type:"stat",label:`+€${raise}/mo`}]);
+      updateStats();
+    }
   },
-
-  strictDiet() {
-    addStoryBlock(`
-      <h2>The Diet Plan</h2>
-      <p>You cut out the processed food, the late-night snacks, the takeaways.
-      It takes six weeks, but the results are real and hard-won.</p>
-    `);
-    loseFat(35);
-    life.health = clamp(life.health+15);
-    advanceDay(42);
-    updateLifeStats();
-    drawCharacter();
-    setActions([{label:"Continue", primary:true, fn:()=>Events.dailyLife()}]);
+  ()=>{
+    loseFat(3);G.mood=clamp(G.mood+8);G.health=clamp(G.health+5);
+    storyEntry("Good health week","You sleep well, eat reasonably, and feel genuinely good in your body this week.",[]); 
+    renderCharacter();
   },
+];
 
-  randomEvent_binge() {
-    gainFat(18);
-    life.happiness = clamp(life.happiness+6);
-    life.health    = clamp(life.health-5);
-    addStoryBlock(`
-      <h2>The Binge</h2>
-      <p>A stressful week, a bad day, a long evening alone — it happens.
-      You eat more than you meant to. You feel it in your clothes the next morning.
-      ${tag('gain','+weight')} ${tag('lose','−health')}</p>
-    `);
-    drawCharacter();
-    updateLifeStats();
-    setActions([
-      {label:"Shake it off", primary:true, fn:()=>Events.dailyLife()},
-      {label:"Start diet immediately", fn:()=>Events.strictDiet()},
-    ]);
-  },
+function triggerRandomEvent(){
+  const e=RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)];
+  e();
+}
 
-  randomEvent_opportunity() {
-    addStoryBlock(`
-      <h2>An Unexpected Opportunity</h2>
-      <p>Out of nowhere — a message. A contact, a chance, an opening you didn't see coming.
-      Life has a way of doing this.</p>
-    `);
-    const bonus = Math.round((1000 + Math.random()*2000));
-    life.money += bonus;
-    addStoryBlock(`<p>You receive a one-off bonus of <strong>€${bonus.toLocaleString()}</strong> from a freelance gig. ${tag('gain','+€'+bonus.toLocaleString())}</p>`);
-    updateLifeStats();
-    setActions([{label:"Continue", primary:true, fn:()=>Events.dailyLife()}]);
-  }
-};
+// ═══════════════════════════════════════════════════════
+//  MAIN MENU
+// ═══════════════════════════════════════════════════════
+function mainMenu(){
+  advanceWeeks(1);
+  const w=calcWeight().toFixed(1);
+  setActions([
+    {label:"🛒 Grocery shop",fn:()=>openGroceryMenu()},
+    {label:"💼 Jobs / career",fn:()=>openJobMenu()},
+    {label:"🏠 Housing & assets",fn:()=>openHousingMenu()},
+    {label:"💉 Plastic surgery",fn:()=>openSurgeryMenu()},
+    {label:"🍺 Go out drinking",fn:()=>openBarNight()},
+    {label:"🏋 Gym",fn:()=>doGym()},
+    {label:"🏃 Running",fn:()=>doRun()},
+    {label:"💌 Date",fn:()=>openDateEvent()},
+    {label:"🚬 Cigarettes",fn:()=>openSmokeMenu()},
+    {label:"⏩ Skip a week",fn:()=>mainMenu()},
+  ]);
+}
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  THEME TOGGLE
+// ═══════════════════════════════════════════════════════
+function toggleTheme(){
+  const isDark=document.documentElement.dataset.theme==="dark";
+  document.documentElement.dataset.theme=isDark?"light":"dark";
+  setEl('btn-theme',isDark?"🌙 Dark":"☀ Light");
+}
+
+// ═══════════════════════════════════════════════════════
 //  DEBUG PANEL
-// ═══════════════════════════════════════════════════════════
-function buildDebugControls() {
-  const inner = document.getElementById('debug-controls-inner');
-  if(inner.innerHTML !== '') return; // already built
-  for(const part of PARTS) {
-    const div = document.createElement('div');
-    div.className = 'dg';
-    div.innerHTML = `<strong style="font-size:.8rem;text-transform:uppercase;letter-spacing:.1em">${part}</strong>`;
-
-    if(part==="belly"||part==="hair") {
-      const sel = document.createElement('select');
-      const opts = part==="belly" ? BELLY_VARIANTS : HAIR_VARIANTS;
-      opts.forEach(v=>{ const o=document.createElement('option'); o.value=o.textContent=v; sel.appendChild(o); });
-      sel.value = state[part].variant;
-      sel.onchange = ()=>{ state[part].variant=sel.value; drawCharacter(); };
-      const lv = document.createElement('label'); lv.textContent="Variant";
-      lv.appendChild(sel); div.appendChild(lv);
+// ═══════════════════════════════════════════════════════
+function buildDebug(){
+  const inner=document.getElementById('dbg-inner');
+  if(inner.innerHTML) return;
+  for(const part of PARTS){
+    const d=document.createElement('div');d.className='dbg-group';
+    d.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">${part}</strong>`;
+    if(part==="belly"||part==="hair"){
+      const opts=part==="belly"?BELLY_V:HAIR_V;
+      const sel=document.createElement('select');
+      opts.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;sel.appendChild(o);});
+      sel.value=S[part].variant;
+      sel.onchange=()=>{S[part].variant=sel.value;if(part==="belly")G.baseBellyVariant=sel.value;renderCharacter();};
+      const lb=document.createElement('label');lb.textContent="Variant";lb.appendChild(sel);d.appendChild(lb);
     }
-
-    const max = STAGE_MAX[part];
-    const step = part==="thighs"?4:1;
-    const sl = document.createElement('input');
-    sl.type="range"; sl.min=1; sl.max=max; sl.step=step; sl.value=state[part].stage;
-    sl.oninput = ()=>{ state[part].stage=parseInt(sl.value); drawCharacter(); };
-    const lb = document.createElement('label'); lb.textContent=`Stage (1–${max})`;
-    lb.appendChild(sl); div.appendChild(lb);
-    inner.appendChild(div);
+    const max=STAGE_MAX[part];
+    const sl=document.createElement('input');
+    sl.type="range";sl.min=1;sl.max=max;sl.step=part==="thighs"?4:1;sl.value=S[part].stage;
+    sl.oninput=()=>{S[part].stage=parseInt(sl.value);renderCharacter();};
+    const lb=document.createElement('label');lb.textContent=`Stage (1–${max})`;lb.appendChild(sl);d.appendChild(lb);
+    inner.appendChild(d);
   }
 }
-
-function toggleDebug() {
-  const ov = document.getElementById('debug-overlay');
-  if(ov.style.display==='block') { ov.style.display='none'; }
-  else { buildDebugControls(); ov.style.display='block'; }
-}
-function closeDebug(e) {
-  if(e.target===document.getElementById('debug-overlay'))
-    document.getElementById('debug-overlay').style.display='none';
+function toggleDebug(){
+  const ov=document.getElementById('dbg-overlay');
+  if(ov.style.display==="block"){ov.style.display="none";}
+  else{buildDebug();ov.style.display="block";}
 }
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════
+function setEl(id,html){
+  const el=document.getElementById(id);
+  if(el) el.innerHTML=html;
+}
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// Tab switching
+document.querySelectorAll('.ltab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.ltab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.ltab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ═══════════════════════════════════════════════════════
 //  CHARACTER CREATION LOGIC
-// ═══════════════════════════════════════════════════════════
-let selectedPreset  = null;
-let selectedHair    = "HairTied";
+// ═══════════════════════════════════════════════════════
+let ccPreset="slim",ccHairStyle="HairTied",ccGlasses=false,ccBreastTend=50;
+let ccHairColor="Blonde",ccEyeColor="Brown",ccTraits=[];
 
-document.getElementById('name-input').addEventListener('input', checkCanStart);
-
-document.querySelectorAll('.preset-opt:not(.hair-opt)').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.preset-opt:not(.hair-opt)').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedPreset = parseInt(btn.dataset.preset);
-    checkCanStart();
+// Color pickers
+document.querySelectorAll('#cc-hair-colors .cc-color').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('#cc-hair-colors .cc-color').forEach(e=>e.classList.remove('sel'));
+    el.classList.add('sel');ccHairColor=el.dataset.hc;
   });
 });
-
-document.querySelectorAll('.hair-opt').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.hair-opt').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedHair = btn.dataset.hair;
+document.querySelectorAll('#cc-eye-colors .cc-color').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('#cc-eye-colors .cc-color').forEach(e=>e.classList.remove('sel'));
+    el.classList.add('sel');ccEyeColor=el.dataset.ec;
   });
 });
-
-function checkCanStart() {
-  const name = document.getElementById('name-input').value.trim();
-  document.getElementById('btn-start').disabled = !(name && selectedPreset);
+// Preset pills
+document.querySelectorAll('#cc-presets .cc-pill').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#cc-presets .cc-pill').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');ccPreset=btn.dataset.p;
+  });
+});
+// Hair style
+document.querySelectorAll('#cc-hairstyle .cc-pill').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#cc-hairstyle .cc-pill').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');ccHairStyle=btn.dataset.hs;
+  });
+});
+// Glasses
+document.querySelectorAll('#cc-glasses .cc-pill').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#cc-glasses .cc-pill').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');ccGlasses=btn.dataset.gl==="true";
+  });
+});
+// Breast tendency
+const btRange=document.getElementById('cc-breast-tend');
+const btLabel=document.getElementById('cc-bt-label');
+btRange.addEventListener('input',()=>{
+  ccBreastTend=parseInt(btRange.value);
+  const labels=["Very flat","Flat","Below average","Average","Full","Ample","Very ample","Large","Very large","Extremely large"];
+  btLabel.textContent=" — "+labels[Math.floor(ccBreastTend/11)];
+});
+// Traits
+document.querySelectorAll('#cc-traits .cc-trait').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const t=btn.dataset.trait;
+    if(ccTraits.includes(t)){
+      ccTraits=ccTraits.filter(x=>x!==t);btn.classList.remove('sel');
+    } else if(ccTraits.length<2){
+      ccTraits.push(t);btn.classList.add('sel');
+    } else {
+      toast("Pick up to 2 traits.");
+    }
+  });
+});
+// Name input
+document.getElementById('cc-name').addEventListener('input',checkStart);
+function checkStart(){
+  const name=document.getElementById('cc-name').value.trim();
+  document.getElementById('cc-start').disabled=!name;
 }
 
-document.getElementById('btn-start').addEventListener('click', ()=>{
-  charName = document.getElementById('name-input').value.trim();
+// ═══════════════════════════════════════════════════════
+//  GAME START
+// ═══════════════════════════════════════════════════════
+document.getElementById('cc-start').addEventListener('click',()=>{
+  const name=document.getElementById('cc-name').value.trim();
+  const startAge=parseInt(document.getElementById('cc-age').value)||18;
 
-  // Init state
-  for(const part of PARTS) {
-    state[part] = {
-      stage:   1,
-      x:       DEFAULT_POS[part].x,
-      y:       DEFAULT_POS[part].y,
-      variant: part==="belly" ? "Belly" : part==="hair" ? selectedHair : null
-    };
-  }
+  initState(ccPreset,ccHairStyle,ccBreastTend);
+  G.name=name;
+  G.age=startAge;
+  G.glasses=ccGlasses;
+  G.hairColor=ccHairColor;
+  G.eyeColor=ccEyeColor;
+  G.traits=ccTraits;
 
-  // Apply preset
-  const preset = PRESETS[selectedPreset];
-  for(const [k,v] of Object.entries(preset)) state[k].stage = v;
+  // Apply trait modifiers
+  if(ccTraits.includes("foodie")){G.appetite=75;G.bingeTendency=30;gainFat(5,"balanced");}
+  if(ccTraits.includes("athlete")){G.fitness=70;loseFat(8);G.health=85;}
+  if(ccTraits.includes("lazy")){G.fitness=25;gainFat(8,"balanced");G.energy=60;}
+  if(ccTraits.includes("anxious")){G.depressionScore=20;G.bingeTendency=25;G.mood=45;}
+  if(ccTraits.includes("social")){G.happy=75;G.conf=65;}
+  if(ccTraits.includes("introvert")){G.social=30;}
+  if(ccTraits.includes("impulsive")){G.bingeTendency=35;}
+  if(ccTraits.includes("disciplined")){G.fitness=60;G.bingeTendency=10;}
 
-  // Hide creation, show game
+  // Show game
   document.getElementById('creation-screen').style.display='none';
-  document.getElementById('game').style.display='block';
-  document.getElementById('tb-name').textContent  = charName;
-  document.getElementById('tb-date').textContent  = formatDate();
-  document.getElementById('tb-age').textContent   = life.age;
-  // sync hair buttons
-  document.getElementById('hbtn-tied').classList.toggle('active',  selectedHair==='HairTied');
-  document.getElementById('hbtn-loose').classList.toggle('active', selectedHair==='HairLoose');
+  document.getElementById('game').style.display='flex';
+  setEl('tb-name',name);
+  setEl('tb-age',G.age);
+  updateDateDisplay();
+  updateStats();
 
-  updateLifeStats();
-  drawCharacter();
-  Events.intro();
+  renderCharacter(false).then(()=>{
+    // Opening story
+    storyEntry(
+      `${name}, age ${G.age}`,
+      `You exist in a city that doesn't know your name yet. A small flat, a modest savings account, and a life that could go in any direction.
+      ${ccTraits.length?`You're the kind of person who ${traitDesc(ccTraits)}.`:""}
+      The mirror reflects back someone at the beginning of something. You're not sure what.`,
+      []
+    );
+    if(ccGlasses) storyEntry("Glasses","You push your glasses up your nose and get on with it.",[]);
+    mainMenu();
+  });
 });
+
+function traitDesc(traits){
+  const d={
+    foodie:"finds genuine pleasure in eating — always has",
+    athlete:"can't imagine a week without exercise",
+    lazy:"would rather take the path of least resistance",
+    anxious:"carries a constant low-level worry about most things",
+    social:"lights up around other people",
+    introvert:"needs quiet time to recharge",
+    impulsive:"acts first and thinks later",
+    disciplined:"holds themselves to a standard others find uncomfortable",
+  };
+  return traits.map(t=>d[t]||t).join(", and who ");
+}
 </script>
 </body>
 </html>
