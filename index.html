@@ -808,7 +808,7 @@
         const x = state[part].x;
         const y = state[part].y;
 
-        const src = `/viewport/${variantFolder}/${stage}.png`;
+        const src = `/https://raw.githubusercontent.com/piritaargenta/life/refs/heads/main/viewport/${variantFolder}/${stage}.png`;
 
         try {
           const img = await loadImage(src);
@@ -835,7 +835,7 @@
       const armStage = state["arm"].stage;
       const armX = state["arm"].x;
       const armY = state["arm"].y;
-      const armSrc = `/viewport/${armVariant}/${armStage}.png`;
+      const armSrc = `/https://raw.githubusercontent.com/piritaargenta/life/refs/heads/main/viewport/${armVariant}/${armStage}.png`;
 
       try {
         const armImg = await loadImage(armSrc);
