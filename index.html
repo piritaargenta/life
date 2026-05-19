@@ -2,522 +2,882 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Character Viewport with Sliders and Outline</title>
+  <title>Character Creator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #0d0b0f;
+      --surface: #16121c;
+      --surface2: #1e1828;
+      --border: #2e2640;
+      --border-glow: #5a3e8a;
+      --accent: #c084fc;
+      --accent2: #e879f9;
+      --gold: #d4a84b;
+      --gold-dim: #8b6a2a;
+      --text: #e8ddf5;
+      --text-dim: #7a6e8a;
+      --danger: #f87171;
+      --canvas-size: 512px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      background: #111;
-      color: #fff;
-      font-family: sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Crimson Pro', Georgia, serif;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-areas:
+        "header header header"
+        "left   stage  right"
+        "footer footer footer";
+      gap: 0;
+      overflow: hidden;
+    }
+
+    /* === HEADER === */
+    header {
+      grid-area: header;
       display: flex;
-      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(90,62,138,0.08) 0%, transparent 100%);
+    }
+
+    .logo {
+      font-family: 'Cinzel', serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* === STAGE (center) === */
+    #stage {
+      grid-area: stage;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
       gap: 20px;
-      padding: 20px;
     }
 
     #viewport {
       position: relative;
-      width: 512px;
-      height: 512px;
-      border: 2px solid #555;
-      background-color: #222;
+      width: var(--canvas-size);
+      height: var(--canvas-size);
+      border: 1px solid var(--border);
+      background: radial-gradient(ellipse at 50% 80%, #1a1028 0%, #0d0b0f 70%);
+      box-shadow:
+        0 0 0 1px var(--border-glow),
+        0 0 60px rgba(90,62,138,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      overflow: hidden;
+    }
+
+    #viewport::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 63px, rgba(255,255,255,0.015) 63px, rgba(255,255,255,0.015) 64px),
+        repeating-linear-gradient(90deg, transparent, transparent 63px, rgba(255,255,255,0.015) 63px, rgba(255,255,255,0.015) 64px);
+      pointer-events: none;
+      z-index: 1;
     }
 
     canvas {
-      width: 512px;
-      height: 512px;
+      width: var(--canvas-size);
+      height: var(--canvas-size);
       image-rendering: pixelated;
-      background-color: transparent;
       display: block;
+      position: relative;
+      z-index: 2;
     }
 
-    .controls {
-      max-height: 100vh;
+    /* === WEIGHT PANEL (below canvas) === */
+    #weight-panel {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      width: var(--canvas-size);
+    }
+
+    .weight-label {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .weight-value {
+      font-family: 'Cinzel', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--gold);
+      line-height: 1;
+    }
+
+    .weight-unit {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-left: 3px;
+    }
+
+    .weight-bar-wrap {
+      flex: 1;
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .weight-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width 0.4s cubic-bezier(.4,0,.2,1);
+      width: 5%;
+    }
+
+    .weight-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* === SIDE PANELS === */
+    #left-panel, #right-panel {
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      gap: 12px;
+      min-width: 220px;
+      max-width: 260px;
+      border-color: var(--border);
+    }
+
+    #left-panel {
+      grid-area: left;
+      border-right: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    }
+
+    #right-panel {
+      grid-area: right;
+      border-left: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    }
+
+    .panel-title {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--gold-dim);
+      text-transform: uppercase;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+
+    /* === PRESET CARDS === */
+    .preset-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .preset-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preset-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .preset-card:hover {
+      border-color: var(--border-glow);
+      background: #221b30;
+    }
+
+    .preset-card:hover::before { opacity: 1; }
+    .preset-card.active { border-color: var(--accent); background: #221b30; }
+    .preset-card.active::before { opacity: 1; }
+
+    .preset-name {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .preset-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    /* === PART CONTROLS === */
+    #controls {
+      display: none; /* hidden by default, shown in debug */
+    }
+
+    .controls-visible {
+      display: flex !important;
+      flex-direction: column;
+      gap: 8px;
       overflow-y: auto;
-      padding: 10px;
-      background: #222;
-      border: 1px solid #444;
+      max-height: 400px;
     }
 
-    .control-group {
-      margin-bottom: 1em;
-      border-bottom: 1px solid #333;
-      padding-bottom: 1em;
+    .part-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
     }
 
-    label {
-      display: block;
-      font-weight: bold;
-      margin-top: 0.5em;
+    .part-name {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--gold-dim);
+      text-transform: uppercase;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slider-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      width: 28px;
+      flex-shrink: 0;
     }
 
     input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: var(--accent2);
+    }
+
+    /* === BUTTONS === */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .btn-ghost {
+      border-color: var(--border);
+      color: var(--text-dim);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--border-glow);
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .btn-primary {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-primary:hover {
+      background: rgba(192,132,252,0.1);
+      box-shadow: 0 0 12px rgba(192,132,252,0.2);
+    }
+
+    .btn-gold {
+      border-color: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    .btn-gold:hover {
+      background: rgba(212,168,75,0.08);
+      border-color: var(--gold);
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 14px;
+      letter-spacing: 0;
+      width: 26px;
+      height: 26px;
+    }
+
+    /* === FOOTER === */
+    footer {
+      grid-area: footer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 32px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #4ade80;
+      margin-right: 6px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* === VARIANT SELECT === */
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 8px;
+      font-family: 'Crimson Pro', serif;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
       width: 100%;
     }
 
-    .info {
-      font-size: 0.9em;
-      color: #aaa;
+    select:focus { border-color: var(--border-glow); }
+
+    /* === LOADING OVERLAY === */
+    #loading {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      transition: opacity 0.5s;
     }
-	
-		  img#arm {
-    filter: drop-shadow(0 0 1px white) drop-shadow(0 0 1px white);
-  }
-  
-    img#arm {
-    z-index: 10;
-    position: absolute; /* Required for z-index to take effect */
-  }
-	
+
+    .spinner {
+      width: 32px; height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* === DEBUG PANEL === */
+    #debug-panel {
+      display: none;
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      width: 280px;
+      background: var(--surface);
+      border: 1px solid var(--border-glow);
+      padding: 16px;
+      z-index: 100;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    .debug-title {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .control-group {
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .control-group h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      color: var(--gold-dim);
+      letter-spacing: 0.15em;
+      margin-bottom: 6px;
+    }
+
+    .info { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+
+    label { display: block; font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+
+    /* Corner decorations */
+    .corner-tl, .corner-br {
+      position: absolute;
+      width: 16px; height: 16px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .corner-tl { top: -1px; left: -1px; border-top: 2px solid var(--gold-dim); border-left: 2px solid var(--gold-dim); }
+    .corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--gold-dim); border-right: 2px solid var(--gold-dim); }
   </style>
 </head>
 <body>
 
+<header>
+  <div class="logo">Body<span>Forge</span></div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="toggleDebug()">⚙ Debug</button>
+    <button class="btn btn-gold">Save Character</button>
+  </div>
+</header>
+
+<!-- LEFT PANEL: Presets -->
+<aside id="left-panel">
+  <div class="panel-title">Body Presets</div>
+  <div class="preset-grid">
+    <div class="preset-card" id="preset-1" onclick="applyPreset(1)">
+      <div class="preset-name">Slender</div>
+      <div class="preset-desc">Light frame, lean build</div>
+    </div>
+    <div class="preset-card" id="preset-2" onclick="applyPreset(2)">
+      <div class="preset-name">Average</div>
+      <div class="preset-desc">Balanced, natural figure</div>
+    </div>
+    <div class="preset-card" id="preset-3" onclick="applyPreset(3)">
+      <div class="preset-name">Curvy</div>
+      <div class="preset-desc">Fuller, soft silhouette</div>
+    </div>
+  </div>
+
+  <div class="panel-title" style="margin-top:16px">Hair Style</div>
+  <select id="hair-select" onchange="setPartVariant('hair', this.value)">
+    <option value="HairTied">Hair Tied</option>
+    <option value="HairLoose">Hair Loose</option>
+  </select>
+
+  <div class="panel-title" style="margin-top:16px">Belly Type</div>
+  <select id="belly-select" onchange="setPartVariant('belly', this.value)">
+    <option value="Belly">Belly (default)</option>
+    <option value="Belly1">Belly 1</option>
+    <option value="Belly2">Belly 2</option>
+    <option value="Belly3">Belly 3</option>
+    <option value="Belly4">Belly 4</option>
+  </select>
+</aside>
+
+<!-- CENTER STAGE -->
+<main id="stage">
   <div id="viewport">
+    <div class="corner-tl"></div>
+    <div class="corner-br"></div>
+    <div id="loading">
+      <div id="loading-inner">
+        <div class="spinner"></div>
+        Loading character…
+      </div>
+    </div>
     <canvas id="characterCanvas" width="512" height="512"></canvas>
   </div>
 
-  <div class="controls" id="controls"></div>
-
-  <script>
-    const parts = ["body", "belly", "arm", "butt", "thighs", "breast", "hair"];
-
-    const bellyVariants = ["Belly", "Belly1", "Belly2", "Belly3", "Belly4"];
-    const hairVariants = ["HairTied", "HairLoose"];
-
-    const defaultPositions = {
-      body: { x: 0, y: 0 },
-      belly: { x: 173, y: 84 },
-      arm: { x: 163, y: 76 },
-      butt: { x: 44, y: 110 },
-      thighs: { x: 115, y: 159 },
-      breast: { x: 184, y: 90 },
-      hair: { x: 143, y: 39 }
-    };
-
-    const stageLimits = {
-      body: 1,
-      belly: 251,
-      arm: 240,
-      butt: 351,
-      thighs: 228,
-      breast: 301,
-      hair: 600
-    };
-
-    const state = {};
-
-    // Store loaded Image objects here
-    const imagesCache = {};
-
-    // Get canvas and context
-    const canvas = document.getElementById('characterCanvas');
-    const ctx = canvas.getContext('2d');
-
-    // Load a single image asynchronously with caching
-    function loadImage(src) {
-      return new Promise((resolve, reject) => {
-        if (imagesCache[src]) {
-          resolve(imagesCache[src]);
-          return;
-        }
-        const img = new Image();
-        img.onload = () => {
-          imagesCache[src] = img;
-          resolve(img);
-        };
-        img.onerror = reject;
-        img.src = src;
-      });
-    }
-
-async function drawCharacterWithOutline() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const offscreen = document.createElement('canvas');
-  offscreen.width = canvas.width;
-  offscreen.height = canvas.height;
-  const offCtx = offscreen.getContext('2d');
-
-  // Draw all parts to offscreen context (no outline yet)
-  for (const part of parts) {
-    const variantFolder = (part === 'belly' || part === 'hair') ? state[part].variant : part;
-    const stage = state[part].stage;
-    const x = state[part].x;
-    const y = state[part].y;
-
-    const src = `https://raw.githubusercontent.com/piritaargenta/life/refs/heads/main/viewport/${variantFolder}/${stage}.png`;
-
-    try {
-      const img = await loadImage(src);
-      offCtx.drawImage(img, x, y);
-    } catch (e) {
-      console.warn(`Failed to load image: ${src}`);
-    }
-  }
-
-  // Apply full-character white outline from offscreen to main canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.shadowColor = 'white';
-  ctx.shadowBlur = 6;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
-  ctx.drawImage(offscreen, 0, 0);
-
-  // Disable shadow and redraw the combined character
-  ctx.shadowColor = 'transparent';
-  ctx.drawImage(offscreen, 0, 0);
-
-  // ✴️ Draw arm outline (solid color line)
-  const armVariant = state["arm"].variant || "arm";
-  const armStage = state["arm"].stage;
-  const armX = state["arm"].x;
-  const armY = state["arm"].y;
-  const armSrc = `https://raw.githubusercontent.com/piritaargenta/life/refs/heads/main/viewport/${armVariant}/${armStage}.png`;
-
-  try {
-    const armImg = await loadImage(armSrc);
-
-    // Create a temporary canvas to get arm alpha shape
-    const temp = document.createElement('canvas');
-    temp.width = armImg.width;
-    temp.height = armImg.height;
-    const tempCtx = temp.getContext('2d');
-    tempCtx.drawImage(armImg, 0, 0);
-
-    const imgData = tempCtx.getImageData(0, 0, armImg.width, armImg.height);
-    const data = imgData.data;
-
-    // Create a path around non-transparent pixels
-    const path = new Path2D();
-    for (let y = 0; y < armImg.height; y++) {
-      for (let x = 0; x < armImg.width; x++) {
-        const i = (y * armImg.width + x) * 4 + 3;
-        if (data[i] > 20) { // alpha threshold
-          path.rect(armX + x, armY + y, 1, 1);
-        }
-      }
-    }
-
-    ctx.save();
-    ctx.strokeStyle = 'white'; // Choose your arm outline color here
-    ctx.lineWidth = 1;
-    ctx.stroke(path);
-    ctx.restore();
-  } catch (e) {
-    console.warn(`Failed to outline arm: ${armSrc}`);
-  }
-}
-
-
-    function setPartStage(part, stage) {
-      state[part].stage = stage;
-      updateInfo(part);
-      drawCharacterWithOutline();
-    }
-
-    function setPartPosition(part, x, y) {
-      state[part].x = x;
-      state[part].y = y;
-      updateInfo(part);
-      drawCharacterWithOutline();
-    }
-
-    function setPartVariant(part, variant) {
-      state[part].variant = variant;
-      updateInfo(part);
-      drawCharacterWithOutline();
-    }
-
-    function updateInfo(part) {
-      const info = document.getElementById(`info-${part}`);
-      const { stage, x, y, variant } = state[part];
-      const variantInfo = variant ? ` | Variant: ${variant}` : '';
-      if (info) info.textContent = `Image: ${stage} | X: ${x} | Y: ${y}${variantInfo}`;
-    }
-
-    function createLabeledControl(labelText, input, minusBtn, plusBtn) {
-      const label = document.createElement("label");
-      label.textContent = labelText;
-
-      const container = document.createElement("div");
-      container.style.display = "flex";
-      container.style.alignItems = "center";
-      container.style.gap = "5px";
-
-      container.appendChild(minusBtn);
-      container.appendChild(input);
-      container.appendChild(plusBtn);
-
-      label.appendChild(container);
-      return label;
-    }
-
-    function createControlGroup(part) {
-      state[part] = {
-        stage: 1,
-        x: defaultPositions[part]?.x || 0,
-        y: defaultPositions[part]?.y || 0,
-        variant: part === "belly" ? bellyVariants[0] : part === "hair" ? hairVariants[0] : null
-      };
-
-
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "control-group";
-
-      const title = document.createElement("h3");
-      title.textContent = part.toUpperCase();
-      wrapper.appendChild(title);
-
-      // Variant selector
-      if (part === "belly" || part === "hair") {
-        const variantLabel = document.createElement("label");
-        variantLabel.textContent = part === "belly" ? "Belly Type" : "Hair Style";
-
-        const select = document.createElement("select");
-        const variantList = part === "belly" ? bellyVariants : hairVariants;
-
-        variantList.forEach(v => {
-          const opt = document.createElement("option");
-          opt.value = v;
-          opt.textContent = v;
-          select.appendChild(opt);
-        });
-
-        select.value = state[part].variant;
-        select.addEventListener("change", () => {
-          setPartVariant(part, select.value);
-        });
-
-        variantLabel.appendChild(select);
-        wrapper.appendChild(variantLabel);
-      }
-
-      // Stage slider and buttons
-      const maxStage = stageLimits[part] || 10;
-      const inputStage = document.createElement("input");
-      inputStage.type = "range";
-      inputStage.min = 1;
-      inputStage.max = maxStage;
-      inputStage.step = (part === "thighs") ? 4 : 1;
-      inputStage.value = 1;
-      inputStage.style.flex = "1";
-
-      const btnStageMinus = document.createElement("button");
-      btnStageMinus.textContent = "–";
-      btnStageMinus.onclick = () => {
-        const step = (part === "thighs") ? 4 : 1;
-        if (parseInt(inputStage.value) > 1) {
-          inputStage.value = Math.max(1, parseInt(inputStage.value) - step);
-          setPartStage(part, parseInt(inputStage.value));
-        }
-      };
-
-      const btnStagePlus = document.createElement("button");
-      btnStagePlus.textContent = "+";
-      btnStagePlus.onclick = () => {
-        const step = (part === "thighs") ? 4 : 1;
-        if (parseInt(inputStage.value) < maxStage) {
-          inputStage.value = Math.min(maxStage, parseInt(inputStage.value) + step);
-          setPartStage(part, parseInt(inputStage.value));
-        }
-      };
-
-      inputStage.addEventListener("input", () => {
-        setPartStage(part, parseInt(inputStage.value));
-      });
-
-      wrapper.appendChild(createLabeledControl("Image Stage", inputStage, btnStageMinus, btnStagePlus));
-
-      // X slider and buttons
-      const inputX = document.createElement("input");
-      inputX.type = "range";
-      inputX.min = -200;
-      inputX.max = 200;
-      inputX.value = state[part].x;
-      inputX.style.flex = "1";
-
-      const btnXMinus = document.createElement("button");
-      btnXMinus.textContent = "–";
-      btnXMinus.onclick = () => {
-        if (parseInt(inputX.value) > -200) {
-          inputX.value = parseInt(inputX.value) - 1;
-          setPartPosition(part, parseInt(inputX.value), state[part].y);
-        }
-      };
-
-      const btnXPlus = document.createElement("button");
-      btnXPlus.textContent = "+";
-      btnXPlus.onclick = () => {
-        if (parseInt(inputX.value) < 200) {
-          inputX.value = parseInt(inputX.value) + 1;
-          setPartPosition(part, parseInt(inputX.value), state[part].y);
-        }
-      };
-
-      inputX.addEventListener("input", () => {
-        setPartPosition(part, parseInt(inputX.value), state[part].y);
-      });
-
-      wrapper.appendChild(createLabeledControl("X Position", inputX, btnXMinus, btnXPlus));
-
-      // Y slider and buttons
-      const inputY = document.createElement("input");
-      inputY.type = "range";
-      inputY.min = -200;
-      inputY.max = 200;
-      inputY.value = state[part].y;
-      inputY.style.flex = "1";
-
-      const btnYMinus = document.createElement("button");
-      btnYMinus.textContent = "–";
-      btnYMinus.onclick = () => {
-        if (parseInt(inputY.value) > -200) {
-          inputY.value = parseInt(inputY.value) - 1;
-          setPartPosition(part, state[part].x, parseInt(inputY.value));
-        }
-      };
-
-      const btnYPlus = document.createElement("button");
-      btnYPlus.textContent = "+";
-      btnYPlus.onclick = () => {
-        if (parseInt(inputY.value) < 200) {
-          inputY.value = parseInt(inputY.value) + 1;
-          setPartPosition(part, state[part].x, parseInt(inputY.value));
-        }
-      };
-
-      inputY.addEventListener("input", () => {
-        setPartPosition(part, state[part].x, parseInt(inputY.value));
-      });
-
-      wrapper.appendChild(createLabeledControl("Y Position", inputY, btnYMinus, btnYPlus));
-
-      // Info line
-      const info = document.createElement("div");
-      info.id = `info-${part}`;
-      info.className = "info";
-      wrapper.appendChild(info);
-
-      updateInfo(part);
-
-      return wrapper;
-    }
-
-    // Initialize controls
-    const controlsDiv = document.getElementById("controls");
-    for (const part of parts) {
-      controlsDiv.appendChild(createControlGroup(part));
-    }
-
-    // Initial draw
-    drawCharacterWithOutline();
-	
-	
-	
-  </script>
-  
-  <style>
-  #top-bar {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 9999;
-  }
-
-  #top-bar button {
-    padding: 4px 8px;
-    margin-left: 5px;
-    font-size: 12px;
-  }
-
-  #controls {
-    display: none;
-  }
-
-  #bottom-panel {
-    position: absolute;
-    top: 540px;
-    left: 20px;
-    background: #222;
-    border: 1px solid #444;
-    padding: 10px;
-    color: white;
-    font-family: sans-serif;
-    font-size: 14px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  #bottom-panel button {
-    padding: 4px 8px;
-  }
-</style>
-
-<div id="top-bar">
-  <button onclick="toggleControls()">Debug</button>
+  <div id="weight-panel">
+    <div>
+      <div class="weight-label">Body Weight</div>
+      <div><span class="weight-value" id="weight-display">—</span><span class="weight-unit">kg</span></div>
+    </div>
+    <div class="weight-bar-wrap">
+      <div class="weight-bar" id="weight-bar"></div>
+    </div>
+    <div class="weight-btns">
+      <button class="btn btn-ghost btn-sm" title="Lose weight" onclick="adjustWeight(-1)">−</button>
+      <button class="btn btn-primary btn-sm" title="Gain weight" onclick="adjustWeight(1)">+</button>
+    </div>
+  </div>
+</main>
+
+<!-- RIGHT PANEL: Stats -->
+<aside id="right-panel">
+  <div class="panel-title">Body Stats</div>
+  <div id="stats-panel" style="display:flex;flex-direction:column;gap:10px;">
+    <!-- filled by JS -->
+  </div>
+</aside>
+
+<!-- DEBUG PANEL -->
+<div id="debug-panel">
+  <div class="debug-title">⚙ Debug Controls</div>
+  <div id="controls"></div>
 </div>
 
-<div id="bottom-panel">
-  <div>Weight: <span id="weight-display">40.00</span> kg</div>
-  <button onclick="adjustWeight(1)">Gain Weight</button>
-  <button onclick="adjustWeight(-1)">Lose Weight</button>
-  <button onclick="applyPreset(1)">I'm skinny</button>
-  <button onclick="applyPreset(2)">I'm pudgy</button>
-  <button onclick="applyPreset(3)">I'm chubby</button>
-</div>
+<footer>
+  <div><span class="status-dot"></span>Character loaded</div>
+  <div>BodyForge v0.2</div>
+</footer>
 
 <script>
-  let weight = 0;
+  const parts = ["body", "belly", "arm", "butt", "thighs", "breast", "hair"];
 
-  const adjustableParts = parts.filter(p => p !== "body"); // allow hair
-  const weightDisplay = document.getElementById("weight-display");
+  const bellyVariants = ["Belly", "Belly1", "Belly2", "Belly3", "Belly4"];
+  const hairVariants = ["HairTied", "HairLoose"];
 
-  const presets = {
-    1: { belly: 10, arm: 20, butt: 60, thighs: 21, breast: 60, hair: 160 },
-    2: { belly: 40, arm: 30, butt: 100, thighs: 41, breast: 80, hair: 160 },
-    3: { belly: 68, arm: 50, butt: 120, thighs: 81, breast: 120, hair: 160 }
+  // Map each part to its capitalized folder name on GitHub
+  const partFolderNames = {
+    body:   "Body",
+    belly:  null,   // uses variant directly
+    arm:    "Arm",
+    butt:   "Butt",
+    thighs: "Thighs",
+    breast: "Breast",
+    hair:   null    // uses variant directly
   };
 
-  function toggleControls() {
-    const ctrl = document.getElementById("controls");
-    ctrl.style.display = ctrl.style.display === "none" ? "block" : "none";
-  }
+  const defaultPositions = {
+    body:   { x: 0,   y: 0   },
+    belly:  { x: 173, y: 84  },
+    arm:    { x: 163, y: 76  },
+    butt:   { x: 44,  y: 110 },
+    thighs: { x: 115, y: 159 },
+    breast: { x: 184, y: 90  },
+    hair:   { x: 143, y: 39  }
+  };
 
-  function adjustWeight(delta) {
-    adjustableParts.forEach(part => {
-      const step = (part === "thighs") ? 4 : 1;
-      const newStage = state[part].stage + delta * step;
-      const max = stageLimits[part];
-      state[part].stage = Math.max(1, Math.min(max, newStage));
+  const stageLimits = {
+    body:   1,
+    belly:  251,
+    arm:    240,
+    butt:   351,
+    thighs: 228,
+    breast: 301,
+    hair:   600
+  };
+
+  // Min weight reference (sum at all stage=1)
+  const minWeightSum = parts.filter(p => p !== "body").length; // 6
+  const maxWeightSum = Object.entries(stageLimits)
+    .filter(([p]) => p !== "body")
+    .reduce((s, [, v]) => s + v, 0);
+
+  const state = {};
+  const imagesCache = {};
+
+  const canvas = document.getElementById('characterCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      if (imagesCache[src]) { resolve(imagesCache[src]); return; }
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => { imagesCache[src] = img; resolve(img); };
+      img.onerror = () => reject(new Error(`Failed: ${src}`));
+      img.src = src;
     });
-    recalculateWeight(); // calculate based on stage
-    drawCharacterWithOutline();
   }
 
-  function recalculateWeight() {
-    let total = 0;
-    adjustableParts.forEach(part => {
-      total += state[part].stage;
-    });
-    weight = total * 0.15;
-    weightDisplay.textContent = weight.toFixed(2);
+  function getFolder(part) {
+    if (part === "belly" || part === "hair") return state[part].variant;
+    return partFolderNames[part];
   }
 
-  function applyPreset(presetNumber) {
-    const preset = presets[presetNumber];
-    for (const part in preset) {
-      if (state[part]) {
-        state[part].stage = preset[part];
+  async function drawCharacterWithOutline() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const offscreen = document.createElement('canvas');
+    offscreen.width = canvas.width;
+    offscreen.height = canvas.height;
+    const offCtx = offscreen.getContext('2d');
+
+    for (const part of parts) {
+      const folder = getFolder(part);
+      const stage  = state[part].stage;
+      const x      = state[part].x;
+      const y      = state[part].y;
+      const src    = `https://raw.githubusercontent.com/piritaargenta/life/refs/heads/main/viewport/${folder}/${stage}.png`;
+
+      try {
+        const img = await loadImage(src);
+        offCtx.drawImage(img, x, y);
+      } catch (e) {
+        console.warn(`Failed to load: ${src}`);
       }
     }
-    recalculateWeight(); // apply weight based on preset stages
+
+    // White outline (glow)
+    ctx.shadowColor = 'white';
+    ctx.shadowBlur = 6;
+    ctx.drawImage(offscreen, 0, 0);
+    ctx.shadowColor = 'transparent';
+    // Draw clean on top
+    ctx.drawImage(offscreen, 0, 0);
+
+    updateStats();
+    hideLoading();
+  }
+
+  // ── Loading overlay ──────────────────────────────────────
+  let loadingHidden = false;
+  function hideLoading() {
+    if (loadingHidden) return;
+    loadingHidden = true;
+    const el = document.getElementById('loading');
+    el.style.opacity = '0';
+    setTimeout(() => el.style.display = 'none', 500);
+  }
+
+  // ── State setters ────────────────────────────────────────
+  function setPartStage(part, stage) {
+    state[part].stage = stage;
+    updateInfo(part);
     drawCharacterWithOutline();
   }
+
+  function setPartPosition(part, x, y) {
+    state[part].x = x;
+    state[part].y = y;
+    updateInfo(part);
+    drawCharacterWithOutline();
+  }
+
+  function setPartVariant(part, variant) {
+    state[part].variant = variant;
+    updateInfo(part);
+    drawCharacterWithOutline();
+  }
+
+  function updateInfo(part) {
+    const info = document.getElementById(`info-${part}`);
+    if (!info) return;
+    const { stage, x, y, variant } = state[part];
+    info.textContent = `Stage: ${stage} | X: ${x} | Y: ${y}${variant ? ' | ' + variant : ''}`;
+  }
+
+  // ── Weight / stats ───────────────────────────────────────
+  function recalculateWeight() {
+    const adjustable = parts.filter(p => p !== "body");
+    let total = adjustable.reduce((s, p) => s + state[p].stage, 0);
+    const weight = total * 0.15;
+    document.getElementById('weight-display').textContent = weight.toFixed(1);
+    // Bar: 0–100% based on min/max possible sum
+    const pct = Math.min(100, Math.max(2, ((total - minWeightSum) / (maxWeightSum - minWeightSum)) * 100));
+    document.getElementById('weight-bar').style.width = pct + '%';
+  }
+
+  function updateStats() {
+    recalculateWeight();
+    const panel = document.getElementById('stats-panel');
+    const statsData = [
+      { label: 'Belly',  value: state.belly.stage,  max: stageLimits.belly  },
+      { label: 'Chest',  value: state.breast.stage, max: stageLimits.breast },
+      { label: 'Arms',   value: state.arm.stage,    max: stageLimits.arm    },
+      { label: 'Rear',   value: state.butt.stage,   max: stageLimits.butt   },
+      { label: 'Thighs', value: state.thighs.stage, max: stageLimits.thighs },
+    ];
+    panel.innerHTML = statsData.map(s => {
+      const pct = Math.round((s.value / s.max) * 100);
+      return `
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:.1em;color:var(--text-dim);text-transform:uppercase">${s.label}</span>
+            <span style="font-size:11px;color:var(--text-dim)">${pct}%</span>
+          </div>
+          <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Weight adjust ────────────────────────────────────────
+  function adjustWeight(delta) {
+    parts.filter(p => p !== "body").forEach(part => {
+      const step = (part === "thighs") ? 4 : 1;
+      const newStage = state[part].stage + delta * step;
+      state[part].stage = Math.max(1, Math.min(stageLimits[part], newStage));
+    });
+    drawCharacterWithOutline();
+  }
+
+  // ── Presets ──────────────────────────────────────────────
+  const presets = {
+    1: { belly: 10,  arm: 20,  butt: 60,  thighs: 21, breast: 60,  hair: 160 },
+    2: { belly: 40,  arm: 30,  butt: 100, thighs: 41, breast: 80,  hair: 160 },
+    3: { belly: 68,  arm: 50,  butt: 120, thighs: 81, breast: 120, hair: 160 }
+  };
+
+  function applyPreset(n) {
+    document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+    document.getElementById(`preset-${n}`)?.classList.add('active');
+    const preset = presets[n];
+    for (const part in preset) {
+      if (state[part]) state[part].stage = preset[part];
+    }
+    drawCharacterWithOutline();
+  }
+
+  // ── Debug toggle ─────────────────────────────────────────
+  function toggleDebug() {
+    const panel = document.getElementById('debug-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // ── Build debug controls ─────────────────────────────────
+  function createLabeledControl(labelText, input, minusBtn, plusBtn) {
+    const label = document.createElement("label");
+    label.textContent = labelText;
+    const container = document.createElement("div");
+    container.style.cssText = "display:flex;align-items:center;gap:5px;";
+    container.appendChild(minusBtn);
+    container.appendChild(input);
+    container.appendChild(plusBtn);
+    label.appendChild(container);
+    return label;
+  }
+
+  function createControlGroup(part) {
+    state[part] = {
+      stage: 1,
+      x: defaultPositions[part]?.x || 0,
+      y: defaultPositions[part]?.y || 0,
+      variant: part === "belly" ? bellyVariants[0] : part === "hair" ? hairVariants[0] : null
+    };
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "control-group";
+
+    const title = document.createElement("h3");
+    title.textContent = part.toUpperCase();
+    wrapper.appendChild(title);
+
+    if (part === "belly" || part === "hair") {
+      const variantLabel = document.createElement("label");
+      variantLabel.textContent = part === "belly" ? "Belly Type" : "Hair Style";
+      const select = document.createElement("select");
+      const variantList = part === "belly" ? bellyVariants : hairVariants;
+      variantList.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v; opt.textContent = v;
+        select.appendChild(opt);
+      });
+      select.value = state[part].variant;
+      select.addEventListener("change", () => setPartVariant(part, select.value));
+      variantLabel.appendChild(select);
+      wrapper.appendChild(variantLabel);
+    }
+
+    const makeSlider = (labelText, min, max, initVal, step, onChange) => {
+      const input = document.createElement("input");
+      input.type = "range"; input.min = min; input.max = max;
+      input.step = step; input.value = initVal; input.style.flex = "1";
+      input.addEventListener("input", () => onChange(parseInt(input.value)));
+      const bm = document.createElement("button"); bm.textContent = "–"; bm.className = "btn btn-ghost btn-sm";
+      const bp = document.createElement("button"); bp.textContent = "+"; bp.className = "btn btn-ghost btn-sm";
+      bm.onclick = () => { input.value = Math.max(min, parseInt(input.value) - step); onChange(parseInt(input.value)); };
+      bp.onclick = () => { input.value = Math.min(max, parseInt(input.value) + step); onChange(parseInt(input.value)); };
+      return createLabeledControl(labelText, input, bm, bp);
+    };
+
+    const maxStage = stageLimits[part] || 10;
+    const thighStep = (part === "thighs") ? 4 : 1;
+    wrapper.appendChild(makeSlider("Stage", 1, maxStage, 1, thighStep, v => setPartStage(part, v)));
+    wrapper.appendChild(makeSlider("X", -200, 200, state[part].x, 1, v => setPartPosition(part, v, state[part].y)));
+    wrapper.appendChild(makeSlider("Y", -200, 200, state[part].y, 1, v => setPartPosition(part, state[part].x, v)));
+
+    const info = document.createElement("div");
+    info.id = `info-${part}`; info.className = "info";
+    wrapper.appendChild(info);
+    updateInfo(part);
+    return wrapper;
+  }
+
+  // ── Init ─────────────────────────────────────────────────
+  const controlsDiv = document.getElementById("controls");
+  for (const part of parts) {
+    controlsDiv.appendChild(createControlGroup(part));
+  }
+
+  drawCharacterWithOutline();
 </script>
-
-
 </body>
 </html>
