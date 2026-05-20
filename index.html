@@ -2,6 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Life — A Realistic Simulator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -306,67 +307,158 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
 .wplan-commit:disabled{background:var(--ink3);cursor:default;}
 .wplan-empty{color:var(--ink3);font-size:.68rem;font-style:italic;}
 
+/* ── DISABLE ZOOM / TEXT SELECTION ON TOUCH ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wplan-commit, .tb-btn {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+/* Allow text selection in story and inputs */
+#story-scroll, input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ── HAMBURGER DRAWER (mobile) ── */
+#mob-menu-overlay{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.55);
+}
+#mob-drawer{
+  position:fixed;top:0;right:0;bottom:0;z-index:301;
+  width:min(88vw,320px);
+  background:var(--panel);border-left:1px solid var(--line);
+  overflow-y:auto;
+  transform:translateX(100%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+}
+#mob-drawer.open{transform:translateX(0);}
+#mob-menu-overlay.open{display:block;}
+.mob-drawer-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px;border-bottom:1px solid var(--line);
+  background:var(--bg2);position:sticky;top:0;z-index:1;
+}
+.mob-drawer-header h3{
+  font-family:"Lora",serif;font-size:1rem;font-weight:400;color:var(--ink);
+}
+.mob-drawer-close{
+  background:none;border:1px solid var(--line);color:var(--ink3);
+  font-size:1rem;cursor:pointer;padding:6px 12px;line-height:1;
+  border-radius:0;
+}
+.mob-drawer-section{padding:16px 18px;border-bottom:1px solid var(--line);}
+.mob-drawer-section-title{
+  font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:12px;display:block;
+}
+.mob-dstat-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.mob-dstat-name{font-size:.87rem;color:var(--ink2);width:84px;flex-shrink:0;}
+.mob-dstat-bg{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.mob-dstat-fill{height:100%;border-radius:3px;transition:width .5s;}
+.mob-dstat-num{font-family:"IBM Plex Mono",monospace;font-size:.84rem;color:var(--ink2);width:28px;text-align:right;flex-shrink:0;}
+.mob-kv{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line);font-size:.9rem;}
+.mob-kv:last-child{border-bottom:none;}
+.mob-kv-key{color:var(--ink2);}
+.mob-kv-val{font-family:"IBM Plex Mono",monospace;font-size:.86rem;color:var(--ink);text-align:right;}
+.mob-rel-entry{padding:9px 0;border-bottom:1px solid var(--line);font-size:.88rem;}
+.mob-rel-entry:last-child{border-bottom:none;}
+.mob-rel-name{color:var(--ink);font-weight:500;margin-bottom:2px;}
+.mob-rel-detail{color:var(--ink3);font-size:.78rem;}
+.mob-drawer-btn-row{display:flex;gap:8px;padding:14px 18px;border-bottom:1px solid var(--line);}
+.mob-drawer-btn{
+  flex:1;padding:11px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--ink2);font-size:.82rem;
+  cursor:pointer;text-align:center;
+}
+.mob-drawer-btn:active{background:var(--bg3);}
+
 /* ── MOBILE RESPONSIVE ── */
 @media(max-width:700px){
-  html,body{overflow:auto;}
+  html,body{overflow:auto;font-size:15px;}
   #game{height:auto;min-height:100svh;}
-  #topbar{padding:0 12px;gap:6px;height:52px;flex-wrap:nowrap;}
-  .tb-brand{font-size:1rem;}
-  .tb-info{font-size:.8rem;}
-  .tb-date{display:none;}
-  .tb-btn{padding:5px 10px;font-size:.72rem;min-height:36px;}
+
+  /* Topbar: brand + date + hamburger */
+  #topbar{
+    padding:0 14px;gap:10px;height:54px;flex-wrap:nowrap;
+    position:sticky;top:0;z-index:100;
+    background:var(--panel);border-bottom:1px solid var(--line);
+  }
+  .tb-brand{font-size:1.1rem;flex:1;}
+  .tb-info{display:none;}
+  #tb-week-info{display:none;}
+  .tb-date{display:block;font-size:.78rem;color:var(--ink3);font-family:"IBM Plex Mono",monospace;}
+  .tb-btn{display:none;}
+  #btn-hamburger{
+    display:flex;align-items:center;justify-content:center;
+    width:42px;height:42px;flex-shrink:0;
+    background:transparent;border:1px solid var(--line);
+    color:var(--ink2);cursor:pointer;font-size:1.15rem;
+    touch-action:manipulation;
+  }
+
+  /* Grid */
   #grid{display:flex;flex-direction:column;height:auto;overflow:visible;}
   #col-left{border-right:none;border-bottom:1px solid var(--line);width:100%;}
-  #viewport-wrap{width:100%;height:68vw;max-height:320px;}
-  #characterCanvas{
-    transform:scale(calc(100vw / 512 * 1.087)) translate(-40px,-10px);
-  }
+  #viewport-wrap{width:100%;height:64vw;max-height:300px;}
+  #characterCanvas{transform:scale(calc(100vw / 512 * 1.087)) translate(-40px,-10px);}
+
+  /* Left tabs */
   .ltabs{gap:0;}
-  .ltab{padding:12px 4px;font-size:.72rem;}
-  .ltab-panel{max-height:220px;padding:12px 14px;}
-  .meas-row{padding:9px 0;}
-  .meas-lbl{font-size:.82rem;}
-  .meas-val{font-size:.92rem;}
-  .habit-row{padding:10px 0;}
-  .habit-name{font-size:.84rem;}
-  .habit-val{font-size:.8rem;}
+  .ltab{padding:14px 4px;font-size:.82rem;min-height:50px;}
+  .ltab-panel{max-height:280px;padding:14px 16px;overflow-y:auto;}
+
+  /* Measurements */
+  .meas-row{padding:11px 0;}
+  .meas-lbl{font-size:.92rem;}
+  .meas-val{font-size:1.02rem;}
+
+  /* Habits */
+  .habit-row{padding:11px 0;}
+  .habit-name{font-size:.92rem;}
+  .habit-val{font-size:.88rem;}
+
+  /* Story */
   #col-mid{height:auto;}
-  #story-scroll{height:auto;min-height:220px;max-height:45vh;padding:18px 16px;}
-  .story-entry h3{font-size:1.1rem;}
-  .story-entry p{font-size:.9rem;line-height:1.75;}
-  #action-bar{position:sticky;bottom:0;z-index:40;padding:12px 14px 16px;}
-  .abar-label{font-size:.7rem;margin-bottom:10px;}
-  .abar-grid{gap:7px;}
-  .a-btn{padding:12px 14px;font-size:.86rem;min-height:44px;line-height:1.25;}
-  #week-planner-bar{padding:8px 14px;min-height:48px;}
-  .wplan-label{font-size:.7rem;}
-  .wplan-pill{font-size:.76rem;padding:5px 10px;}
-  .wplan-commit{padding:8px 16px;font-size:.78rem;min-height:40px;}
-  #col-right{
-    display:flex;flex-direction:column;
-    gap:0;padding:0;border-left:none;border-top:1px solid var(--line);
+  #story-scroll{height:auto;min-height:240px;max-height:48vh;padding:20px 18px;}
+  .story-entry h3{font-size:1.2rem;margin-bottom:8px;}
+  .story-entry p{font-size:.97rem;line-height:1.82;}
+
+  /* Week planner */
+  #week-planner-bar{padding:10px 16px;min-height:54px;gap:8px;}
+  .wplan-label{font-size:.76rem;}
+  .wplan-pill{font-size:.84rem;padding:8px 12px;min-height:38px;}
+  .wplan-commit{padding:10px 18px;font-size:.86rem;min-height:46px;}
+
+  /* Action bar */
+  #action-bar{
+    position:sticky;bottom:0;z-index:40;
+    padding:14px 16px 22px;
+    background:var(--panel);border-top:2px solid var(--line);
   }
-  #col-right>div{padding:14px 16px;border-bottom:1px solid var(--line);}
-  .rsec-title{font-size:.7rem;padding-bottom:10px;margin-bottom:12px;}
-  .stat-row{margin-bottom:10px;}
-  .stat-name{font-size:.82rem;width:76px;}
-  .stat-bar-bg{height:4px;}
-  .stat-num{font-size:.79rem;width:28px;}
-  .kv-row{padding:8px 0;font-size:.83rem;}
-  .kv-val{font-size:.8rem;}
-  .rel-entry{padding:10px 0;}
-  .rel-name{font-size:.84rem;}
-  .rel-detail{font-size:.76rem;}
-  .week-grid{grid-template-columns:1fr 1fr;gap:7px;}
-  .wk-btn{padding:11px 6px;font-size:.78rem;min-height:44px;}
-  .cc-wrap{padding:22px 16px;}
-  .cc-wrap h1{font-size:1.5rem;}
+  .abar-label{font-size:.8rem;margin-bottom:12px;letter-spacing:.08em;}
+  .abar-grid{gap:9px;}
+  .a-btn{padding:14px 16px;font-size:.95rem;min-height:52px;line-height:1.3;}
+
+  /* Right column — hidden, data shown in drawer */
+  #col-right{display:none;}
+
+  /* CC screen */
+  .cc-wrap{padding:24px 18px;}
+  .cc-wrap h1{font-size:1.65rem;}
   .cc-two{grid-template-columns:1fr;}
-  .cc-pill{padding:10px 16px;font-size:.84rem;min-height:40px;}
-  .cc-trait{padding:10px 12px;font-size:.82rem;min-height:40px;}
-  .cc-input{padding:12px 14px;font-size:1rem;}
-  .cc-btn-start{padding:16px;font-size:1.05rem;}
-  #col-right .bill-row{padding:8px 0;font-size:.82rem;}
+  .cc-pill{padding:12px 18px;font-size:.9rem;min-height:46px;}
+  .cc-trait{padding:12px 14px;font-size:.88rem;min-height:46px;}
+  .cc-input{padding:14px 16px;font-size:1.05rem;}
+  .cc-btn-start{padding:18px;font-size:1.1rem;}
+  .cc-label{font-size:.74rem;}
+  .cc-subtitle{font-size:.8rem;}
+
+  /* Debug panel */
+  #dbg-panel{top:0;right:0;left:0;width:100%;max-height:100vh;border:none;}
 }
 
 /* Left tabs */
@@ -784,7 +876,43 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
     <div class="tb-date" id="tb-date">Week 1, 2007</div>
     <button class="tb-btn" id="btn-theme" onclick="toggleTheme()">☀ Light</button>
     <button class="tb-btn" onclick="toggleDebug()">⚙ Debug</button>
+    <button id="btn-hamburger" onclick="openMobDrawer()" aria-label="Menu" style="display:none">☰</button>
   </div>
+
+<!-- ═════════════════════════════════════════════
+     MOBILE DRAWER
+═════════════════════════════════════════════ -->
+<div id="mob-menu-overlay" onclick="closeMobDrawer()"></div>
+<div id="mob-drawer">
+  <div class="mob-drawer-header">
+    <h3 id="mob-drawer-title">Stats &amp; Menu</h3>
+    <button class="mob-drawer-close" onclick="closeMobDrawer()">✕</button>
+  </div>
+  <div class="mob-drawer-btn-row">
+    <button class="mob-drawer-btn" onclick="closeMobDrawer();toggleTheme()" id="mob-btn-theme">☀ Light</button>
+    <button class="mob-drawer-btn" onclick="closeMobDrawer();toggleDebug()">⚙ Debug</button>
+  </div>
+  <div class="mob-drawer-section" id="mob-wellbeing-section">
+    <span class="mob-drawer-section-title">Wellbeing</span>
+    <div id="mob-stats-list"></div>
+  </div>
+  <div class="mob-drawer-section" id="mob-finances-section">
+    <span class="mob-drawer-section-title">Finances</span>
+    <div id="mob-finances-list"></div>
+  </div>
+  <div class="mob-drawer-section" id="mob-pantry-section">
+    <span class="mob-drawer-section-title">Pantry</span>
+    <div id="mob-pantry-list"></div>
+  </div>
+  <div class="mob-drawer-section" id="mob-property-section">
+    <span class="mob-drawer-section-title">Property &amp; Assets</span>
+    <div id="mob-property-list"></div>
+  </div>
+  <div class="mob-drawer-section" id="mob-rels-section">
+    <span class="mob-drawer-section-title">Relationships</span>
+    <div id="mob-rels-list"></div>
+  </div>
+</div>
 
   <div id="grid">
     <!-- LEFT -->
@@ -1390,6 +1518,10 @@ function updateStats(){
   const defShop = G.grocerySet && G.groceryProfile ? (FOOD_PROFILES[G.groceryProfile.profileKey]||{label:"Custom"}).label.replace(/[🥗🍞🥩🧀🍕🛒🍱]/u,"").trim() : "Not set";
   setEl('kv-def-shop', defShop);
   renderRelationships();
+  // Update mobile drawer if open
+  if(document.getElementById('mob-drawer')&&document.getElementById('mob-drawer').classList.contains('open')){
+    updateMobDrawer();
+  }
 }
 
 function renderRelationships(){
@@ -1417,6 +1549,8 @@ function weekToDate(week,year){
 function updateDateDisplay(){
   setEl('tb-date',weekToDate(G.weekOfYear,G.year));
   setEl('tb-age',G.age);
+  const mdt=document.getElementById('mob-drawer-title');
+  if(mdt&&G.name) mdt.textContent=G.name+', age '+G.age;
 }
 function advanceWeeks(n=1){
   for(let i=0;i<n;i++){
@@ -3120,19 +3254,20 @@ function mainMenuActions(){
       ? {label:"⏩ End week →", cls:"pri", fn:()=>commitWeek()}
       : {label:"⏩ Skip a week",          fn:()=>{advanceWeeks(1);renderCharacter();mainMenuActions();}},
   ].filter(Boolean));
+  // Inject Free Will button into week-grid
   const wg = document.getElementById('week-grid');
-  if(!wg) return;
-  // Remove any existing Free Will button before re-adding
-  const existing = wg.querySelector('.freeWillBtn');
-  if(existing) existing.remove();
-  const btn = document.createElement('button');
-  btn.className = 'wk-btn freeWillBtn';
-  btn.style.gridColumn='1/-1';
-  btn.style.borderColor='var(--acc2)';
-  btn.style.color='var(--acc2)';
-  btn.textContent = '✦ Free Will this week';
-  btn.onclick = ()=>openFreeWillMenu();
-  wg.prepend(btn);
+  if(wg){
+    const existing = wg.querySelector('.freeWillBtn');
+    if(existing) existing.remove();
+    const btn = document.createElement('button');
+    btn.className = 'wk-btn freeWillBtn';
+    btn.style.gridColumn='1/-1';
+    btn.style.borderColor='var(--acc2)';
+    btn.style.color='var(--acc2)';
+    btn.textContent = '✦ Free Will this week';
+    btn.onclick = ()=>openFreeWillMenu();
+    wg.prepend(btn);
+  }
 }
 
 // queued (non-branching) versions of activities
@@ -3184,7 +3319,42 @@ function toggleTheme(){
 // ═══════════════════════════════════════════════════════
 function buildDebug(){
   const inner=document.getElementById('dbg-inner');
-  if(inner.innerHTML) return;
+  inner.innerHTML=''; // always rebuild so weight slider stays in sync
+  // ── Weight (kg) slider ──────────────────────────────
+  const wdiv=document.createElement('div');wdiv.className='dbg-group';
+  const currentKg=Math.round(KG_BASE+S.body.stage*KG_PER_UNIT);
+  const minKg=Math.round(KG_BASE+1*KG_PER_UNIT);
+  const maxKg=Math.round(KG_BASE+STAGE_MAX.body*KG_PER_UNIT);
+  wdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Weight</strong>`;
+  const wValSpan=document.createElement('span');
+  wValSpan.style.cssText='font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink2);margin-left:8px;';
+  wValSpan.textContent=currentKg+'kg';
+  wdiv.querySelector('strong').appendChild(wValSpan);
+  const wLb=document.createElement('label');wLb.textContent=`kg (${minKg}–${maxKg})`;
+  const wSl=document.createElement('input');
+  wSl.type='range';wSl.min=minKg;wSl.max=maxKg;wSl.step=1;wSl.value=currentKg;
+  wSl.style.width='100%';wSl.style.accentColor='var(--acc)';
+  wSl.oninput=()=>{
+    const targetKg=parseInt(wSl.value);
+    wValSpan.textContent=targetKg+'kg';
+    const targetStage=Math.round((targetKg-KG_BASE)/KG_PER_UNIT);
+    S.body.stage=Math.max(1,Math.min(STAGE_MAX.body,targetStage));
+    // Distribute weight proportionally across body parts
+    const ratio=targetStage/STAGE_MAX.body;
+    for(const p of WEIGHT_PARTS){
+      S[p].stage=Math.round(1+ratio*(STAGE_MAX[p]-1));
+    }
+    G.bodyFatUnits=targetStage;
+    renderCharacter();
+    // sync all stage sliders in debug panel
+    inner.querySelectorAll('[data-dbg-part]').forEach(el=>{
+      const pt=el.dataset.dbgPart;
+      if(pt) el.value=S[pt].stage;
+    });
+  };
+  wLb.appendChild(wSl);wdiv.appendChild(wLb);
+  inner.appendChild(wdiv);
+  // ── Per-part sliders ───────────────────────────────
   for(const part of PARTS){
     const d=document.createElement('div');d.className='dbg-group';
     d.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">${part}</strong>`;
@@ -3199,6 +3369,7 @@ function buildDebug(){
     const max=STAGE_MAX[part];
     const sl=document.createElement('input');
     sl.type="range";sl.min=1;sl.max=max;sl.step=part==="thighs"?4:1;sl.value=S[part].stage;
+    sl.dataset.dbgPart=part;
     sl.oninput=()=>{S[part].stage=parseInt(sl.value);renderCharacter();};
     const lb=document.createElement('label');lb.textContent=`Stage (1–${max})`;lb.appendChild(sl);d.appendChild(lb);
     inner.appendChild(d);
@@ -3209,6 +3380,86 @@ function toggleDebug(){
   if(ov.style.display==="block"){ov.style.display="none";}
   else{buildDebug();ov.style.display="block";}
 }
+
+// ═══════════════════════════════════════════════════════
+//  MOBILE DRAWER
+// ═══════════════════════════════════════════════════════
+function openMobDrawer(){
+  updateMobDrawer();
+  document.getElementById('mob-drawer').classList.add('open');
+  document.getElementById('mob-menu-overlay').classList.add('open');
+}
+function closeMobDrawer(){
+  document.getElementById('mob-drawer').classList.remove('open');
+  document.getElementById('mob-menu-overlay').classList.remove('open');
+}
+function updateMobDrawer(){
+  // Wellbeing stats
+  const statsData=[
+    ["Health",G.health],["Fitness",G.fitness],["Happiness",G.happy],
+    ["Energy",G.energy],["Mood",G.mood],["Libido",G.libido],
+    ["Confidence",G.conf],["Appetite",G.appetite]
+  ];
+  const sl=document.getElementById('mob-stats-list');
+  if(sl) sl.innerHTML=statsData.map(([name,v])=>`
+    <div class="mob-dstat-row">
+      <span class="mob-dstat-name">${name}</span>
+      <div class="mob-dstat-bg"><div class="mob-dstat-fill" style="width:${v}%;background:${v>60?'var(--green)':v>35?'var(--amber)':'var(--red)'}"></div></div>
+      <span class="mob-dstat-num">${v}</span>
+    </div>`).join('');
+  // Finances
+  const gross=G.salary;
+  const annualTax=calcTax(gross*12);
+  const monthlyTax=Math.round(annualTax/12);
+  const monthlyNIC=Math.round(calcNIC(gross*12)/12);
+  const takeHome=gross-monthlyTax-monthlyNIC;
+  const bills=calcMonthlyBills();
+  const net=takeHome-(G.rent+bills.total);
+  const fl=document.getElementById('mob-finances-list');
+  if(fl) fl.innerHTML=`
+    <div class="mob-kv"><span class="mob-kv-key">Job</span><span class="mob-kv-val">${G.job}</span></div>
+    <div class="mob-kv"><span class="mob-kv-key">Net take-home</span><span class="mob-kv-val">${gross?'€'+takeHome.toLocaleString()+'/mo':'—'}</span></div>
+    <div class="mob-kv"><span class="mob-kv-key">Savings</span><span class="mob-kv-val">€${Math.round(G.savings).toLocaleString()}</span></div>
+    <div class="mob-kv"><span class="mob-kv-key">Monthly net</span><span class="mob-kv-val" style="color:${net>=0?'var(--green)':net>-200?'var(--amber)':'var(--red)'}">${gross?(net>=0?'+€'+net.toLocaleString():'−€'+Math.abs(net).toLocaleString()):'—'}</span></div>
+    ${G.debt>0?`<div class="mob-kv"><span class="mob-kv-key">Debt</span><span class="mob-kv-val" style="color:var(--red)">€${G.debt.toLocaleString()}</span></div>`:''}`;
+  // Pantry
+  const ps=pantryStatus();
+  const psColor=ps==="empty"?"var(--red)":ps==="low"?"var(--amber)":"var(--green)";
+  const pl=document.getElementById('mob-pantry-list');
+  if(pl) pl.innerHTML=`
+    <div class="mob-kv"><span class="mob-kv-key">Stock</span><span class="mob-kv-val" style="color:${psColor}">${G.pantry&&G.pantry.servings>0?G.pantry.servings+' meals':'Empty'}</span></div>
+    <div class="mob-kv"><span class="mob-kv-key">Alcohol</span><span class="mob-kv-val">${G.groceryAlcohol>0?G.groceryAlcohol+' drinks':'None'}</span></div>`;
+  // Property
+  const prl=document.getElementById('mob-property-list');
+  if(prl) prl.innerHTML=`
+    <div class="mob-kv"><span class="mob-kv-key">Housing</span><span class="mob-kv-val">${G.housing}</span></div>
+    <div class="mob-kv"><span class="mob-kv-key">Car</span><span class="mob-kv-val">${G.car}</span></div>
+    <div class="mob-kv"><span class="mob-kv-key">Licence</span><span class="mob-kv-val">${G.licence?'Full':'None'}</span></div>`;
+  // Relationships
+  const rl=document.getElementById('mob-rels-list');
+  if(rl){
+    if(!G.relationships||!G.relationships.length){
+      rl.innerHTML='<p style="font-size:.88rem;color:var(--ink3)">No meaningful relationships yet.</p>';
+    } else {
+      rl.innerHTML=G.relationships.map(r=>`
+        <div class="mob-rel-entry">
+          <div class="mob-rel-name">${r.name} <span style="color:var(--ink3);font-weight:400">(${r.type})</span></div>
+          <div class="mob-rel-detail">Closeness ${r.closeness}/100</div>
+        </div>`).join('');
+    }
+  }
+  // Sync theme button text
+  const isDark=document.documentElement.dataset.theme==="dark";
+  const mbtn=document.getElementById('mob-btn-theme');
+  if(mbtn) mbtn.textContent=isDark?"☀ Light":"🌙 Dark";
+}
+// Show hamburger only on mobile
+(function(){
+  const btn=document.getElementById('btn-hamburger');
+  function checkMob(){if(btn) btn.style.display=window.innerWidth<=700?'flex':'none';}
+  checkMob();
+  window.addEventListener('resize',checkMob);
+})();
 
 // ═══════════════════════════════════════════════════════
 //  UI HELPERS
@@ -3331,10 +3582,12 @@ document.getElementById('cc-start').addEventListener('click',()=>{
   document.getElementById('game').style.display='flex';
   setEl('tb-name',name);
   setEl('tb-age',G.age);
+  // update mob drawer title
+  const mdt=document.getElementById('mob-drawer-title');
+  if(mdt) mdt.textContent=name+', age '+G.age;
   updateDateDisplay();
   updateStats();
 
-  injectFreeWillButton();
   renderCharacter(false).then(()=>{
     // Opening story
     storyEntry(
