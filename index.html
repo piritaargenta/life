@@ -240,19 +240,24 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
 /* Viewport */
 #viewport-wrap{
   position:relative;flex-shrink:0;
-  width:300px;height:400px;
+  width:300px;height:420px;
   background:var(--bg2);
   border-bottom:1px solid var(--line);
   overflow:hidden;
   cursor:zoom-in;
   -webkit-tap-highlight-color:transparent;
 }
-/* Character sprite ~x:44-320,y:30-510 of 512 canvas.
-   scale≈1.087 fills 300px width, translate trims dead space. */
+/* Default crop: scale 1.1 to fill 300px, translate to center character and cut feet.
+   These values are controlled via CSS custom props so debug sliders can adjust them live. */
+#viewport-wrap{
+  --vp-scale:1.10;
+  --vp-tx:-36px;
+  --vp-ty:-18px;
+}
 #characterCanvas{
   position:absolute;
   width:512px;height:512px;
-  transform:scale(1.087) translate(-40px,-10px);
+  transform:scale(var(--vp-scale)) translate(var(--vp-tx),var(--vp-ty));
   transform-origin:top left;
   image-rendering:auto;
 }
@@ -434,7 +439,9 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   #grid{display:flex;flex-direction:column;height:auto;overflow:visible;}
   #col-left{border-right:none;border-bottom:1px solid var(--line);width:100%;}
   #viewport-wrap{width:100%;height:56vw;max-height:260px;}
-  #characterCanvas{transform:scale(calc(100vw / 512 * 1.087)) translate(-40px,-10px);}
+  #characterCanvas{
+    transform:scale(calc(100vw / 512 * var(--vp-scale, 1.10))) translate(var(--vp-tx,-36px),var(--vp-ty,-18px));
+  }
 
   /* Left tabs */
   .ltabs{gap:0;}
@@ -758,7 +765,7 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
 }
 #dbg-panel{
   position:absolute;top:56px;right:16px;
-  width:280px;max-height:80vh;overflow-y:auto;
+  width:340px;max-height:85vh;overflow-y:auto;
   background:var(--panel);border:1px solid var(--line);
   padding:16px;box-shadow:0 8px 32px var(--shadow2);
 }
@@ -1849,8 +1856,7 @@ function advanceWeeks(n=1){
 // ═══════════════════════════════════════════════════════
 function clamp(v,mn=0,mx=100){return Math.max(mn,Math.min(mx,v));}
 function changePart(part,delta){
-  const step=part==="thighs"?Math.sign(delta)*4:delta;
-  S[part].stage=clamp(S[part].stage+step,1,STAGE_MAX[part]);
+  S[part].stage=clamp(S[part].stage+delta,1,STAGE_MAX[part]);
 }
 function gainFat(amt,profile="balanced"){
   // profile changes fat distribution
@@ -4508,15 +4514,122 @@ function toggleTheme(){
 // ═══════════════════════════════════════════════════════
 //  DEBUG PANEL
 // ═══════════════════════════════════════════════════════
+
+// Store current viewport transform so it persists between buildDebug calls
+let _vpScale=1.10, _vpTx=-36, _vpTy=-18;
+
+function applyViewportTransform(){
+  const wrap=document.getElementById('viewport-wrap');
+  if(wrap){
+    wrap.style.setProperty('--vp-scale',_vpScale);
+    wrap.style.setProperty('--vp-tx',_vpTx+'px');
+    wrap.style.setProperty('--vp-ty',_vpTy+'px');
+  }
+}
+
+// 10 calibration body presets for measurement testing
+// Format: {name, stages:{belly,arm,butt,thighs,breast}, desc}
+const DBG_CAL_PRESETS = [
+  {name:"P1 — Very lean",     s:{belly:4,  arm:8,  butt:25, thighs:7,  breast:12}, desc:"Underweight, very slim"},
+  {name:"P2 — Lean athletic", s:{belly:8,  arm:25, butt:60, thighs:30, breast:25}, desc:"Slim but muscular"},
+  {name:"P3 — Slim",          s:{belly:14, arm:18, butt:70, thighs:25, breast:45}, desc:"Slim, small bust"},
+  {name:"P4 — Slim curvy",    s:{belly:16, arm:20, butt:100,thighs:50, breast:90}, desc:"Slim waist, wide hips, big bust"},
+  {name:"P5 — Average",       s:{belly:35, arm:30, butt:90, thighs:41, breast:75}, desc:"Average/healthy weight"},
+  {name:"P6 — Thick",         s:{belly:55, arm:45, butt:140,thighs:85, breast:110},desc:"Full figure, proportionate"},
+  {name:"P7 — Chubby",        s:{belly:80, arm:60, butt:130,thighs:100,breast:90}, desc:"Overweight, belly-dominant"},
+  {name:"P8 — Very heavy",    s:{belly:150,arm:90, butt:180,thighs:130,breast:140},desc:"Obese, large belly"},
+  {name:"P9 — Pear shape",    s:{belly:20, arm:22, butt:220,thighs:180,breast:40}, desc:"Small top, very large bottom"},
+  {name:"P10 — Top heavy",    s:{belly:30, arm:50, butt:60, thighs:30, breast:250},desc:"Large bust, slim hips"},
+];
+
+function applyCalPreset(p){
+  for(const [part,stage] of Object.entries(p.s)){
+    S[part].stage=clamp(stage,1,STAGE_MAX[part]);
+  }
+  renderCharacter();
+}
+
 function buildDebug(){
   const inner=document.getElementById('dbg-inner');
-  inner.innerHTML=''; // always rebuild so weight slider stays in sync
-  // ── Weight (kg) slider ──────────────────────────────
+  inner.innerHTML='';
+
+  // ── VIEWPORT CONTROLS ──────────────────────────────
+  const vpdiv=document.createElement('div');vpdiv.className='dbg-group';
+  vpdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Viewport Position &amp; Scale</strong>
+  <div style="font-size:.65rem;color:var(--ink3);margin:4px 0 6px">Adjust to frame the character. Record values to lock permanently.</div>`;
+
+  function makeVpSlider(label,min,max,step,getVal,setVal){
+    const row=document.createElement('div');row.style.cssText='margin-bottom:6px;';
+    const valSpan=document.createElement('span');
+    valSpan.style.cssText='font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--acc);margin-left:6px;';
+    valSpan.textContent=getVal();
+    const lb=document.createElement('label');
+    lb.style.cssText='font-size:.68rem;color:var(--ink3);display:block;margin-bottom:2px;';
+    lb.textContent=label;
+    lb.appendChild(valSpan);
+    const sl=document.createElement('input');
+    sl.type='range';sl.min=min;sl.max=max;sl.step=step;sl.value=getVal();
+    sl.style.cssText='width:100%;accent-color:var(--acc);';
+    sl.oninput=()=>{setVal(parseFloat(sl.value));valSpan.textContent=getVal();applyViewportTransform();};
+    row.appendChild(lb);row.appendChild(sl);
+    return row;
+  }
+
+  vpdiv.appendChild(makeVpSlider('Scale',0.5,3.0,0.01,()=>_vpScale.toFixed(2),v=>_vpScale=v));
+  vpdiv.appendChild(makeVpSlider('Translate X (px)',-200,100,1,()=>_vpTx,v=>_vpTx=v));
+  vpdiv.appendChild(makeVpSlider('Translate Y (px)',-200,100,1,()=>_vpTy,v=>_vpTy=v));
+
+  const copyBtn=document.createElement('button');
+  copyBtn.textContent='📋 Copy current values';
+  copyBtn.style.cssText='font-size:.7rem;padding:4px 10px;border:1px solid var(--line);background:var(--bg3);color:var(--ink2);cursor:pointer;width:100%;margin-top:4px;';
+  copyBtn.onclick=()=>{
+    const txt=`scale:${_vpScale.toFixed(2)}, tx:${_vpTx}px, ty:${_vpTy}px`;
+    navigator.clipboard?.writeText(txt).then(()=>toast('Copied: '+txt)).catch(()=>toast(txt));
+  };
+  vpdiv.appendChild(copyBtn);
+  inner.appendChild(vpdiv);
+
+  // ── CALIBRATION PRESETS ────────────────────────────
+  const cpdiv=document.createElement('div');cpdiv.className='dbg-group';
+  cpdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Calibration Presets</strong>
+  <div style="font-size:.65rem;color:var(--ink3);margin:4px 0 6px">Click each preset and report: estimated visual weight, and what the measurements should be. Used to calibrate the formula.</div>`;
+
+  const calGrid=document.createElement('div');
+  calGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:5px;';
+
+  DBG_CAL_PRESETS.forEach((p,i)=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='font-size:.65rem;padding:6px 4px;border:1px solid var(--line);background:var(--bg2);color:var(--ink2);cursor:pointer;text-align:center;line-height:1.3;';
+    btn.innerHTML=`<strong>${p.name.split('—')[0]}</strong><br><span style="color:var(--ink3)">${p.desc}</span>`;
+    btn.onclick=()=>{
+      applyCalPreset(p);
+      // Show readout
+      const w=calcWeight(),bmi=calcBMI();
+      const info=`belly:${p.s.belly} arm:${p.s.arm} butt:${p.s.butt} thighs:${p.s.thighs} breast:${p.s.breast}
+→ ${w.toFixed(1)}kg BMI:${bmi.toFixed(1)} bust:${calcBust().toFixed(0)}cm waist:${calcWaist().toFixed(0)}cm hips:${calcHips().toFixed(0)}cm bra:${calcBraSize()}`;
+      toast(p.name);
+      // Also update the readout area
+      const ro=inner.querySelector('#cal-readout');
+      if(ro){
+        ro.textContent=`${p.name}: ${p.desc}\nStages: belly=${p.s.belly} arm=${p.s.arm} butt=${p.s.butt} thighs=${p.s.thighs} breast=${p.s.breast}\nCalculated: ${w.toFixed(1)}kg | BMI ${bmi.toFixed(1)} | bust ${calcBust().toFixed(0)}cm | waist ${calcWaist().toFixed(0)}cm | hips ${calcHips().toFixed(0)}cm | bra ${calcBraSize()}`;
+      }
+    };
+    calGrid.appendChild(btn);
+  });
+  cpdiv.appendChild(calGrid);
+
+  const readout=document.createElement('pre');
+  readout.id='cal-readout';
+  readout.style.cssText='font-size:.63rem;color:var(--ink3);margin-top:8px;line-height:1.5;white-space:pre-wrap;font-family:"IBM Plex Mono",monospace;background:var(--bg3);padding:8px;';
+  readout.textContent='← Click a preset to see its calculated measurements here.';
+  cpdiv.appendChild(readout);
+  inner.appendChild(cpdiv);
+
+  // ── WEIGHT SLIDER ──────────────────────────────────
   const wdiv=document.createElement('div');wdiv.className='dbg-group';
   const currentKg=Math.round(calcWeight());
-  const minKg=Math.round(38); // lean preset target
-  const maxKg=Math.round(200); // heavy+ target
-  wdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Weight</strong>`;
+  const minKg=35, maxKg=220;
+  wdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Weight (distribute evenly)</strong>`;
   const wValSpan=document.createElement('span');
   wValSpan.style.cssText='font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink2);margin-left:8px;';
   wValSpan.textContent=currentKg+'kg';
@@ -4524,12 +4637,10 @@ function buildDebug(){
   const wLb=document.createElement('label');wLb.textContent=`kg (${minKg}–${maxKg})`;
   const wSl=document.createElement('input');
   wSl.type='range';wSl.min=minKg;wSl.max=maxKg;wSl.step=1;wSl.value=currentKg;
-  wSl.style.width='100%';wSl.style.accentColor='var(--acc)';
+  wSl.style.cssText='width:100%;accent-color:var(--acc);';
   wSl.oninput=()=>{
     const targetKg=parseInt(wSl.value);
     wValSpan.textContent=targetKg+'kg';
-    // Convert target kg to a ratio across weight parts
-    // KG = KG_BASE + sum*KG_PER_UNIT => sum = (KG - KG_BASE)/KG_PER_UNIT
     const targetSum=Math.round((targetKg-KG_BASE)/KG_PER_UNIT);
     const PART_MAXES={belly:STAGE_MAX.belly,arm:STAGE_MAX.arm,butt:STAGE_MAX.butt,thighs:STAGE_MAX.thighs,breast:STAGE_MAX.breast};
     const totalMax=Object.values(PART_MAXES).reduce((a,b)=>a+b,0);
@@ -4538,7 +4649,6 @@ function buildDebug(){
       S[p].stage=Math.max(1,Math.min(STAGE_MAX[p],Math.round(targetSum*frac)));
     }
     renderCharacter();
-    // sync all stage sliders in debug panel
     inner.querySelectorAll('[data-dbg-part]').forEach(el=>{
       const pt=el.dataset.dbgPart;
       if(pt) el.value=S[pt].stage;
@@ -4546,7 +4656,8 @@ function buildDebug(){
   };
   wLb.appendChild(wSl);wdiv.appendChild(wLb);
   inner.appendChild(wdiv);
-  // ── Per-part sliders ───────────────────────────────
+
+  // ── PER-PART SLIDERS ───────────────────────────────
   for(const part of PARTS){
     const d=document.createElement('div');d.className='dbg-group';
     d.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">${part}</strong>`;
@@ -4560,17 +4671,28 @@ function buildDebug(){
     }
     const max=STAGE_MAX[part];
     const sl=document.createElement('input');
-    sl.type="range";sl.min=1;sl.max=max;sl.step=part==="thighs"?4:1;sl.value=S[part].stage;
+    sl.type="range";sl.min=1;sl.max=max;sl.step=1; // step=1 for all parts, including thighs now fixed
+    sl.value=S[part].stage;
     sl.dataset.dbgPart=part;
     sl.oninput=()=>{S[part].stage=parseInt(sl.value);renderCharacter();};
-    const lb=document.createElement('label');lb.textContent=`Stage (1–${max})`;lb.appendChild(sl);d.appendChild(lb);
+    const valSpan=document.createElement('span');
+    valSpan.style.cssText='font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--acc);margin-left:6px;';
+    valSpan.textContent=S[part].stage;
+    sl.addEventListener('input',()=>valSpan.textContent=sl.value);
+    const lb=document.createElement('label');
+    lb.style.cssText='font-size:.68rem;color:var(--ink3);display:block;margin-bottom:2px;';
+    lb.innerHTML=`Stage (1–${max})`;
+    lb.appendChild(valSpan);
+    lb.appendChild(sl);
+    d.appendChild(lb);
     inner.appendChild(d);
   }
 }
+
 function toggleDebug(){
   const ov=document.getElementById('dbg-overlay');
   if(ov.style.display==="block"){ov.style.display="none";}
-  else{buildDebug();ov.style.display="block";}
+  else{buildDebug();applyViewportTransform();ov.style.display="block";}
 }
 
 // ═══════════════════════════════════════════════════════
