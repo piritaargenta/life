@@ -244,55 +244,26 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
   background:var(--bg2);
   border-bottom:1px solid var(--line);
   overflow:hidden;
-  cursor:zoom-in;
   -webkit-tap-highlight-color:transparent;
+  /* No zoom cursor — tap-to-zoom removed */
 }
-/* Default crop: scale 1.1 to fill 300px, translate to center character and cut feet.
-   These values are controlled via CSS custom props so debug sliders can adjust them live. */
+/* Locked viewport transform (calibrated: Scale 1.5, TX -90, TY -10) */
 #viewport-wrap{
-  --vp-scale:1.10;
-  --vp-tx:-36px;
-  --vp-ty:-18px;
+  --vp-scale:1.5;
+  --vp-tx:-90px;
+  --vp-ty:-10px;
 }
 #characterCanvas{
   position:absolute;
   width:512px;height:512px;
   transform:scale(var(--vp-scale)) translate(var(--vp-tx),var(--vp-ty));
   transform-origin:top left;
+  image-rendering:-webkit-optimize-contrast; /* sharper on Webkit without pixelation */
   image-rendering:auto;
 }
-#vp-tap-hint{
-  position:absolute;bottom:8px;right:8px;z-index:6;pointer-events:none;
-  background:rgba(0,0,0,.5);color:#fff;font-size:.58rem;
-  padding:2px 7px;opacity:.5;transition:opacity .3s;
-}
-#viewport-wrap:hover #vp-tap-hint{opacity:.9;}
-/* FULLSCREEN ZOOM */
-#vp-zoom{
-  display:none;position:fixed;inset:0;z-index:900;
-  background:rgba(0,0,0,.92);
-  align-items:center;justify-content:center;
-  cursor:zoom-out;
-}
-#vp-zoom.active{display:flex;}
-#vp-zoom-inner{
-  position:relative;
-  width:min(92vw,600px);height:min(92vw,600px);
-  overflow:hidden;
-}
-#vp-zoom-inner canvas{
-  position:absolute;width:512px;height:512px;
-  transform:scale(2.174) translate(-40px,-10px);
-  transform-origin:top left;
-  image-rendering:auto;
-}
-#vp-zoom-close{
-  position:absolute;top:14px;right:14px;
-  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
-  color:#fff;font-size:.72rem;padding:5px 12px;cursor:pointer;
-  font-family:'IBM Plex Sans',sans-serif;letter-spacing:.06em;z-index:901;
-}
-#vp-zoom-close:hover{background:rgba(255,255,255,.2);}
+#vp-tap-hint{ display:none; }
+/* Zoom overlay kept but inactive — removal of openZoom() call means it won't trigger */
+#vp-zoom{ display:none!important; }
 #canvas-fade{
   position:absolute;inset:0;
   background:var(--bg2);
@@ -438,10 +409,44 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   /* Grid: single column */
   #grid{display:flex;flex-direction:column;height:auto;overflow:visible;}
   #col-left{border-right:none;border-bottom:1px solid var(--line);width:100%;}
-  #viewport-wrap{width:100%;height:56vw;max-height:260px;}
-  #characterCanvas{
-    transform:scale(calc(100vw / 512 * var(--vp-scale, 1.10))) translate(var(--vp-tx,-36px),var(--vp-ty,-18px));
+
+  /* Mobile viewport: taller to show more character, no blank sides */
+  /* Scale: at locked vp-scale=1.5, the 512px canvas covers 512*1.5=768px
+     but viewport is 100vw wide. The character occupies roughly x:44-320 of 512.
+     Character width at scale 1.5: (320-44)*1.5=414px. With tx=-90, left edge at:
+     (44-0)*1.5 + (-90) = 66-90 = -24px (slight trim on left, correct).
+     On mobile 390px screen, character fills ~414px → slight left bleed → use overflow:hidden
+     Height at scale 1.5 showing from y=25 (after ty=-10): 512*1.5 = 768px canvas height.
+     We show top ~430px of that → viewport-wrap height = 72vw feels right. */
+  #viewport-wrap{
+    width:100%;
+    height:72vw;
+    max-height:380px;
+    min-height:220px;
+    --vp-scale:1.5;
+    --vp-tx:-90px;
+    --vp-ty:-10px;
   }
+  #characterCanvas{
+    /* Use same locked transform — it works for mobile too since we keep same scale */
+    transform:scale(var(--vp-scale)) translate(var(--vp-tx),var(--vp-ty));
+  }
+
+  /* Mobile quick-action strip below character — visible key stats */
+  #mob-quick-strip{
+    display:flex;gap:0;border-bottom:1px solid var(--line);
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;background:var(--panel);flex-shrink:0;
+  }
+  #mob-quick-strip::-webkit-scrollbar{display:none;}
+  .mqbtn{
+    flex:0 0 auto;padding:10px 14px;
+    border-right:1px solid var(--line);border:none;border-right:1px solid var(--line);
+    background:var(--panel);color:var(--ink2);font-size:.78rem;
+    cursor:pointer;white-space:nowrap;touch-action:manipulation;
+  }
+  .mqbtn:active{background:var(--bg3);}
+  .mqbtn span{display:block;font-size:.6rem;color:var(--ink3);}
 
   /* Left tabs */
   .ltabs{gap:0;}
@@ -985,18 +990,20 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   <div id="grid">
     <!-- LEFT -->
     <div id="col-left">
-      <div id="viewport-wrap" onclick="openZoom()" ontouchend="openZoom()">
+      <div id="viewport-wrap">
         <div id="vp-loader"><div class="spin"></div></div>
         <div id="canvas-fade"></div>
         <canvas id="characterCanvas" width="512" height="512"></canvas>
-        <div id="vp-tap-hint">tap to zoom</div>
       </div>
-      <!-- ZOOM OVERLAY -->
-      <div id="vp-zoom" onclick="closeZoom()">
-        <button id="vp-zoom-close" onclick="event.stopPropagation();closeZoom()">✕ Close</button>
-        <div id="vp-zoom-inner">
-          <canvas id="zoomCanvas" width="512" height="512"></canvas>
-        </div>
+
+      <!-- MOBILE QUICK-ACTION STRIP (hidden on desktop via CSS) -->
+      <div id="mob-quick-strip" style="display:none">
+        <button class="mqbtn" onclick="openJobMenu()">💼 <span id="mqs-job">Work</span></button>
+        <button class="mqbtn" onclick="openGroceryMenu()">🛒 <span id="mqs-pantry">Food</span></button>
+        <button class="mqbtn" onclick="openHousingMenu()">🏠 <span id="mqs-rent">Home</span></button>
+        <button class="mqbtn" onclick="openBudgetMenu()">💰 <span id="mqs-savings">Budget</span></button>
+        <button class="mqbtn" onclick="openRelationshipsMenu()">💌 <span>Relations</span></button>
+        <button class="mqbtn" onclick="openHobbyMenu()">🎨 <span>Hobby</span></button>
       </div>
 
       <div class="ltabs">
@@ -1156,13 +1163,13 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
 //  CONSTANTS
 // ═══════════════════════════════════════════════════════
 const H = 160; // height cm fixed
-// Weight sum for each preset (belly+arm+butt+thighs+breast stages):
-// lean:35+10+30+9+20=104, slim:60+20+60+21+50=211, average:135+30+90+41+75=371, chubby:268+50+120+81+110=629, heavy:470+90+180+120+160=1020
-// Target weights: lean~38kg, slim~55kg, average~72kg, chubby~95kg, heavy~150kg (visually calibrated)
-// KG = KG_BASE + sum * KG_PER_UNIT => solve for two anchor points (lean & heavy)
-// 38 = KG_BASE + 104*KPU ; 150 = KG_BASE + 1020*KPU => 112 = 916*KPU => KPU=0.1223
-const KG_PER_UNIT = 112 / 916; // ~0.1223 kg per stage-sum unit
-const KG_BASE     = 38 - 104 * KG_PER_UNIT; // anchored at lean preset
+
+// ── Weight formula (fitted to 10 visual calibration presets + MAX) ──
+// kg = KG_A + KG_B * (sum of all WEIGHT_PARTS stages)^KG_C
+// Calibration anchors: P1(sum=56)→38kg … P8(sum=690)→200kg … MAX(sum=1371)→600kg
+const KG_A = 36.27;
+const KG_B = 0.001162;
+const KG_C = 1.8132;
 const PARTS = ["body","belly","arm","butt","thighs","breast","hair"];
 const BELLY_V = ["Belly","Belly1","Belly2","Belly3","Belly4"];
 const HAIR_V  = ["HairTied","HairLoose"];
@@ -1534,13 +1541,15 @@ async function renderCharacter(animate=true){
     await new Promise(r=>setTimeout(r,150));
   }
 
-  // ── Offscreen canvas: draw all sprite layers in order ──
+  // ── Render at 2× resolution for supersampling antialiasing ──
+  // Drawing at 1024×1024 then scaling down to 512×512 gives natural 2x MSAA.
+  const SSAA = 2;
   const off=document.createElement('canvas');
-  off.width=off.height=512;
+  off.width=off.height=512*SSAA;
   const offCtx=off.getContext('2d');
-  // Disable pixellation on the offscreen canvas
   offCtx.imageSmoothingEnabled=true;
   offCtx.imageSmoothingQuality='high';
+  offCtx.scale(SSAA, SSAA); // draw at 2× coords
 
   for(const part of PARTS){
     const folder=getFolder(part);
@@ -1550,24 +1559,22 @@ async function renderCharacter(animate=true){
     try{const img=await loadImg(src);offCtx.drawImage(img,x,y);}catch(e){}
   }
 
-  // ── Main canvas: glow pass then clean pass ──
-  // The glow is a soft white outline applied to the whole composited sprite.
-  // We draw it twice: once with shadow (creates glow outline), once sharp on top.
+  // ── Composite onto main 512×512 canvas (downscaling = natural AA) ──
   ctx.clearRect(0,0,512,512);
   ctx.imageSmoothingEnabled=true;
   ctx.imageSmoothingQuality='high';
 
-  // Glow pass — very subtle, just enough to separate character from background
-  ctx.globalAlpha=0.6;
-  ctx.shadowColor='rgba(255,255,255,0.9)';
-  ctx.shadowBlur=5;
-  ctx.drawImage(off,0,0);
+  // Soft glow outline pass
+  ctx.globalAlpha=0.55;
+  ctx.shadowColor='rgba(255,255,255,0.85)';
+  ctx.shadowBlur=4;
+  ctx.drawImage(off, 0,0, 512*SSAA,512*SSAA, 0,0, 512,512);
 
-  // Clean sharp pass on top
+  // Clean sharp pass on top (downscaling from 2× gives smooth edges)
   ctx.globalAlpha=1;
   ctx.shadowColor='transparent';
   ctx.shadowBlur=0;
-  ctx.drawImage(off,0,0);
+  ctx.drawImage(off, 0,0, 512*SSAA,512*SSAA, 0,0, 512,512);
 
   if(animate){
     const fade=document.getElementById('canvas-fade');
@@ -1587,47 +1594,68 @@ async function renderCharacter(animate=true){
 }
 
 // ═══════════════════════════════════════════════════════
-//  MEASUREMENTS & BODY CALCS
+//  MEASUREMENTS & BODY CALCS  (calibrated to visual presets)
 // ═══════════════════════════════════════════════════════
 function calcWeight(){
-  const sum=WEIGHT_PARTS.reduce((a,p)=>a+S[p].stage,0);
-  return Math.max(35, KG_BASE+sum*KG_PER_UNIT);
+  const sum = WEIGHT_PARTS.reduce((a,p)=>a+S[p].stage, 0);
+  return Math.max(30, KG_A + KG_B * Math.pow(sum, KG_C));
 }
-function calcWaist(){return 50+(S.belly.stage-1)/250*250;}
-// Band (underbust/ribcage circumference) is determined by belly/torso size
-function calcBand(){return Math.round(60 + Math.pow(S.belly.stage/251,0.6)*90);}
-// Cup projection is determined by breast stage — mapped to cup difference over band
-function calcCupDiff(){return Math.pow(S.breast.stage/301,0.75)*30;} // 0-30cm cup diff
-// Bust = band + cup projection (approximate full bust circumference)
-function calcBust(){return calcBand() + calcCupDiff();}
-function calcHips(){return 75+Math.pow(S.butt.stage/351,0.75)*225;}
-function calcBMI(){return calcWeight()/(H/100)**2;}
+// Waist circumference — driven by belly stage (visceral/abdominal fat)
+// P1(belly=4)→50cm, P5(belly=35)→87cm, P8(belly=150)→200cm, MAX(belly=251)→268cm
+function calcWaist(){
+  return 41.5 + 227.4 * Math.pow(S.belly.stage / 251, 0.825);
+}
+// Band (underbust / ribcage circumference) — driven by belly/body mass
+// P1(belly=4)→52cm, P5(belly=35)→74cm, P8(belly=150)→112cm, MAX(belly=251)→134cm
+function calcBand(){
+  return Math.round(41.9 + 92.6 * Math.pow(S.belly.stage / 251, 0.538));
+}
+// Cup projection (added to band to get full bust circumference)
+// Quadratic: low breast stages → small projection; extreme stages → enormous
+// P1(breast=12)→5cm (A), P3(breast=45)→22cm (F/G), P5(breast=75)→41cm (K/L), P10(breast=250)→228cm (ZZZZ)
+function calcCupDiff(){
+  const b = S.breast.stage;
+  return 0.3917 * b + 0.6265 * (b * b / 301);
+}
+// Full bust circumference
+function calcBust(){ return calcBand() + calcCupDiff(); }
+// Hip circumference — driven by butt stage
+// P1(butt=25)→68cm, P2(butt=60)→89cm, P9(butt=220)→222cm, MAX(butt=351)→352cm
+function calcHips(){ return 57.0 + 295.4 * Math.pow(S.butt.stage / 351, 1.253); }
+function calcBMI(){ return calcWeight() / (H/100)**2; }
 function bmiCat(bmi){
   if(bmi<18.5)return{l:"Underweight",c:"bmi-u"};
   if(bmi<25)  return{l:"Normal",c:"bmi-n"};
   if(bmi<30)  return{l:"Overweight",c:"bmi-ow"};
   if(bmi<35)  return{l:"Obese I",c:"bmi-ob"};
   if(bmi<40)  return{l:"Obese II",c:"bmi-ob"};
-  return            {l:"Morbidly Obese",c:"bmi-mo"};
+  if(bmi<50)  return{l:"Morbidly Obese",c:"bmi-mo"};
+  return            {l:"Super Obese",c:"bmi-mo"};
 }
 function calcBraSize(){
-  const band=calcBand();
-  const cupDiff=calcCupDiff();
-  // Round band to nearest even number (UK sizing convention)
-  const bandSize=Math.max(28, Math.round(band/2)*2);
-  const cups=["AA","A","B","C","D","DD","E","F","FF","G","GG","H","HH","J","JJ","K","KK"];
-  const cupIdx=Math.max(0,Math.min(cups.length-1,Math.floor(cupDiff/2.5)));
+  const band = calcBand();
+  const cupDiff = calcCupDiff();
+  // Band: round to nearest even number (UK convention), minimum 28
+  const bandSize = Math.max(28, Math.round(band / 2) * 2);
+  // Cup alphabet — each letter = 2.5cm projection above band
+  // Extended to cover extreme sizes
+  const cups = [
+    "AA","A","B","C","D","DD","E","F","FF","G","GG","H","HH","J","JJ","K","KK",
+    "L","LL","M","MM","N","NN","O","OO","P","Q","R","S","T","U","V","W","X","Y","Z",
+    "ZZ","ZZZ","ZZZZ","ZZZZZ"
+  ];
+  // AA starts at <2.5cm, A at 2.5-5cm, B at 5-7.5cm, etc.
+  const cupIdx = Math.max(0, Math.min(cups.length - 1, Math.floor(cupDiff / 2.5)));
   return `${bandSize}${cups[cupIdx]}`;
 }
 function updateMeasurements(){
-  const w=calcWeight(),bmi=calcBMI(),cat=bmiCat(bmi);
-  setEl('m-weight',`${w.toFixed(1)}<span class="meas-sub">kg</span>`);
-  setEl('m-bmi',`${bmi.toFixed(1)}<span class="bmi-tag ${cat.c}">${cat.l}</span>`);
-  setEl('m-waist',`${calcWaist().toFixed(0)}<span class="meas-sub">cm</span>`);
-  // Bust shows full circumference (band + projection)
-  setEl('m-bust',`${calcBust().toFixed(0)}<span class="meas-sub">cm</span>`);
-  setEl('m-hips',`${calcHips().toFixed(0)}<span class="meas-sub">cm</span>`);
-  setEl('m-bra',calcBraSize());
+  const w=calcWeight(), bmi=calcBMI(), cat=bmiCat(bmi);
+  setEl('m-weight', `${w.toFixed(1)}<span class="meas-sub">kg</span>`);
+  setEl('m-bmi',    `${bmi.toFixed(1)}<span class="bmi-tag ${cat.c}">${cat.l}</span>`);
+  setEl('m-waist',  `${calcWaist().toFixed(0)}<span class="meas-sub">cm</span>`);
+  setEl('m-bust',   `${calcBust().toFixed(0)}<span class="meas-sub">cm</span>`);
+  setEl('m-hips',   `${calcHips().toFixed(0)}<span class="meas-sub">cm</span>`);
+  setEl('m-bra',    calcBraSize());
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1811,6 +1839,24 @@ function updateStats(){
   if(document.getElementById('mob-drawer')&&document.getElementById('mob-drawer').classList.contains('open')){
     updateMobDrawer();
   }
+  // Mobile quick strip
+  updateMobQuickStrip();
+}
+
+function updateMobQuickStrip(){
+  const strip = document.getElementById('mob-quick-strip');
+  if(!strip) return;
+  const isMobile = window.innerWidth <= 700;
+  strip.style.display = isMobile ? 'flex' : 'none';
+  // Update dynamic labels
+  const jobEl = document.getElementById('mqs-job');
+  if(jobEl) jobEl.textContent = G.salary>0 ? `€${G.salary}/mo` : 'Find work';
+  const pantryEl = document.getElementById('mqs-pantry');
+  if(pantryEl) pantryEl.textContent = G.pantry&&G.pantry.servings>0 ? `${G.pantry.servings} meals` : 'Empty!';
+  const rentEl = document.getElementById('mqs-rent');
+  if(rentEl) rentEl.textContent = `€${G.rent}/mo`;
+  const savEl = document.getElementById('mqs-savings');
+  if(savEl) savEl.textContent = `€${Math.round(G.savings).toLocaleString()}`;
 }
 
 function renderRelationships(){
@@ -4516,7 +4562,7 @@ function toggleTheme(){
 // ═══════════════════════════════════════════════════════
 
 // Store current viewport transform so it persists between buildDebug calls
-let _vpScale=1.10, _vpTx=-36, _vpTy=-18;
+let _vpScale=1.5, _vpTx=-90, _vpTy=-10;
 
 function applyViewportTransform(){
   const wrap=document.getElementById('viewport-wrap');
@@ -4628,7 +4674,7 @@ function buildDebug(){
   // ── WEIGHT SLIDER ──────────────────────────────────
   const wdiv=document.createElement('div');wdiv.className='dbg-group';
   const currentKg=Math.round(calcWeight());
-  const minKg=35, maxKg=220;
+  const minKg=30, maxKg=620;
   wdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Weight (distribute evenly)</strong>`;
   const wValSpan=document.createElement('span');
   wValSpan.style.cssText='font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink2);margin-left:8px;';
@@ -4641,7 +4687,8 @@ function buildDebug(){
   wSl.oninput=()=>{
     const targetKg=parseInt(wSl.value);
     wValSpan.textContent=targetKg+'kg';
-    const targetSum=Math.round((targetKg-KG_BASE)/KG_PER_UNIT);
+    // Inverse of KG = KG_A + KG_B * sum^KG_C => sum = ((KG-KG_A)/KG_B)^(1/KG_C)
+    const targetSum = Math.max(1, Math.round(Math.pow(Math.max(0.001,(targetKg-KG_A)/KG_B), 1/KG_C)));
     const PART_MAXES={belly:STAGE_MAX.belly,arm:STAGE_MAX.arm,butt:STAGE_MAX.butt,thighs:STAGE_MAX.thighs,breast:STAGE_MAX.breast};
     const totalMax=Object.values(PART_MAXES).reduce((a,b)=>a+b,0);
     for(const p of WEIGHT_PARTS){
