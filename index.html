@@ -619,6 +619,38 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
 .a-btn.good{border-color:var(--green);color:var(--green);}
 .a-btn.good:hover:not([disabled]){background:#0a1a10;}
 
+/* Action menu — category dropdowns */
+.abar-cats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.acat-btn{
+  padding:5px 12px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--ink2);
+  font-size:.72rem;cursor:pointer;transition:all .15s;
+  position:relative;white-space:nowrap;
+}
+.acat-btn:hover,.acat-btn.open{border-color:var(--ink2);color:var(--ink);background:var(--bg3);}
+.acat-btn.open{border-bottom-color:var(--panel);z-index:21;}
+.acat-drop{
+  display:none;position:absolute;top:100%;left:-1px;min-width:200px;
+  background:var(--panel);border:1px solid var(--line);
+  border-top:none;z-index:20;
+  box-shadow:0 8px 24px var(--shadow);
+}
+.acat-btn.open .acat-drop{display:block;}
+.acat-drop button{
+  display:block;width:100%;text-align:left;
+  padding:8px 14px;border:none;border-bottom:1px solid var(--line);
+  background:transparent;color:var(--ink2);
+  font-size:.78rem;font-family:'IBM Plex Sans',sans-serif;
+  cursor:pointer;transition:background .12s,color .12s;
+}
+.acat-drop button:last-child{border-bottom:none;}
+.acat-drop button:hover:not([disabled]){background:var(--bg3);color:var(--ink);}
+.acat-drop button[disabled]{opacity:.35;cursor:default;}
+.acat-drop button.good{color:var(--green);}
+.acat-drop button.bad{color:var(--red);}
+.acat-drop button.warn{color:var(--amber);}
+.acat-drop button.pri{color:var(--blue);}
+
 /* ═══════════════════════════════════════════════════
    RIGHT COLUMN — stats
 ═══════════════════════════════════════════════════ */
@@ -992,7 +1024,7 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
         <button class="wplan-commit" id="wplan-commit-btn" onclick="commitWeek()" disabled>End week →</button>
       </div>
       <div id="action-bar">
-        <div class="abar-label">What do you do?</div>
+        <div class="abar-label">Plan your week — pick a category</div>
         <div class="abar-grid" id="abar-grid"></div>
       </div>
     </div>
@@ -1853,6 +1885,8 @@ function passiveWeeklyEffects(){
   G.weeklyDairy=0;G.weeklyAlcohol=0;G.weeklyCarbs=0;
   G.weeklyMeat=0;G.weeklyJunk=0;G.weeklyHealthy=0;
   G.gymVisitsPerWeek=0;
+  // Rotate job listings weekly
+  G.weeklyJobPool=null;
 
   // Pantry drain + auto-restock if default set
   passiveGroceryTick();
@@ -2863,52 +2897,49 @@ function beginSurrogacy(fee){
   mainMenuActions();
 }
 
-function openJobMenu(){
+function getWeeklyJobPool(){
+  if(G.weeklyJobPool && G.weeklyJobPool.length) return G.weeklyJobPool;
   const available=JOBS.filter(j=>{
     const reqs=Object.entries(j.req);
-    return reqs.every(([sk,min])=>(G.skills[sk]||0)>=min);
+    return reqs.every(([sk,min])=>(G.skills[sk]||0)>=min) && j.title!==G.job;
   });
-  // Sort by salary desc, show current job first
-  available.sort((a,b)=>b.sal-a.sal);
-  const categories = [...new Set(available.map(j=>j.type))];
-  
-  const currentTier = G.salary>0 ? (JOBS.find(j=>j.title===G.job)||{tier:-1}).tier : -1;
-  const upgrades = available.filter(j=>j.sal>G.salary);
-  const allJobs = available.slice(0, 8);
-  
-  storyEntry("Job listings",`${available.length} positions you qualify for. ${upgrades.length>0?`${upgrades.length} would be a pay increase.`:""}`);
+  // Shuffle then pick 2-3 listings
+  const shuffled=available.slice().sort(()=>Math.random()-0.5);
+  const count = 2 + Math.floor(Math.random()*2); // 2 or 3
+  G.weeklyJobPool=shuffled.slice(0, count);
+  return G.weeklyJobPool;
+}
+
+function openJobMenu(){
+  const currentJob = G.salary>0 ? JOBS.find(j=>j.title===G.job) : null;
+  const pool = getWeeklyJobPool();
+  const upgrades = pool.filter(j=>j.sal>G.salary);
+  const surrogacyAvail = !G.pregnant && !G.surrogacyActive && G.age>=21 && G.age<=42;
+
+  storyEntry(
+    G.salary>0 ? `Current job: ${G.job}` : "Job market",
+    G.salary>0
+      ? `You earn €${G.salary.toLocaleString()}/mo. ${pool.length} new listing${pool.length!==1?"s":""} available this week. Check back next week for different postings.`
+      : `${pool.length} position${pool.length!==1?"s":""} available this week. New listings appear each week.`
+  );
   setActions([
-    ...allJobs.map(j=>({
+    ...(currentJob?[{label:`💼 ${currentJob.title} — current (€${currentJob.sal}/mo)`,cls:"pri",fn:()=>{ storyEntry("Your current role",`${currentJob.desc}`); mainMenuActions(); }}]:[]),
+    ...pool.map(j=>({
       label:`${j.active?"🏃":"💺"} ${j.title} — €${j.sal.toLocaleString()}/mo`,
-      cls:j.sal>G.salary?"good":j.title===G.job?"pri":undefined,
+      cls:j.sal>G.salary?"good":undefined,
       fn:()=>takeJob(j)
     })),
-    available.length>8?{label:`+${available.length-8} more jobs…`,fn:()=>openJobMenuExpanded()}:null,
+    surrogacyAvail?{label:"🤰 Surrogacy — €18k–30k compensation",fn:()=>openSurrogacyMenu()}:null,
+    G.surrogacyActive?{label:"🤰 Surrogacy (active)",cls:"pri",fn:()=>openSurrogacyMenu()}:null,
     {label:"📚 Study / take a course",fn:()=>openStudyMenu()},
-    {label:"💼 Budget & finances",fn:()=>openBudgetMenu()},
     {label:"← Back",fn:()=>mainMenuActions()},
   ].filter(Boolean));
 }
-function openJobMenuExpanded(){
-  const available=JOBS.filter(j=>{
-    const reqs=Object.entries(j.req);
-    return reqs.every(([sk,min])=>(G.skills[sk]||0)>=min);
-  }).sort((a,b)=>b.sal-a.sal);
-  storyEntry("All available jobs","Every position you qualify for right now.");
-  setActions([
-    ...available.map(j=>({
-      label:`${j.active?"🏃":"💺"} ${j.title} — €${j.sal.toLocaleString()}/mo`,
-      cls:j.sal>G.salary?"good":j.title===G.job?"pri":undefined,
-      fn:()=>takeJob(j)
-    })),
-    {label:"← Back",fn:()=>openJobMenu()},
-  ]);
-}
 function takeJob(job){
-  G.job=job.title; G.salary=job.salary;
+  G.job=job.title; G.salary=job.sal;
   G.skills[job.type]=(G.skills[job.type]||0)+5;
   G.happy=clamp(G.happy+8);G.conf=clamp(G.conf+5);
-  storyEntry(`New job: ${job.title}`,`Starting salary €${job.salary}/mo. ${job.desc} ${job.active?"An active job — your body will reflect that over time.":"A desk job — don't let the sedentary lifestyle catch up with you."}`,[{type:"stat",label:"employed"}]);
+  storyEntry(`New job: ${job.title}`,`Starting salary €${job.sal.toLocaleString()}/mo. ${job.desc} ${job.active?"An active job — your body will reflect that over time.":"A desk job — don't let the sedentary lifestyle catch up with you."}`,[{type:"stat",label:"employed"}]);
   if(!job.active){
     // Sedentary warning — passive fat gain
     G.weeklyCalories=clamp(G.weeklyCalories+5);
@@ -3216,44 +3247,108 @@ function mainMenu(){
   mainMenuActions();
 }
 
+// Close all open category dropdowns
+function closeAllCatDrops(){
+  document.querySelectorAll('.acat-btn.open').forEach(b=>b.classList.remove('open'));
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.acat-btn')) closeAllCatDrops();
+});
+
 function mainMenuActions(){
   const hasJob = G.salary > 0;
   const pregnant = G.pregnant || G.surrogacyActive;
+  const grid = document.getElementById('abar-grid');
+  grid.innerHTML = '';
 
-  setActions([
-    // Food
-    {label:"🛒 Groceries",          fn:()=>openGroceryMenu()},
-    {label:"🍽 Eat out",            fn:()=>openEatOut()},
-    {label:"🍳 Cook at home",       fn:()=>queueActivity("🍳","cook at home", doHomeCook)},
-    // Exercise
-    !pregnant?{label:"🏋 Gym",      fn:()=>queueActivity("🏋","gym", doGymQ)}:null,
-    !pregnant?{label:"🏃 Run",      fn:()=>queueActivity("🏃","run", doRunQ)}:null,
-    {label:"🧘 Rest / yoga",        fn:()=>queueActivity("🧘","rest & yoga", doYoga)},
-    // Social
-    {label:"🍺 Night out",          fn:()=>openBarNight()},
-    {label:"💌 Relationships",      fn:()=>openRelationshipsMenu()},
-    {label:"👥 Friends",            fn:()=>openFriendsMenu()},
-    // Life
-    {label:"🚬 Smoking",            fn:()=>openSmokeMenu()},
-    {label:"📱 Social media",       fn:()=>openSocialMediaMenu()},
-    {label:"🎲 Gambling",           fn:()=>openGamblingMenu()},
-    {label:"✈ Travel / holiday",   fn:()=>openTravelMenu()},
-    {label:"🎨 Hobby",             fn:()=>openHobbyMenu()},
-    {label:"😴 Sleep habits",       fn:()=>openSleepMenu()},
-    // Career & finance
-    !hasJob?{label:"💼 Find work",  fn:()=>openJobMenu()}:null,
-    hasJob?{label:"💼 Career",      fn:()=>openJobMenu()}:null,
-    {label:"📚 Study",              fn:()=>openStudyMenu()},
-    {label:"💰 Budget & finances",  fn:()=>openBudgetMenu()},
-    {label:"🤰 Surrogacy",         fn:()=>openSurrogacyMenu()},
-    // Assets
-    {label:"🏠 Housing",            fn:()=>openHousingMenu()},
-    {label:"💉 Surgery",            fn:()=>openSurgeryMenu()},
-    // Time
-    weekQueue.length
-      ? {label:"⏩ End week →", cls:"pri", fn:()=>commitWeek()}
-      : {label:"⏩ Skip a week",          fn:()=>{advanceWeeks(1);renderCharacter();mainMenuActions();}},
-  ].filter(Boolean));
+  // Category definitions: [emoji, label, actions[]]
+  const CATS = [
+    {emoji:"🍽", label:"Food", acts:[
+      {label:"🛒 Groceries",       fn:()=>openGroceryMenu()},
+      {label:"🍽 Eat out",         fn:()=>openEatOut()},
+      {label:"🍳 Cook at home",    fn:()=>queueActivity("🍳","cook at home", doHomeCook)},
+    ]},
+    {emoji:"💪", label:"Exercise", acts:[
+      !pregnant?{label:"🏋 Gym",   fn:()=>queueActivity("🏋","gym", doGymQ)}:null,
+      !pregnant?{label:"🏃 Run",   fn:()=>queueActivity("🏃","run", doRunQ)}:null,
+      {label:"🧘 Rest / yoga",     fn:()=>queueActivity("🧘","rest & yoga", doYoga)},
+      {label:"🏋 Gym membership",  fn:()=>openGymMembershipMenu()},
+    ].filter(Boolean)},
+    {emoji:"👥", label:"Social", acts:[
+      {label:"🍺 Night out",       fn:()=>openBarNight()},
+      {label:"💌 Relationships",   fn:()=>openRelationshipsMenu()},
+      {label:"👥 Friends",         fn:()=>openFriendsMenu()},
+    ]},
+    {emoji:"🌿", label:"Lifestyle", acts:[
+      {label:"🚬 Smoking",         fn:()=>openSmokeMenu()},
+      {label:"📱 Social media",    fn:()=>openSocialMediaMenu()},
+      {label:"🎲 Gambling",        fn:()=>openGamblingMenu()},
+      {label:"✈ Travel",           fn:()=>openTravelMenu()},
+      {label:"🎨 Hobby",           fn:()=>openHobbyMenu()},
+      {label:"😴 Sleep habits",    fn:()=>openSleepMenu()},
+    ]},
+    {emoji:"💼", label:"Career", acts:[
+      {label: hasJob?"💼 Career & jobs":"💼 Find work",  fn:()=>openJobMenu()},
+      {label:"📚 Study",           fn:()=>openStudyMenu()},
+      {label:"💰 Budget",          fn:()=>openBudgetMenu()},
+    ]},
+    {emoji:"🏠", label:"Assets", acts:[
+      {label:"🏠 Housing",         fn:()=>openHousingMenu()},
+      {label:"💉 Surgery",         fn:()=>openSurgeryMenu()},
+    ]},
+  ];
+
+  // Build category dropdown buttons
+  const catsRow = document.createElement('div');
+  catsRow.className = 'abar-cats';
+
+  CATS.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'acat-btn';
+    btn.innerHTML = `${cat.emoji} ${cat.label} ▾`;
+
+    const drop = document.createElement('div');
+    drop.className = 'acat-drop';
+
+    cat.acts.forEach(act => {
+      if(!act) return;
+      const ab = document.createElement('button');
+      ab.textContent = act.label;
+      if(act.cls) ab.className = act.cls;
+      if(act.disabled) ab.disabled = true;
+      ab.onclick = e => { e.stopPropagation(); closeAllCatDrops(); act.fn(); };
+      drop.appendChild(ab);
+    });
+
+    btn.appendChild(drop);
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const wasOpen = btn.classList.contains('open');
+      closeAllCatDrops();
+      if(!wasOpen) btn.classList.add('open');
+    });
+    catsRow.appendChild(btn);
+  });
+
+  grid.appendChild(catsRow);
+
+  // Always-visible bottom row: week queue actions
+  const timeRow = document.createElement('div');
+  timeRow.style.cssText = 'display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;';
+
+  const endBtn = document.createElement('button');
+  if(weekQueue.length){
+    endBtn.className = 'a-btn pri';
+    endBtn.textContent = '⏩ End week →';
+    endBtn.onclick = ()=>commitWeek();
+  } else {
+    endBtn.className = 'a-btn';
+    endBtn.textContent = '⏩ Skip a week';
+    endBtn.onclick = ()=>{advanceWeeks(1);renderCharacter();mainMenuActions();};
+  }
+  timeRow.appendChild(endBtn);
+
+  grid.appendChild(timeRow);
   // Inject Free Will button into week-grid
   const wg = document.getElementById('week-grid');
   if(wg){
@@ -3787,35 +3882,65 @@ function openGymMembershipMenu(){
 // ═══════════════════════════════════════════════════════
 function openEatOut(){
   const pNote = pantryStatus()==="empty" ? " Your fridge is empty." : pantryStatus()==="low" ? ` Only ${G.pantry.servings} meals left at home.` : "";
-  storyEntry("Eating out",`You decide to eat out.${pNote} Where?`);
+  storyEntry("Eating out this week",`How many days this week do you want to eat out?${pNote} Each day out saves pantry stock but costs money.`);
   setActions([
-    {label:"🍔 Fast food",fn:()=>eatOut("fast food",8,"carb",8)},
-    {label:"🍕 Pizza place",fn:()=>eatOut("pizza",6,"carb",7)},
-    {label:"🍣 Japanese / sushi",fn:()=>eatOut("sushi",5,"balanced",3)},
-    {label:"🥗 Salad bar",fn:()=>eatOut("salad bar",4,"balanced",-1)},
-    {label:"🍛 Indian / curry",fn:()=>eatOut("curry house",5,"carb",5)},
-    {label:"🍷 Nice restaurant",fn:()=>eatOut("nice restaurant",10,"meat",4,20)},
-    {label:"🥞 All-you-can-eat buffet",fn:()=>eatOut("all-you-can-eat buffet",6,"balanced",12)},
+    {label:"1 day — treat yourself",fn:()=>planEatOut(1)},
+    {label:"2 days",fn:()=>planEatOut(2)},
+    {label:"3 days",fn:()=>planEatOut(3)},
+    {label:"4–5 days — mostly eating out",fn:()=>planEatOut(5)},
+    {label:"Every day — no cooking at all",fn:()=>planEatOut(7)},
     {label:"Back",fn:()=>mainMenuActions()},
   ]);
 }
+function planEatOut(days){
+  storyEntry("Where do you eat?","Pick the kind of place you'll be going this week.");
+  setActions([
+    {label:"🍔 Fast food",fn:()=>scheduleEatOut(days,"fast food",8,"carb",8)},
+    {label:"🍕 Pizza",fn:()=>scheduleEatOut(days,"pizza",6,"carb",7)},
+    {label:"🍣 Japanese / sushi",fn:()=>scheduleEatOut(days,"sushi",5,"balanced",3)},
+    {label:"🥗 Salad bar",fn:()=>scheduleEatOut(days,"salad bar",4,"balanced",-1)},
+    {label:"🍛 Indian / curry",fn:()=>scheduleEatOut(days,"curry house",5,"carb",5)},
+    {label:"🍷 Nice restaurant",fn:()=>scheduleEatOut(days,"nice restaurant",10,"meat",4,20)},
+    {label:"🥞 All-you-can-eat buffet",fn:()=>scheduleEatOut(days,"all-you-can-eat buffet",6,"balanced",12)},
+    {label:"← Back",fn:()=>openEatOut()},
+  ]);
+}
+function scheduleEatOut(days, place, happyGain, profile, fatPerDay, costPerMeal=12){
+  const totalCost = costPerMeal * days;
+  if(G.savings < totalCost * 0.5){
+    storyEntry("Short on money",`${days} days at ${place} would cost around €${totalCost} — you don't have enough. Eating at home instead.`,[{type:"bad",label:"can't afford it"}]);
+    doHomeCook(); mainMenuActions(); return;
+  }
+  G.savings -= totalCost;
+  // Less pantry drain on days you eat out
+  if(G.pantry) G.pantry.servings = Math.max(0, G.pantry.servings - Math.max(0, 7 - days));
+  const totalFat = fatPerDay * days * 0.6;
+  if(totalFat > 0) gainFat(totalFat, profile);
+  else if(totalFat < 0) loseFat(Math.abs(totalFat));
+  G.happy = clamp(G.happy + Math.min(happyGain * days * 0.4, 20));
+  G.weeklyJunk += days > 4 ? 40 : days > 2 ? 20 : 10;
+  const freq = days === 1 ? "one evening" : days <= 3 ? `${days} times` : days <= 5 ? "most days" : "every day";
+  storyEntry("Eating out",
+    `You eat at ${place} ${freq} this week. ${totalFat > 8 ? "The portions add up." : totalFat < 0 ? "Light and fresh." : "Decent food."} €${totalCost} spent, ${days} fewer meals needed from home.`,
+    [
+      totalFat > 4 ? {type:"gain",label:"+calories"} : {type:"stat",label:"enjoyable"},
+      {type:"bad", label:`−€${totalCost}`},
+    ]
+  );
+  mainMenuActions();
+}
 function eatOut(place, happyGain, profile, fatGain, cost=12){
+  // Single-meal version used by random events
   if(G.savings<cost){
-    storyEntry("Can't afford it",`Not enough for ${place}. ${pantryStatus()==="empty"?"Your fridge is also empty — you need to shop.":"You have food at home."}`,[{type:"bad",label:"no money"}]);
-    setActions([
-      {label:"🛒 Go shopping instead", fn:()=>openGroceryMenu()},
-      {label:"🍳 Cook what's at home",  fn:()=>{ doHomeCook(); mainMenuActions(); }},
-      {label:"Back",                     fn:()=>mainMenuActions()},
-    ]);
-    return;
+    storyEntry("Can't afford it",`Not enough for ${place}.`,[{type:"bad",label:"no money"}]);
+    mainMenuActions(); return;
   }
   G.savings-=cost;
   if(fatGain>0) gainFat(fatGain,profile);
   else if(fatGain<0) loseFat(Math.abs(fatGain));
   G.happy=clamp(G.happy+happyGain);
   G.weeklyJunk+=fatGain>4?30:10;
-  const pantryNote=pantryStatus()==="empty"?" (Nothing at home — this was necessary.)":"";
-  storyEntry("Eating out",`You go to ${place}. ${fatGain>6?"The portions are huge — you overdo it.":fatGain<0?"Light and fresh.":"A decent meal."}${pantryNote}`,[
+  storyEntry("Eating out",`You go to ${place}. ${fatGain>6?"The portions are huge.":fatGain<0?"Light and fresh.":"A decent meal."}`,[
     fatGain>4?{type:"gain",label:"+calories"}:{type:"stat",label:"enjoyable"},
   ]);
   mainMenuActions();
