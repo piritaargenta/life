@@ -247,11 +247,11 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
   -webkit-tap-highlight-color:transparent;
   /* No zoom cursor — tap-to-zoom removed */
 }
-/* Locked viewport transform (calibrated: Scale 1.5, TX -90, TY -10) */
+/* Locked viewport transform (calibrated: Scale 1.5, TX -90, TY +10) */
 #viewport-wrap{
   --vp-scale:1.5;
   --vp-tx:-90px;
-  --vp-ty:-10px;
+  --vp-ty:10px;
 }
 #characterCanvas{
   position:absolute;
@@ -948,6 +948,7 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
     <div class="tb-info" id="tb-week-info" style="font-size:.7rem;"></div>
     <div class="tb-date" id="tb-date">Week 1, 2007</div>
     <button class="tb-btn" id="btn-theme" onclick="toggleTheme()">☀ Light</button>
+    <button class="tb-btn" onclick="openSaveLoadMenu()" title="Save / Load game">💾</button>
     <button class="tb-btn" onclick="toggleDebug()">⚙ Debug</button>
     <button id="btn-hamburger" onclick="openMobDrawer()" aria-label="Menu" style="display:none">☰</button>
   </div>
@@ -963,6 +964,7 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   </div>
   <div class="mob-drawer-btn-row">
     <button class="mob-drawer-btn" onclick="closeMobDrawer();toggleTheme()" id="mob-btn-theme">☀ Light</button>
+    <button class="mob-drawer-btn" onclick="closeMobDrawer();openSaveLoadMenu()">💾 Save / Load</button>
     <button class="mob-drawer-btn" onclick="closeMobDrawer();toggleDebug()">⚙ Debug</button>
   </div>
   <div class="mob-drawer-section" id="mob-wellbeing-section">
@@ -1600,28 +1602,36 @@ function calcWeight(){
   const sum = WEIGHT_PARTS.reduce((a,p)=>a+S[p].stage, 0);
   return Math.max(30, KG_A + KG_B * Math.pow(sum, KG_C));
 }
-// Waist circumference — driven by belly stage (visceral/abdominal fat)
-// P1(belly=4)→50cm, P5(belly=35)→87cm, P8(belly=150)→200cm, MAX(belly=251)→268cm
+
+// Waist circumference — driven by belly stage
+// P1(4)→50cm  P5(35)→87cm  P8(150)→200cm  MAX(251)→268cm
 function calcWaist(){
   return 41.5 + 227.4 * Math.pow(S.belly.stage / 251, 0.825);
 }
-// Band (underbust / ribcage circumference) — driven by belly/body mass
-// P1(belly=4)→52cm, P5(belly=35)→74cm, P8(belly=150)→112cm, MAX(belly=251)→134cm
+
+// Underbust band circumference — driven by belly/body mass (ribcage girth)
+// Recalibrated: P1(4)→61cm  P5(35)→89cm  P7(80)→106cm  P8(150)→122cm  MAX(251)→138cm
 function calcBand(){
-  return Math.round(41.9 + 92.6 * Math.pow(S.belly.stage / 251, 0.538));
+  return Math.round(33.4 + 104.5 * Math.pow(S.belly.stage / 251, 0.321));
 }
-// Cup projection (added to band to get full bust circumference)
-// Quadratic: low breast stages → small projection; extreme stages → enormous
-// P1(breast=12)→5cm (A), P3(breast=45)→22cm (F/G), P5(breast=75)→41cm (K/L), P10(breast=250)→228cm (ZZZZ)
+
+// Cup projection (overbust minus underbust) — pure function of breast stage.
+// Near-linear at low stages (physiologically small), then accelerates rapidly.
+// breast=12 → ~2cm (A cup)   breast=90 → ~3.5cm (B/C cup)
+// breast=140 → ~41cm (K cup)  breast=250 → ~205cm (ZZZZ)  breast=301 → ~299cm
 function calcCupDiff(){
   const b = S.breast.stage;
-  return 0.3917 * b + 0.6265 * (b * b / 301);
+  if(b <= 100) return Math.max(0, 0.022 * b + 1.5);
+  return 0.26545 * Math.pow(b - 100, 1.321) + 6;
 }
-// Full bust circumference
+
+// Full bust circumference = underbust band + cup projection
 function calcBust(){ return calcBand() + calcCupDiff(); }
+
 // Hip circumference — driven by butt stage
-// P1(butt=25)→68cm, P2(butt=60)→89cm, P9(butt=220)→222cm, MAX(butt=351)→352cm
+// P1(25)→68cm  P2(60)→89cm  P9(220)→222cm  MAX(351)→352cm
 function calcHips(){ return 57.0 + 295.4 * Math.pow(S.butt.stage / 351, 1.253); }
+
 function calcBMI(){ return calcWeight() / (H/100)**2; }
 function bmiCat(bmi){
   if(bmi<18.5)return{l:"Underweight",c:"bmi-u"};
@@ -1632,22 +1642,22 @@ function bmiCat(bmi){
   if(bmi<50)  return{l:"Morbidly Obese",c:"bmi-mo"};
   return            {l:"Super Obese",c:"bmi-mo"};
 }
+
 function calcBraSize(){
-  const band = calcBand();
+  const band    = calcBand();
   const cupDiff = calcCupDiff();
-  // Band: round to nearest even number (UK convention), minimum 28
+  // Round band to nearest even number (UK convention), minimum 28
   const bandSize = Math.max(28, Math.round(band / 2) * 2);
-  // Cup alphabet — each letter = 2.5cm projection above band
-  // Extended to cover extreme sizes
+  // Extended cup alphabet — each step = 2.5cm projection above band
   const cups = [
     "AA","A","B","C","D","DD","E","F","FF","G","GG","H","HH","J","JJ","K","KK",
     "L","LL","M","MM","N","NN","O","OO","P","Q","R","S","T","U","V","W","X","Y","Z",
     "ZZ","ZZZ","ZZZZ","ZZZZZ"
   ];
-  // AA starts at <2.5cm, A at 2.5-5cm, B at 5-7.5cm, etc.
   const cupIdx = Math.max(0, Math.min(cups.length - 1, Math.floor(cupDiff / 2.5)));
   return `${bandSize}${cups[cupIdx]}`;
 }
+
 function updateMeasurements(){
   const w=calcWeight(), bmi=calcBMI(), cat=bmiCat(bmi);
   setEl('m-weight', `${w.toFixed(1)}<span class="meas-sub">kg</span>`);
@@ -1904,8 +1914,11 @@ function clamp(v,mn=0,mx=100){return Math.max(mn,Math.min(mx,v));}
 function changePart(part,delta){
   S[part].stage=clamp(S[part].stage+delta,1,STAGE_MAX[part]);
 }
-function gainFat(amt,profile="balanced"){
-  // profile changes fat distribution
+// Fractional fat accumulator — prevents small ratios rounding to 0 every call
+const _fatAcc = {belly:0, arm:0, butt:0, thighs:0, breast:0};
+
+function gainFat(amt, profile="balanced"){
+  // Distribution fractions by profile
   const dist={
     balanced:{belly:.30,arm:.15,butt:.25,thighs:.18,breast:.12},
     dairy:   {belly:.10,arm:.08,butt:.35,thighs:.35,breast:.12},
@@ -1914,15 +1927,29 @@ function gainFat(amt,profile="balanced"){
     meat:    {belly:.40,arm:.20,butt:.20,thighs:.15,breast:.05},
     overall: {belly:.25,arm:.18,butt:.28,thighs:.18,breast:.11},
   };
-  const d=dist[profile]||dist.balanced;
-  for(const[p,r]of Object.entries(d)) changePart(p,Math.round(amt*r));
+  const d = dist[profile] || dist.balanced;
+  for(const [p, r] of Object.entries(d)){
+    _fatAcc[p] = (_fatAcc[p] || 0) + amt * r;
+    const whole = Math.floor(_fatAcc[p]);
+    if(whole >= 1){
+      changePart(p, whole);
+      _fatAcc[p] -= whole;
+    }
+  }
 }
+const _lossAcc = {belly:0, arm:0, butt:0, thighs:0, breast:0};
+
 function loseFat(amt){
-  // Lose from all parts proportionally based on current size
-  const total=WEIGHT_PARTS.reduce((s,p)=>s+S[p].stage,0);
+  const total = WEIGHT_PARTS.reduce((s,p)=>s+S[p].stage, 0);
+  if(total <= 0) return;
   for(const p of WEIGHT_PARTS){
-    const frac=S[p].stage/total;
-    changePart(p,-Math.round(amt*frac));
+    const frac = S[p].stage / total;
+    _lossAcc[p] = (_lossAcc[p] || 0) + amt * frac;
+    const whole = Math.floor(_lossAcc[p]);
+    if(whole >= 1){
+      changePart(p, -whole);
+      _lossAcc[p] -= whole;
+    }
   }
 }
 
@@ -4398,44 +4425,52 @@ function mainMenuActions(){
   const grid = document.getElementById('abar-grid');
   grid.innerHTML = '';
 
-  // Category definitions: [emoji, label, actions[]]
+  // Helper to format an activity label with time and energy cost
+  function actLabel(emoji, name, hours, energyCost, cls){
+    const hPart = hours ? `⏱${hours}h` : '';
+    const ePart = energyCost ? `⚡${energyCost}` : '';
+    const meta = [hPart, ePart].filter(Boolean).join(' ');
+    return { label: `${emoji} ${name}${meta?' · '+meta:''}`, fn:undefined, cls, _hours:hours, _energy:energyCost };
+  }
+
+  // Category definitions with time/energy metadata
   const CATS = [
     {emoji:"🍽", label:"Food", acts:[
-      {label:"🛒 Groceries",       fn:()=>openGroceryMenu()},
-      {label:"🍽 Eat out",         fn:()=>openEatOut()},
-      {label:"🍳 Cook at home",    fn:()=>queueActivity("🍳","cook at home", doHomeCook, 5)},
+      {label:"🛒 Groceries · 2h",           fn:()=>openGroceryMenu()},
+      {label:"🍽 Eat out",                  fn:()=>openEatOut()},
+      {label:"🍳 Cook at home · 5h ⚡5",   fn:()=>queueActivity("🍳","cook at home", doHomeCook, 5)},
     ]},
     {emoji:"💪", label:"Exercise", acts:[
-      !pregnant?{label:"🏋 Gym",   fn:()=>queueActivity("🏋","gym", doGymQ, 20)}:null,
-      !pregnant?{label:"🏃 Run",   fn:()=>queueActivity("🏃","run", doRunQ, 15)}:null,
-      {label:"🧘 Rest / yoga",     fn:()=>queueActivity("🧘","rest & yoga", doYoga, 5)},
-      {label:"🏋 Gym membership",  fn:()=>openGymMembershipMenu()},
+      !pregnant?{label:"🏋 Gym · 5h ⚡20",  fn:()=>queueActivity("🏋","gym", doGymQ, 20)}:null,
+      !pregnant?{label:"🏃 Run · 3h ⚡15",  fn:()=>queueActivity("🏃","run", doRunQ, 15)}:null,
+      {label:"🧘 Yoga · 2h ⚡5",            fn:()=>queueActivity("🧘","rest & yoga", doYoga, 5)},
+      {label:"🏋 Gym membership",           fn:()=>openGymMembershipMenu()},
     ].filter(Boolean)},
     {emoji:"👥", label:"Social", acts:[
-      {label:"🍺 Night out (event)",fn:()=>doOneTimeEvent('bar',()=>openBarNight())},
-      {label:"☕ Meet a friend (event)",fn:()=>doOneTimeEvent('friends',()=>openFriendsMenu())},
-      {label:"💌 Relationships (event)",fn:()=>doOneTimeEvent('date',()=>openRelationshipsMenu())},
+      {label:"🍺 Night out (event)",         fn:()=>doOneTimeEvent('bar',()=>openBarNight())},
+      {label:"☕ Meet friend (event)",        fn:()=>doOneTimeEvent('friends',()=>openFriendsMenu())},
+      {label:"💌 Relationships (event)",     fn:()=>doOneTimeEvent('date',()=>openRelationshipsMenu())},
     ]},
     {emoji:"🌿", label:"Lifestyle", acts:[
-      {label:"🚬 Smoking",         fn:()=>openSmokeMenu()},
-      {label:"📱 Social media",    fn:()=>openSocialMediaMenu()},
-      {label:"🎲 Gambling",        fn:()=>openGamblingMenu()},
-      {label:"✈ Travel",           fn:()=>queueActivity("✈","travel", ()=>openTravelMenu(), 30)},
-      {label:"🎨 Hobby",           fn:()=>queueActivity("🎨","hobby time", ()=>openHobbyMenu(), 10)},
-      {label:"😴 Sleep habits",    fn:()=>openSleepMenu()},
-      {label:"🏠 Home self-care",  fn:()=>doOneTimeEvent('selfcare',doSelfCare)},
-      {label:"💇 Hair",            fn:()=>openHairMenu()},
-      {label:"👁 Eye care",        fn:()=>openEyeCareMenu()},
+      {label:"🚬 Smoking",                   fn:()=>openSmokeMenu()},
+      {label:"📱 Social media",              fn:()=>openSocialMediaMenu()},
+      {label:"🎲 Gambling",                  fn:()=>openGamblingMenu()},
+      {label:"✈ Travel · 8h ⚡30",           fn:()=>queueActivity("✈","travel", ()=>openTravelMenu(), 30)},
+      {label:"🎨 Hobby · 6h ⚡10",           fn:()=>queueActivity("🎨","hobby time", ()=>openHobbyMenu(), 10)},
+      {label:"😴 Sleep habits",              fn:()=>openSleepMenu()},
+      {label:"🏠 Self-care (event) · 4h",   fn:()=>doOneTimeEvent('selfcare',doSelfCare)},
+      {label:"💇 Hair",                      fn:()=>openHairMenu()},
+      {label:"👁 Eye care",                  fn:()=>openEyeCareMenu()},
     ]},
     {emoji:"💼", label:"Career", acts:[
-      {label: hasJob?"💼 Career & jobs":"💼 Find work",  fn:()=>openJobMenu()},
-      {label:"📚 Study",           fn:()=>queueActivity("📚","study", ()=>openStudyMenu(), 20)},
-      {label:"💰 Budget",          fn:()=>openBudgetMenu()},
+      {label: hasJob?"💼 Career & jobs":"💼 Find work", fn:()=>openJobMenu()},
+      {label:"📚 Study · 8h ⚡20",           fn:()=>queueActivity("📚","study", ()=>openStudyMenu(), 20)},
+      {label:"💰 Budget",                    fn:()=>openBudgetMenu()},
     ]},
     {emoji:"🏠", label:"Assets", acts:[
-      {label:"🏠 Housing",         fn:()=>openHousingMenu()},
-      {label:"💉 Surgery",         fn:()=>openSurgeryMenu()},
-      {label:"💾 Save / Load",     fn:()=>openSaveLoadMenu()},
+      {label:"🏠 Housing",                   fn:()=>openHousingMenu()},
+      {label:"💉 Surgery",                   fn:()=>openSurgeryMenu()},
+      {label:"💾 Save / Load",              fn:()=>openSaveLoadMenu()},
     ]},
   ];
 
@@ -4468,22 +4503,26 @@ function mainMenuActions(){
       closeAllCatDrops();
       if(!wasOpen){
         btn.classList.add('open');
-        // On desktop: position the fixed dropdown under the button, clamp to viewport
         if(window.innerWidth > 700){
           const rect = btn.getBoundingClientRect();
-          const dropH = Math.min(480, cat.acts.filter(Boolean).length * 44);
-          const spaceBelow = window.innerHeight - rect.bottom;
-          if(spaceBelow < dropH && rect.top > dropH){
+          const itemCount = cat.acts.filter(Boolean).length;
+          const dropH = Math.min(window.innerHeight * 0.7, itemCount * 46 + 8);
+          const spaceBelow = window.innerHeight - rect.bottom - 8;
+          let topPos;
+          if(spaceBelow >= dropH){
+            topPos = rect.bottom + 2;
+          } else if(rect.top >= dropH){
             // Open upwards
-            drop.style.top = (rect.top - dropH) + 'px';
+            topPos = rect.top - dropH - 2;
           } else {
-            drop.style.top = rect.bottom + 'px';
+            // Not enough space either way — pin to bottom of viewport with scroll
+            topPos = Math.max(8, window.innerHeight - dropH - 8);
           }
-          // Clamp left edge
-          const left = Math.min(rect.left, window.innerWidth - 240);
-          drop.style.left = Math.max(4, left) + 'px';
-          drop.style.width = 'auto';
-          drop.style.right = 'auto';
+          drop.style.top    = topPos + 'px';
+          drop.style.left   = Math.max(4, Math.min(rect.left, window.innerWidth - 260)) + 'px';
+          drop.style.maxHeight = Math.min(dropH, window.innerHeight - topPos - 8) + 'px';
+          drop.style.width  = 'auto';
+          drop.style.right  = 'auto';
           drop.style.bottom = 'auto';
         }
       }
@@ -4562,7 +4601,7 @@ function toggleTheme(){
 // ═══════════════════════════════════════════════════════
 
 // Store current viewport transform so it persists between buildDebug calls
-let _vpScale=1.5, _vpTx=-90, _vpTy=-10;
+let _vpScale=1.5, _vpTx=-90, _vpTy=10;
 
 function applyViewportTransform(){
   const wrap=document.getElementById('viewport-wrap');
