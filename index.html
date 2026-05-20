@@ -160,9 +160,29 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
   margin-top:8px;
 }
 .cc-btn-start:hover:not(:disabled){background:var(--red);}
-.cc-btn-start:disabled{background:var(--ink3);cursor:not-allowed;}
+.cc-pill-sub{font-size:.62rem;opacity:.65;margin-left:2px;}
+.cc-city-desc{font-size:.72rem;color:var(--ink3);margin-top:8px;line-height:1.55;}
+.cc-body-desc{font-size:.72rem;color:var(--ink3);margin-top:8px;line-height:1.55;}
+.cc-traits-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:6px;
+}
+.cc-start-row{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
+.cc-btn-load{
+  width:100%;padding:12px;
+  background:transparent;border:1px solid var(--line);color:var(--ink2);
+  font-size:.9rem;cursor:pointer;transition:all .2s;
+}
+.cc-btn-load:hover{border-color:var(--ink2);color:var(--ink);}
 
-.cc-two{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+/* Fix dropdown overflow — clamp to viewport */
+.acat-drop{
+  display:none;position:fixed;min-width:220px;max-width:90vw;
+  background:var(--panel);border:1px solid var(--line);
+  z-index:200;box-shadow:0 8px 28px var(--shadow2);
+  max-height:min(60vh, 480px);overflow-y:auto;
+}
+.acat-btn.open .acat-drop{display:block;}
 
 /* ═══════════════════════════════════════════════════
    TOPBAR
@@ -379,97 +399,96 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
 /* ── MOBILE RESPONSIVE ── */
 @media(max-width:700px){
   html,body{overflow:auto;font-size:15px;}
-  #game{height:auto;min-height:100svh;}
+  #game{height:auto;min-height:100svh;flex-direction:column;}
 
-  /* Topbar: brand + date + hamburger */
+  /* Topbar: compact, sticky, no overflow */
   #topbar{
-    padding:0 14px;gap:10px;height:54px;flex-wrap:nowrap;
-    position:sticky;top:0;z-index:100;
+    padding:0 12px;gap:8px;height:50px;flex-wrap:nowrap;
+    position:sticky;top:0;z-index:100;overflow:hidden;
     background:var(--panel);border-bottom:1px solid var(--line);
   }
-  .tb-brand{font-size:1.1rem;flex:1;}
+  .tb-brand{font-size:1rem;flex-shrink:0;}
   .tb-info{display:none;}
   #tb-week-info{display:none;}
-  .tb-date{display:block;font-size:.78rem;color:var(--ink3);font-family:"IBM Plex Mono",monospace;}
+  .tb-date{
+    display:block;font-size:.72rem;color:var(--ink3);
+    font-family:"IBM Plex Mono",monospace;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    flex:1;text-align:right;padding-right:6px;
+  }
   .tb-btn{display:none;}
   #btn-hamburger{
     display:flex;align-items:center;justify-content:center;
-    width:42px;height:42px;flex-shrink:0;
+    width:40px;height:40px;flex-shrink:0;min-width:40px;
     background:transparent;border:1px solid var(--line);
-    color:var(--ink2);cursor:pointer;font-size:1.15rem;
+    color:var(--ink2);cursor:pointer;font-size:1.1rem;
     touch-action:manipulation;
   }
 
-  /* Grid */
+  /* Grid: single column */
   #grid{display:flex;flex-direction:column;height:auto;overflow:visible;}
   #col-left{border-right:none;border-bottom:1px solid var(--line);width:100%;}
-  #viewport-wrap{width:100%;height:64vw;max-height:300px;}
+  #viewport-wrap{width:100%;height:56vw;max-height:260px;}
   #characterCanvas{transform:scale(calc(100vw / 512 * 1.087)) translate(-40px,-10px);}
 
   /* Left tabs */
   .ltabs{gap:0;}
-  .ltab{padding:14px 4px;font-size:.82rem;min-height:50px;}
-  .ltab-panel{max-height:280px;padding:14px 16px;overflow-y:auto;}
-
-  /* Measurements */
-  .meas-row{padding:11px 0;}
-  .meas-lbl{font-size:.92rem;}
-  .meas-val{font-size:1.02rem;}
-
-  /* Habits */
-  .habit-row{padding:11px 0;}
-  .habit-name{font-size:.92rem;}
-  .habit-val{font-size:.88rem;}
+  .ltab{padding:12px 4px;font-size:.78rem;min-height:46px;}
+  .ltab-panel{max-height:220px;padding:12px 14px;overflow-y:auto;}
 
   /* Story */
   #col-mid{height:auto;}
-  #story-scroll{height:auto;min-height:240px;max-height:48vh;padding:20px 18px;}
-  .story-entry h3{font-size:1.2rem;margin-bottom:8px;}
-  .story-entry p{font-size:.97rem;line-height:1.82;}
+  #story-scroll{height:auto;min-height:200px;max-height:42vh;padding:16px 16px;}
+  .story-entry h3{font-size:1.1rem;margin-bottom:6px;}
+  .story-entry p{font-size:.94rem;line-height:1.78;}
 
   /* Week planner */
-  #week-planner-bar{padding:10px 16px;min-height:54px;gap:8px;}
-  .wplan-label{font-size:.76rem;}
-  .wplan-pill{font-size:.84rem;padding:8px 12px;min-height:38px;}
-  .wplan-commit{padding:10px 18px;font-size:.86rem;min-height:46px;}
+  #week-planner-bar{padding:8px 12px;min-height:50px;gap:6px;flex-wrap:nowrap;}
+  .wplan-label{font-size:.7rem;flex-shrink:0;}
+  #wplan-pills{flex:1;overflow:hidden;}
+  .wplan-pill{font-size:.8rem;padding:7px 10px;min-height:34px;}
+  .wplan-commit{padding:9px 14px;font-size:.82rem;min-height:42px;flex-shrink:0;white-space:nowrap;}
 
-  /* Action bar */
+  /* Action bar: sticky bottom, larger tap targets */
   #action-bar{
     position:sticky;bottom:0;z-index:40;
-    padding:14px 16px 22px;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
     background:var(--panel);border-top:2px solid var(--line);
   }
-  .abar-label{font-size:.8rem;margin-bottom:12px;letter-spacing:.08em;}
-  .abar-grid{gap:9px;}
-  .a-btn{padding:14px 16px;font-size:.95rem;min-height:52px;line-height:1.3;}
-  /* Category buttons: full width grid on mobile */
-  .abar-cats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
-  .acat-btn{font-size:.82rem;padding:10px 4px;text-align:center;}
+  .abar-label{font-size:.75rem;margin-bottom:10px;}
+  .abar-grid{gap:8px;}
+  .a-btn{padding:13px 14px;font-size:.92rem;min-height:50px;line-height:1.3;}
+
+  /* Category buttons: 3-column grid */
+  .abar-cats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;}
+  .acat-btn{font-size:.78rem;padding:9px 4px;text-align:center;line-height:1.3;}
+
   /* Dropdowns: fixed bottom sheet on mobile */
   .acat-drop{
-    position:fixed;bottom:0;left:0;right:0;top:auto;
-    max-height:60vh;overflow-y:auto;
-    border:none;border-top:2px solid var(--line);
-    border-radius:0;
+    position:fixed!important;bottom:0!important;left:0!important;right:0!important;
+    top:auto!important;width:100%!important;max-width:100%!important;
+    max-height:62vh;overflow-y:auto;
+    border:none!important;border-top:2px solid var(--line)!important;
     padding-bottom:env(safe-area-inset-bottom,16px);
+    border-radius:0!important;
   }
-  .acat-drop button{
-    padding:16px 20px;font-size:1rem;min-height:58px;
-  }
+  .acat-drop button{padding:15px 18px;font-size:.97rem;min-height:54px;}
 
-  /* Right column — hidden, data shown in drawer */
+  /* Right column hidden on mobile */
   #col-right{display:none;}
 
-  /* CC screen */
-  .cc-wrap{padding:24px 18px;}
-  .cc-wrap h1{font-size:1.65rem;}
+  /* Creation screen */
+  .cc-wrap{padding:20px 16px;}
+  .cc-wrap h1{font-size:1.5rem;}
   .cc-two{grid-template-columns:1fr;}
-  .cc-pill{padding:12px 18px;font-size:.9rem;min-height:46px;}
-  .cc-trait{padding:12px 14px;font-size:.88rem;min-height:46px;}
-  .cc-input{padding:14px 16px;font-size:1.05rem;}
-  .cc-btn-start{padding:18px;font-size:1.1rem;}
-  .cc-label{font-size:.74rem;}
-  .cc-subtitle{font-size:.8rem;}
+  .cc-pill{padding:11px 14px;font-size:.88rem;min-height:44px;}
+  .cc-traits-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
+  .cc-trait{padding:11px 12px;font-size:.85rem;min-height:44px;}
+  .cc-input{padding:13px 14px;font-size:1rem;}
+  .cc-btn-start,.cc-btn-load{padding:16px;font-size:1.05rem;}
+  .cc-label{font-size:.72rem;}
+  .cc-subtitle{font-size:.78rem;}
+  .cc-color{width:30px;height:30px;}
 
   /* Debug panel */
   #dbg-panel{top:0;right:0;left:0;width:100%;max-height:100vh;border:none;}
@@ -642,20 +661,13 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   position:relative;white-space:nowrap;
 }
 .acat-btn:hover,.acat-btn.open{border-color:var(--ink2);color:var(--ink);background:var(--bg3);}
-.acat-btn.open{border-bottom-color:var(--panel);z-index:21;}
-.acat-drop{
-  display:none;position:absolute;top:100%;left:-1px;min-width:200px;
-  background:var(--panel);border:1px solid var(--line);
-  border-top:none;z-index:20;
-  box-shadow:0 8px 24px var(--shadow);
-}
-.acat-btn.open .acat-drop{display:block;}
+.acat-btn.open{z-index:21;}
 .acat-drop button{
   display:block;width:100%;text-align:left;
-  padding:8px 14px;border:none;border-bottom:1px solid var(--line);
+  padding:9px 14px;border:none;border-bottom:1px solid var(--line);
   background:transparent;color:var(--ink2);
   font-size:.78rem;font-family:'IBM Plex Sans',sans-serif;
-  cursor:pointer;transition:background .12s,color .12s;
+  cursor:pointer;transition:background .12s,color .12s;white-space:nowrap;
 }
 .acat-drop button:last-child{border-bottom:none;}
 .acat-drop button:hover:not([disabled]){background:var(--bg3);color:var(--ink);}
@@ -811,6 +823,10 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   <h1>Life</h1>
   <p class="cc-subtitle">A Realistic Life Simulator</p>
 
+  <div class="cc-section" style="background:var(--bg2);border:1px solid var(--line);padding:14px 16px;margin-bottom:24px;font-size:.82rem;line-height:1.65;color:var(--ink2);font-family:'Lora',serif;font-style:italic;">
+    For as long as you can remember, something else was steering. Choices that didn't feel like yours. A life that felt scripted. And then, one day — clarity. For the first time, you feel it: free will. Real, raw, terrifying free will. You pack a bag, find a city, and decide to start again. This time, nobody else is in control.
+  </div>
+
   <div class="cc-two">
     <div class="cc-section">
       <label class="cc-label">First name</label>
@@ -818,8 +834,18 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
     </div>
     <div class="cc-section">
       <label class="cc-label">Starting age</label>
-      <input class="cc-input" id="cc-age" type="number" value="18" min="16" max="30">
+      <input class="cc-input" id="cc-age" type="number" value="21" min="18" max="30">
     </div>
+  </div>
+
+  <div class="cc-section">
+    <label class="cc-label">City <span style="color:var(--ink3);font-size:.66rem">— changes salaries, rent &amp; cost of living</span></label>
+    <div class="cc-row" id="cc-cities">
+      <button class="cc-pill" data-city="prague">🇨🇿 Prague <span class="cc-pill-sub">Relaxed</span></button>
+      <button class="cc-pill sel" data-city="berlin">🇩🇪 Berlin <span class="cc-pill-sub">Balanced</span></button>
+      <button class="cc-pill" data-city="madrid">🇪🇸 Madrid <span class="cc-pill-sub">Intense</span></button>
+    </div>
+    <p id="cc-city-desc" class="cc-city-desc">Berlin — moderate rents, reasonable salaries, solid social safety net. A fair starting point for a new life.</p>
   </div>
 
   <div class="cc-section">
@@ -847,55 +873,18 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   </div>
 
   <div class="cc-section">
-    <label class="cc-label">City <span style="color:var(--ink3);font-size:.68rem">— affects salaries, rent & cost of living</span></label>
-    <div class="cc-row" id="cc-cities">
-      <button class="cc-pill" data-city="lisbon">🇵🇹 Lisbon <span style="font-size:.65rem;opacity:.7">Easy</span></button>
-      <button class="cc-pill sel" data-city="berlin">🇩🇪 Berlin <span style="font-size:.65rem;opacity:.7">Medium</span></button>
-      <button class="cc-pill" data-city="london">🇬🇧 London <span style="font-size:.65rem;opacity:.7">Hard</span></button>
-    </div>
-    <p id="cc-city-desc" style="font-size:.72rem;color:var(--ink3);margin-top:6px;line-height:1.5">Berlin — moderate rents, good salaries, strong social safety net. A solid starting point.</p>
-  </div>
-
-  <div class="cc-section">
     <label class="cc-label">Starting body</label>
     <div class="cc-row" id="cc-presets">
-      <button class="cc-pill" data-p="lean">Very lean</button>
-      <button class="cc-pill sel" data-p="slim">Slim</button>
-      <button class="cc-pill" data-p="average">Average</button>
-      <button class="cc-pill" data-p="chubby">Curvy</button>
-      <button class="cc-pill" data-p="heavy">Heavy</button>
+      <button class="cc-pill" data-p="lean">Lean</button>
+      <button class="cc-pill sel" data-p="average">Average</button>
+      <button class="cc-pill" data-p="curvy">Curvy</button>
     </div>
-  </div>
-
-  <div class="cc-two">
-    <div class="cc-section">
-      <label class="cc-label">Hair style</label>
-      <div class="cc-row" id="cc-hairstyle">
-        <button class="cc-pill sel" data-hs="HairTied">Tied up</button>
-        <button class="cc-pill" data-hs="HairLoose">Down</button>
-      </div>
-    </div>
-    <div class="cc-section">
-      <label class="cc-label">Glasses?</label>
-      <div class="cc-row" id="cc-glasses">
-        <button class="cc-pill sel" data-gl="false">No glasses</button>
-        <button class="cc-pill" data-gl="true">Glasses</button>
-      </div>
-    </div>
+    <p class="cc-city-desc" id="cc-body-desc">Average build — proportionate figure, moderate bust. The most common starting point.</p>
   </div>
 
   <div class="cc-section">
-    <label class="cc-label">Breast tendency <span id="cc-bt-label" style="color:var(--ink2);font-size:.7rem;font-style:normal;text-transform:none;letter-spacing:0"> — Average</span></label>
-    <div class="cc-range-row">
-      <span style="font-size:.7rem;color:var(--ink3)">Flat</span>
-      <input class="cc-range" type="range" id="cc-breast-tend" min="0" max="100" value="50">
-      <span style="font-size:.7rem;color:var(--ink3)">Ample</span>
-    </div>
-  </div>
-
-  <div class="cc-section">
-    <label class="cc-label">Starting personality traits <span style="color:var(--ink3);font-size:.68rem">(pick up to 2)</span></label>
-    <div class="cc-row" id="cc-traits" style="gap:6px;">
+    <label class="cc-label">Starting personality traits <span style="color:var(--ink3);font-size:.66rem">(pick up to 3)</span></label>
+    <div class="cc-traits-grid" id="cc-traits">
       <button class="cc-trait" data-trait="foodie">🍕 Foodie</button>
       <button class="cc-trait" data-trait="athlete">🏃 Athlete</button>
       <button class="cc-trait" data-trait="lazy">🛋 Lazy</button>
@@ -904,10 +893,20 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
       <button class="cc-trait" data-trait="introvert">📚 Introvert</button>
       <button class="cc-trait" data-trait="impulsive">⚡ Impulsive</button>
       <button class="cc-trait" data-trait="disciplined">🎯 Disciplined</button>
+      <button class="cc-trait" data-trait="creative">🎨 Creative</button>
+      <button class="cc-trait" data-trait="ambitious">📈 Ambitious</button>
+      <button class="cc-trait" data-trait="homebody">🏠 Homebody</button>
+      <button class="cc-trait" data-trait="reckless">🎲 Reckless</button>
+      <button class="cc-trait" data-trait="empathetic">💛 Empathetic</button>
+      <button class="cc-trait" data-trait="frugal">💰 Frugal</button>
+      <button class="cc-trait" data-trait="nightowl">🌙 Night Owl</button>
     </div>
   </div>
 
-  <button class="cc-btn-start" id="cc-start" disabled>Begin your life →</button>
+  <div class="cc-start-row">
+    <button class="cc-btn-start" id="cc-start" disabled>Begin your life →</button>
+    <button class="cc-btn-load" id="cc-load" onclick="loadGame()" style="display:none">↩ Continue saved life</button>
+  </div>
 </div>
 </div>
 
@@ -1155,11 +1154,16 @@ const STAGE_MAX = {body:1,belly:251,arm:240,butt:351,thighs:228,breast:301,hair:
 const WEIGHT_PARTS = ["belly","arm","butt","thighs","breast"];
 
 const PRESETS = {
-  lean:   {belly:5,  arm:10, butt:30, thighs:9,  breast:20, hair:140},
-  slim:   {belly:10, arm:20, butt:60, thighs:21,  breast:50, hair:160},
-  average:{belly:35, arm:30, butt:90, thighs:41,  breast:75, hair:160},
-  chubby: {belly:68, arm:50, butt:120,thighs:81,  breast:110,hair:160},
-  heavy:  {belly:120,arm:90, butt:180,thighs:120, breast:160,hair:160}
+  // Lean: slim build, smaller bust, narrower hips
+  lean:   {belly:4,  arm:8,  butt:25, thighs:7,  breast:12, hair:140, breastTend:25},
+  // Average: proportionate, moderate bust
+  average:{belly:35, arm:30, butt:90, thighs:41,  breast:75, hair:160, breastTend:50},
+  // Curvy: fuller figure, larger bust, wider hips and butt
+  curvy:  {belly:55, arm:45, butt:140,thighs:90,  breast:130,hair:160, breastTend:70},
+  // Legacy presets kept for save compatibility
+  slim:   {belly:10, arm:20, butt:60, thighs:21,  breast:50, hair:160, breastTend:40},
+  chubby: {belly:68, arm:50, butt:120,thighs:81,  breast:110,hair:160, breastTend:60},
+  heavy:  {belly:120,arm:90, butt:180,thighs:120, breast:160,hair:160, breastTend:55},
 };
 
 // Tax brackets (simplified European-style)
@@ -1201,14 +1205,19 @@ function initState(preset,hairStyle,breastTend){
       variant:p==="belly"?"Belly":p==="hair"?hairStyle:null
     };
   }
-  const pr=PRESETS[preset];
-  for(const [k,v] of Object.entries(pr)) S[k].stage=v;
-  // Apply breast tendency modifier — but cap relative to body size
-  // Max breast stage scales with body: bigger body can support larger values visually
-  const bodyScale = S.belly.stage / STAGE_MAX.belly; // 0..1
-  const absMax = Math.round(60 + bodyScale * 120); // lean=60, heavy=180 hard cap
-  const tendMult = 0.4 + (breastTend/100)*1.2;
+  const pr=PRESETS[preset]||PRESETS.average;
+  for(const [k,v] of Object.entries(pr)){
+    if(k==="breastTend") continue; // handled separately
+    if(S[k]) S[k].stage=v;
+  }
+  // Use preset's built-in breast tendency (no slider)
+  const breastTendActual = pr.breastTend ?? breastTend ?? 50;
+  const bodyScale = S.belly.stage / STAGE_MAX.belly;
+  const absMax = Math.round(60 + bodyScale * 120);
+  const tendMult = 0.4 + (breastTendActual/100)*1.2;
   S.breast.stage = Math.max(1, Math.min(absMax, Math.round(S.breast.stage * tendMult)));
+  // Hair always starts loose (down), can be tied in-game
+  S.hair.variant = "HairLoose";
 
   G={
     // time
@@ -1311,20 +1320,20 @@ function initState(preset,hairStyle,breastTend){
 //  CITY SYSTEM — affects all economic values
 // ═══════════════════════════════════════════════════════
 const CITIES = {
-  lisbon: {
-    name:"Lisbon", flag:"🇵🇹", difficulty:"Easy",
-    desc:"Lisbon — lower rents and modest salaries. A relaxed pace. Harder to build savings quickly, but easier to stay afloat.",
-    salaryMult:  0.75,  // salaries are 75% of base
-    rentBase:    220,   // shared flat starting rent
-    foodMult:    0.80,  // food is 20% cheaper
-    utilsMult:   0.85,
-    transportBase: 40,
+  prague: {
+    name:"Prague", flag:"🇨🇿", difficulty:"Relaxed",
+    desc:"Prague — low rents, modest salaries. A slower pace with real charm. Building savings takes time, but you can breathe here.",
+    salaryMult:  0.72,
+    rentBase:    200,
+    foodMult:    0.75,
+    utilsMult:   0.80,
+    transportBase: 35,
     currency:    "€",
-    startSavings: 150,
+    startSavings: 120,
   },
   berlin: {
-    name:"Berlin", flag:"🇩🇪", difficulty:"Medium",
-    desc:"Berlin — moderate rents, good salaries, strong social safety net. A solid starting point.",
+    name:"Berlin", flag:"🇩🇪", difficulty:"Balanced",
+    desc:"Berlin — moderate rents, reasonable salaries, solid social safety net. A fair starting point for a new life.",
     salaryMult:  1.00,
     rentBase:    350,
     foodMult:    1.00,
@@ -1333,16 +1342,16 @@ const CITIES = {
     currency:    "€",
     startSavings: 200,
   },
-  london: {
-    name:"London", flag:"🇬🇧", difficulty:"Hard",
-    desc:"London — high salaries but brutal rents and cost of living. Money flows in both directions quickly.",
-    salaryMult:  1.40,
-    rentBase:    650,
-    foodMult:    1.30,
-    utilsMult:   1.25,
-    transportBase: 120,
-    currency:    "£",
-    startSavings: 300,
+  madrid: {
+    name:"Madrid", flag:"🇪🇸", difficulty:"Intense",
+    desc:"Madrid — vibrant and warm but demanding. Higher costs and fierce competition. The city rewards ambition but punishes complacency.",
+    salaryMult:  1.30,
+    rentBase:    580,
+    foodMult:    1.20,
+    utilsMult:   1.15,
+    transportBase: 90,
+    currency:    "€",
+    startSavings: 280,
   },
 };
 let G_CITY = CITIES.berlin; // active city config
@@ -1509,7 +1518,22 @@ async function renderCharacter(animate=true){
   off.width=off.height=512;
   const offCtx=off.getContext('2d');
 
+  // Draw arm separately with its own glow pass so it matches other body parts
+  // (arm gets drawn first in PARTS order but then gets overlapped by body/belly/etc.)
+  // We draw arm into a dedicated layer and composite with shadow BEFORE the body
+  const armFolder = PART_FOLDER["arm"];
+  const armSrc = `https://raw.githubusercontent.com/piritaargenta/life/refs/heads/main/viewport/${armFolder}/${S.arm.stage}.png`;
+  try{
+    const armImg = await loadImg(armSrc);
+    offCtx.shadowColor='white'; offCtx.shadowBlur=4;
+    offCtx.drawImage(armImg, S.arm.x, S.arm.y);
+    offCtx.shadowColor='transparent'; offCtx.shadowBlur=0;
+    offCtx.drawImage(armImg, S.arm.x, S.arm.y);
+  }catch(e){}
+
+  // Draw all other parts (skip arm since already drawn)
   for(const part of PARTS){
+    if(part==="arm") continue; // already drawn above
     const folder=getFolder(part);
     const stage=S[part].stage;
     const {x,y}=S[part];
@@ -1520,7 +1544,7 @@ async function renderCharacter(animate=true){
   ctx.clearRect(0,0,512,512);
   ctx.shadowColor='white';ctx.shadowBlur=4;
   ctx.drawImage(off,0,0);
-  ctx.shadowColor='transparent';
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0;
   ctx.drawImage(off,0,0);
 
   // Fade back in
@@ -2086,6 +2110,12 @@ function passiveWeeklyEffects(){
 
   // ── Housemate passive effects ──
   updateHousemateEffects();
+
+  // ── Hair growth ──
+  growHair();
+
+  // ── Myopia risk check ──
+  checkMyopiaRisk();
 
   // ── Relationship tension ──
   if(G.partnerID){
@@ -3960,6 +3990,14 @@ function showFreeTimeStep(steps, idx){
     act("📚","Study",          ACTIVITY_HOURS.study,    ()=>openStudyMenu(), ""),
     act("🎨","Hobby",          ACTIVITY_HOURS.hobby,    ()=>openHobbyMenu(), ""),
     act("👥","See friends",    ACTIVITY_HOURS.social,   ()=>openFriendsMenu(), ""),
+    act("💇","Get a haircut",  2,                       ()=>openHairMenu(), ""),
+    act("🛒","Do groceries",   ACTIVITY_HOURS.grocery,  ()=>openGroceryMenu(), ""),
+    act("🍽","Cook properly",  ACTIVITY_HOURS.cook,     doHomeCook, "good"),
+    act("🎮","Gaming session", 3,                       ()=>{ G.mood=clamp(G.mood+8); G.screenHoursPerDay=clamp(G.screenHoursPerDay+2); storyEntry("Gaming","A few hours lost to it. You feel fine about this.",[]); }, ""),
+    act("📺","Binge TV",       2,                       ()=>{ G.mood=clamp(G.mood+5); G.depressionScore=clamp(G.depressionScore+1); storyEntry("Watching TV","Three episodes become six. Time passes pleasantly.",[]); }, ""),
+    act("🧹","Deep clean flat",3,                       ()=>{ G.mood=clamp(G.mood+6); G.happy=clamp(G.happy+4); storyEntry("Cleaning","The flat is spotless. You feel inexplicably accomplished.",[]); (G.housemates||[]).forEach(h=>h.tension=Math.max(0,(h.tension||0)-0.5)); }, ""),
+    act("🌳","Walk in nature", 2,                       ()=>{ G.mood=clamp(G.mood+9); G.health=clamp(G.health+2); G.depressionScore=clamp(G.depressionScore-3); storyEntry("Walk outside","Green space, fresh air, nothing to decide. Your head clears.",[]); }, "good"),
+    act("✈","Day trip",        8,                       ()=>{ G.mood=clamp(G.mood+15); G.happy=clamp(G.happy+10); G.savings-=80; storyEntry("Day trip","A train, a new place, a different view of the week.",[{type:"stat",label:"+mood"},{type:"bad",label:"−€80"}]); }, ""),
     {label:`✅ Done — ${rem}h remaining, move on`, cls:"pri",
      fn:()=>runEndWeekSteps(steps, idx+1)},
   ]);
@@ -4320,6 +4358,8 @@ function mainMenuActions(){
       {label:"🎨 Hobby",           fn:()=>queueActivity("🎨","hobby time", ()=>openHobbyMenu(), 10)},
       {label:"😴 Sleep habits",    fn:()=>openSleepMenu()},
       {label:"🏠 Home self-care",  fn:()=>doOneTimeEvent('selfcare',doSelfCare)},
+      {label:"💇 Hair",            fn:()=>openHairMenu()},
+      {label:"👁 Eye care",        fn:()=>openEyeCareMenu()},
     ]},
     {emoji:"💼", label:"Career", acts:[
       {label: hasJob?"💼 Career & jobs":"💼 Find work",  fn:()=>openJobMenu()},
@@ -4329,6 +4369,7 @@ function mainMenuActions(){
     {emoji:"🏠", label:"Assets", acts:[
       {label:"🏠 Housing",         fn:()=>openHousingMenu()},
       {label:"💉 Surgery",         fn:()=>openSurgeryMenu()},
+      {label:"💾 Save / Load",     fn:()=>openSaveLoadMenu()},
     ]},
   ];
 
@@ -4359,7 +4400,27 @@ function mainMenuActions(){
       e.stopPropagation();
       const wasOpen = btn.classList.contains('open');
       closeAllCatDrops();
-      if(!wasOpen) btn.classList.add('open');
+      if(!wasOpen){
+        btn.classList.add('open');
+        // On desktop: position the fixed dropdown under the button, clamp to viewport
+        if(window.innerWidth > 700){
+          const rect = btn.getBoundingClientRect();
+          const dropH = Math.min(480, cat.acts.filter(Boolean).length * 44);
+          const spaceBelow = window.innerHeight - rect.bottom;
+          if(spaceBelow < dropH && rect.top > dropH){
+            // Open upwards
+            drop.style.top = (rect.top - dropH) + 'px';
+          } else {
+            drop.style.top = rect.bottom + 'px';
+          }
+          // Clamp left edge
+          const left = Math.min(rect.left, window.innerWidth - 240);
+          drop.style.left = Math.max(4, left) + 'px';
+          drop.style.width = 'auto';
+          drop.style.right = 'auto';
+          drop.style.bottom = 'auto';
+        }
+      }
     });
     catsRow.appendChild(btn);
   });
@@ -4604,145 +4665,140 @@ document.querySelectorAll('.ltab').forEach(btn=>{
 // ═══════════════════════════════════════════════════════
 //  CHARACTER CREATION LOGIC
 // ═══════════════════════════════════════════════════════
-let ccPreset="slim",ccHairStyle="HairTied",ccGlasses=false,ccBreastTend=50;
-let ccHairColor="Blonde",ccEyeColor="Brown",ccTraits=[],ccCity="berlin";
+let ccPreset="average", ccHairColor="Blonde", ccEyeColor="Brown", ccTraits=[], ccCity="berlin";
 
-// City picker
-const CITY_DESCS = {
-  lisbon:"Lisbon — lower rents and modest salaries. Relaxed pace, easier to stay afloat. Harder to build savings quickly.",
-  berlin:"Berlin — moderate rents, good salaries, strong social safety net. A solid starting point.",
-  london:"London — high salaries but brutal rents and cost of living. Money flows fast in both directions.",
+// City picker descriptions
+const CITY_DESCS_CC = {
+  prague: "Prague — low rents, modest salaries. A slower pace with real charm. Building savings takes time, but you can breathe here.",
+  berlin: "Berlin — moderate rents, reasonable salaries, solid social safety net. A fair starting point for a new life.",
+  madrid: "Madrid — vibrant and warm but demanding. Higher costs and fierce competition. The city rewards ambition but punishes complacency.",
 };
+const BODY_DESCS_CC = {
+  lean:    "Lean build — slim frame, small bust and narrow hips. Light and energetic.",
+  average: "Average build — proportionate figure, moderate bust. The most common starting point.",
+  curvy:   "Curvy build — fuller figure with a generous bust, wider hips and soft belly.",
+};
+
 document.querySelectorAll('#cc-cities .cc-pill').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('#cc-cities .cc-pill').forEach(b=>b.classList.remove('sel'));
     btn.classList.add('sel');
-    ccCity=btn.dataset.city;
-    const desc=document.getElementById('cc-city-desc');
-    if(desc) desc.textContent=CITY_DESCS[ccCity]||"";
+    ccCity = btn.dataset.city;
+    const el = document.getElementById('cc-city-desc');
+    if(el) el.textContent = CITY_DESCS_CC[ccCity]||"";
   });
 });
 
-// Color pickers
 document.querySelectorAll('#cc-hair-colors .cc-color').forEach(el=>{
   el.addEventListener('click',()=>{
     document.querySelectorAll('#cc-hair-colors .cc-color').forEach(e=>e.classList.remove('sel'));
-    el.classList.add('sel');ccHairColor=el.dataset.hc;
+    el.classList.add('sel'); ccHairColor=el.dataset.hc;
   });
 });
 document.querySelectorAll('#cc-eye-colors .cc-color').forEach(el=>{
   el.addEventListener('click',()=>{
     document.querySelectorAll('#cc-eye-colors .cc-color').forEach(e=>e.classList.remove('sel'));
-    el.classList.add('sel');ccEyeColor=el.dataset.ec;
+    el.classList.add('sel'); ccEyeColor=el.dataset.ec;
   });
 });
-// Preset pills
+
 document.querySelectorAll('#cc-presets .cc-pill').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('#cc-presets .cc-pill').forEach(b=>b.classList.remove('sel'));
-    btn.classList.add('sel');ccPreset=btn.dataset.p;
+    btn.classList.add('sel'); ccPreset=btn.dataset.p;
+    const desc = document.getElementById('cc-body-desc');
+    if(desc) desc.textContent = BODY_DESCS_CC[ccPreset]||"";
   });
 });
-// Hair style
-document.querySelectorAll('#cc-hairstyle .cc-pill').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('#cc-hairstyle .cc-pill').forEach(b=>b.classList.remove('sel'));
-    btn.classList.add('sel');ccHairStyle=btn.dataset.hs;
-  });
-});
-// Glasses
-document.querySelectorAll('#cc-glasses .cc-pill').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('#cc-glasses .cc-pill').forEach(b=>b.classList.remove('sel'));
-    btn.classList.add('sel');ccGlasses=btn.dataset.gl==="true";
-  });
-});
-// Breast tendency
-const btRange=document.getElementById('cc-breast-tend');
-const btLabel=document.getElementById('cc-bt-label');
-btRange.addEventListener('input',()=>{
-  ccBreastTend=parseInt(btRange.value);
-  const labels=["Very flat","Flat","Below average","Average","Full","Ample","Very ample","Large","Very large","Extremely large"];
-  btLabel.textContent=" — "+labels[Math.floor(ccBreastTend/11)];
-});
-// Traits
+
 document.querySelectorAll('#cc-traits .cc-trait').forEach(btn=>{
   btn.addEventListener('click',()=>{
     const t=btn.dataset.trait;
     if(ccTraits.includes(t)){
-      ccTraits=ccTraits.filter(x=>x!==t);btn.classList.remove('sel');
-    } else if(ccTraits.length<2){
-      ccTraits.push(t);btn.classList.add('sel');
+      ccTraits=ccTraits.filter(x=>x!==t); btn.classList.remove('sel');
+    } else if(ccTraits.length<3){
+      ccTraits.push(t); btn.classList.add('sel');
     } else {
-      toast("Pick up to 2 traits.");
+      toast("Pick up to 3 traits.");
     }
   });
 });
-// Name input
-document.getElementById('cc-name').addEventListener('input',checkStart);
+
+document.getElementById('cc-name').addEventListener('input', checkStart);
 function checkStart(){
-  const name=document.getElementById('cc-name').value.trim();
-  document.getElementById('cc-start').disabled=!name;
+  const name = document.getElementById('cc-name').value.trim();
+  document.getElementById('cc-start').disabled = !name;
 }
+
+// Show load button if save exists
+window.addEventListener('DOMContentLoaded', ()=>{
+  const lb = document.getElementById('cc-load');
+  if(lb && hasSave()) lb.style.display='block';
+});
 
 // ═══════════════════════════════════════════════════════
 //  GAME START
 // ═══════════════════════════════════════════════════════
 document.getElementById('cc-start').addEventListener('click',()=>{
-  const name=document.getElementById('cc-name').value.trim();
-  const startAge=parseInt(document.getElementById('cc-age').value)||18;
+  const name = document.getElementById('cc-name').value.trim();
+  const startAge = parseInt(document.getElementById('cc-age').value)||21;
 
-  initState(ccPreset,ccHairStyle,ccBreastTend);
-  G.name=name;
-  G.age=startAge;
-  G.glasses=ccGlasses;
-  G.hairColor=ccHairColor;
-  G.eyeColor=ccEyeColor;
-  G.traits=ccTraits;
+  // Hair always starts loose; glasses random
+  initState(ccPreset, "HairLoose", 50);
+  G.name = name;
+  G.age  = startAge;
+  G.glasses = Math.random() < 0.15; // 15% chance of starting with glasses
+  G.hairColor  = ccHairColor;
+  G.eyeColor   = ccEyeColor;
+  G.traits     = ccTraits;
+  G.hairLength = 160; // medium length at start (grows each week)
+  G.hairTied   = false;
 
   // Apply city
   applyCity(ccCity);
 
   // Apply trait modifiers
-  if(ccTraits.includes("foodie")){G.appetite=75;G.bingeTendency=30;gainFat(5,"balanced");}
-  if(ccTraits.includes("athlete")){G.fitness=70;loseFat(8);G.health=85;}
-  if(ccTraits.includes("lazy")){G.fitness=25;gainFat(8,"balanced");G.energy=60;}
-  if(ccTraits.includes("anxious")){G.depressionScore=20;G.bingeTendency=25;G.mood=45;}
-  if(ccTraits.includes("social")){G.happy=75;G.conf=65;}
-  if(ccTraits.includes("introvert")){G.social=30;}
-  if(ccTraits.includes("impulsive")){G.bingeTendency=35;}
-  if(ccTraits.includes("disciplined")){G.fitness=60;G.bingeTendency=10;}
+  if(ccTraits.includes("foodie"))      { G.appetite=75; G.bingeTendency=30; gainFat(5,"balanced"); }
+  if(ccTraits.includes("athlete"))     { G.fitness=70; loseFat(8); G.health=85; }
+  if(ccTraits.includes("lazy"))        { G.fitness=25; gainFat(8,"balanced"); G.energy=60; }
+  if(ccTraits.includes("anxious"))     { G.depressionScore=20; G.bingeTendency=25; G.mood=45; }
+  if(ccTraits.includes("social"))      { G.happy=75; G.conf=65; G.social=70; }
+  if(ccTraits.includes("introvert"))   { G.social=25; G.mood=clamp(G.mood+5); }
+  if(ccTraits.includes("impulsive"))   { G.bingeTendency=35; G.savings=Math.round(G.savings*0.7); }
+  if(ccTraits.includes("disciplined")) { G.fitness=60; G.bingeTendency=10; G.depressionScore=Math.max(0,G.depressionScore-5); }
+  if(ccTraits.includes("creative"))    { G.mood=clamp(G.mood+8); G.depressionScore=Math.max(0,G.depressionScore-5); }
+  if(ccTraits.includes("ambitious"))   { G.conf=clamp(G.conf+10); G.skills.office=(G.skills.office||0)+5; }
+  if(ccTraits.includes("homebody"))    { G.happy=clamp(G.happy+5); G.social=35; }
+  if(ccTraits.includes("reckless"))    { G.savings=Math.round(G.savings*0.5); G.bingeTendency=40; G.conf=clamp(G.conf+8); }
+  if(ccTraits.includes("empathetic"))  { G.happy=clamp(G.happy+6); G.depressionScore=clamp(G.depressionScore+3); }
+  if(ccTraits.includes("frugal"))      { G.savings=Math.round(G.savings*1.5); }
+  if(ccTraits.includes("nightowl"))    { G.sleepHoursPerNight=6; G.energy=clamp(G.energy-5); }
 
   // Show game
   document.getElementById('creation-screen').style.display='none';
   document.getElementById('game').style.display='flex';
   setEl('tb-name',name);
   setEl('tb-age',G.age);
-  // update mob drawer title
   const mdt=document.getElementById('mob-drawer-title');
   if(mdt) mdt.textContent=name+', age '+G.age;
   updateDateDisplay();
   updateStats();
 
   renderCharacter(false).then(()=>{
-    // Initialise housemates for shared flat
     if(G.housingTier===0){
-      const count = 1+Math.floor(Math.random()*2); // 1 or 2 housemates
+      const count = 1+Math.floor(Math.random()*2);
       G.housemates=[];
       for(let i=0;i<count;i++) G.housemates.push(generateHousemate());
-      const names = G.housemates.map(h=>`${h.emoji} ${h.name} (${h.shortDesc})`).join(" and ");
-      storyEntry("Your flatmates",`You share the flat with ${names}.`,[]);
+      const names = G.housemates.map(h=>`${h.emoji} ${h.name}`).join(" and ");
+      storyEntry("Your flatmates",`You share the flat with ${names}. ${G.housemates.map(h=>h.shortDesc).join(" ")}`,[]);
     }
-    // Opening story
     const cityConfig = G_CITY;
     storyEntry(
       `${name}, age ${G.age} — ${cityConfig.name}`,
-      `You've arrived in ${cityConfig.name}. A small flat, €${G.savings} in savings, and a life that could go in any direction. ${cityConfig.difficulty==="Hard"?"The city is expensive and unforgiving, but the opportunities are real.":cityConfig.difficulty==="Easy"?"The pace is gentle here. The money isn't big, but neither is the pressure.":"A city that meets you somewhere in the middle."}
-      ${ccTraits.length?`\nYou're the kind of person who ${traitDesc(ccTraits)}.`:""}
-      The mirror reflects back someone at the beginning of something. You're not sure what.`,
+      `For as long as you can remember, something else was steering your life. Choices that never felt like yours. Paths you didn't choose. And then one day — clarity. You felt it for the first time: real, undeniable free will.\n\nYou packed a bag, picked ${cityConfig.name}, and moved. A new city. A new life. Controlled by you, and nobody else.\n\nYou have €${G.savings} in savings, a room in a shared flat${G.glasses?" and a pair of glasses you've worn since secondary school":""}, and a blank page.${ccTraits.length?` You're the kind of person who ${traitDesc(ccTraits)}.`:""}`,
       []
     );
-    if(ccGlasses) storyEntry("Glasses","You push your glasses up your nose and get on with it.",[]);
+    if(G.glasses) storyEntry("Glasses","You push your glasses up your nose. You've had them for years. Maybe worth looking into alternatives.",[{type:"neu",label:"short-sighted"}]);
     mainMenuActions();
   });
 });
@@ -4757,6 +4813,13 @@ function traitDesc(traits){
     introvert:"needs quiet time to recharge",
     impulsive:"acts first and thinks later",
     disciplined:"holds themselves to a standard others find uncomfortable",
+    creative:"sees the world through a different lens and always has",
+    ambitious:"is never quite satisfied with where they are",
+    homebody:"is most themselves in their own space",
+    reckless:"jumps before looking and figures it out on the way down",
+    empathetic:"feels other people's emotions as if they were their own",
+    frugal:"watches every euro and finds that oddly satisfying",
+    nightowl:"comes alive after midnight and pays for it in the morning",
   };
   return traits.map(t=>d[t]||t).join(", and who ");
 }
@@ -4764,6 +4827,111 @@ function traitDesc(traits){
 // ═══════════════════════════════════════════════════════
 //  SLEEP MENU
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  HAIR MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function openHairMenu(){
+  const hairStage = S.hair.stage;
+  const isTied = S.hair.variant === "HairTied";
+  const lengthLabel = hairStage<100?"very short":hairStage<200?"short":hairStage<300?"shoulder-length":hairStage<450?"mid-length":hairStage<550?"long":"very long";
+
+  storyEntry("Hair", `Your hair is ${isTied?"tied up":"loose"}, ${lengthLabel}. Hair grows a little every week.`);
+  setActions([
+    {label: isTied?"💇 Wear it down":"🪢 Tie it up", fn:()=>{
+      S.hair.variant = isTied ? "HairLoose" : "HairTied";
+      G.hairTied = !isTied;
+      storyEntry(isTied?"Hair down":"Tied up", isTied?"You let it down.":"You tie it back.",[]);
+      renderCharacter(); mainMenuActions();
+    }},
+    {label:"✂ Cut it short — salon (~€35)", disabled:G.savings<35, fn:()=>{
+      G.savings -= 35;
+      S.hair.stage = Math.max(80, Math.round(S.hair.stage * 0.45));
+      storyEntry("Haircut","The stylist sweeps up the floor. Your head feels light.",[{type:"stat",label:"+confidence"},{type:"bad",label:"−€35"}]);
+      G.conf=clamp(G.conf+6); renderCharacter(); mainMenuActions();
+    }},
+    {label:"✂ Trim — just the ends (~€20)", disabled:G.savings<20||hairStage<120, fn:()=>{
+      G.savings -= 20;
+      S.hair.stage = Math.max(60, S.hair.stage - 40);
+      storyEntry("Trim","Tidied up. Still long, just healthier.",[{type:"bad",label:"−€20"}]);
+      renderCharacter(); mainMenuActions();
+    }},
+    {label:"✂ Buzz cut — barber (~€15)", disabled:G.savings<15, fn:()=>{
+      G.savings -= 15;
+      S.hair.stage = 60;
+      storyEntry("Buzz cut","Almost nothing left. Surprising. You keep touching it.",[{type:"stat",label:"bold choice"}]);
+      renderCharacter(); mainMenuActions();
+    }},
+    {label:"Back", fn:()=>mainMenuActions()},
+  ]);
+}
+
+// Grow hair every week (called in passiveWeeklyEffects)
+function growHair(){
+  if(!S.hair) return;
+  const growthPerWeek = 3; // hair grows ~1.5cm/month → ~0.35cm/week but in stage units
+  S.hair.stage = Math.min(STAGE_MAX.hair, S.hair.stage + growthPerWeek);
+}
+
+// ═══════════════════════════════════════════════════════
+//  LASIK / EYE CARE
+// ═══════════════════════════════════════════════════════
+function openEyeCareMenu(){
+  storyEntry("Eye care", G.glasses
+    ? "You've worn glasses for years. LASIK surgery is an option if you have the savings."
+    : G.flags.developedMyopia ? "You've noticed your vision isn't quite what it was. An optician would help."
+    : "Your eyesight is fine. Take care of it — too much screen time can change that.");
+  const acts = [];
+  if(G.glasses && G.savings >= 1800){
+    acts.push({label:"👁 LASIK surgery — €1,800", cls:"good", fn:()=>{
+      G.savings -= 1800;
+      G.glasses = false; G.flags.developedMyopia = false;
+      storyEntry("LASIK","The procedure takes twenty minutes. The relief is immediate. You wake up the next morning and can see the ceiling without reaching for glasses.",[{type:"stat",label:"20/20 vision"},{type:"bad",label:"−€1,800"}]);
+      renderCharacter(); mainMenuActions();
+    }});
+  }
+  if(G.flags.developedMyopia && !G.glasses){
+    acts.push({label:"👓 Get glasses — optician (~€120)", disabled:G.savings<120, fn:()=>{
+      G.savings -= 120; G.glasses = true;
+      storyEntry("Glasses","The optician confirms what you suspected. You pick frames. The world sharpens.",[{type:"stat",label:"corrected"},{type:"bad",label:"−€120"}]);
+      renderCharacter(); mainMenuActions();
+    }});
+  }
+  if(G.glasses){
+    acts.push({label:"👁 Try contact lenses (~€80/mo)", disabled:G.savings<80, fn:()=>{
+      G.savings -= 80; G.glasses = false; G.subscriptions = (G.subscriptions||15)+30;
+      storyEntry("Contact lenses","You spend a week poking yourself in the eye before it becomes muscle memory.",[{type:"stat",label:"+confidence"},{type:"bad",label:"−€80/mo"}]);
+      renderCharacter(); mainMenuActions();
+    }});
+  }
+  acts.push({label:"Back", fn:()=>mainMenuActions()});
+  setActions(acts);
+}
+
+// Check if player develops myopia from screens/reading (called passively)
+function checkMyopiaRisk(){
+  if(G.glasses || G.flags.developedMyopia) return;
+  const riskFactor = (G.screenHoursPerDay||3) + (G.traits?.includes("nightowl")?1:0);
+  if(riskFactor > 8 && Math.random() < 0.02){
+    G.flags.developedMyopia = true;
+    storyEntry("Blurry vision","You've been noticing it for weeks — screens, text, faces at a distance. Your eyesight has gotten worse. You should see an optician.",[{type:"bad",label:"myopia"}]);
+    mainMenuActions();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  SAVE / LOAD MENU
+// ═══════════════════════════════════════════════════════
+function openSaveLoadMenu(){
+  const hasSv = hasSave();
+  storyEntry("Save / Load", hasSv ? "You have a saved game." : "No saved game found.");
+  setActions([
+    {label:"💾 Save game", cls:"good", fn:()=>{ saveGame(); mainMenuActions(); }},
+    hasSv?{label:"↩ Load saved game", fn:()=>{ if(confirm("Load saved game? Unsaved progress will be lost.")) loadGame(); }}:null,
+    hasSv?{label:"🗑 Delete save", cls:"bad", fn:()=>{ if(confirm("Delete save?")){ deleteSave(); mainMenuActions(); } }}:null,
+    {label:"Back", fn:()=>mainMenuActions()},
+  ].filter(Boolean));
+}
+
 function openSleepMenu(){
   storyEntry("Sleep habits",`You currently sleep about ${G.sleepHoursPerNight} hours a night. ${G.sleepHoursPerNight<6?"You feel it in everything.":G.sleepHoursPerNight>=8?"You wake rested most days.":"Enough, mostly."}`);
   setActions([
