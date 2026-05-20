@@ -59,7 +59,8 @@
    RESET & BASE
 ═══════════════════════════════════════════════════ */
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;}
+html{height:100%;}
+body{height:100%;overflow:hidden;}
 body{
   background:var(--bg); color:var(--ink);
   font-family:'IBM Plex Sans',sans-serif;
@@ -77,13 +78,18 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
 #creation-screen{
   position:fixed;inset:0;z-index:500;
   background:var(--bg);
-  display:flex;align-items:center;justify-content:center;
-  overflow-y:auto;padding:40px 20px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:0;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
 }
 .cc-wrap{
   width:600px;max-width:100%;
   background:var(--panel);border:1px solid var(--line);
   padding:40px;box-shadow:0 20px 60px var(--shadow2);
+  margin:40px 20px;
 }
 .cc-wrap h1{
   font-family:'Lora',serif;font-size:2rem;font-weight:400;
@@ -248,8 +254,7 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
   width:512px;height:512px;
   transform:scale(1.087) translate(-40px,-10px);
   transform-origin:top left;
-  image-rendering:pixelated;
-  image-rendering:crisp-edges;
+  image-rendering:auto;
 }
 #vp-tap-hint{
   position:absolute;bottom:8px;right:8px;z-index:6;pointer-events:none;
@@ -274,7 +279,7 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
   position:absolute;width:512px;height:512px;
   transform:scale(2.174) translate(-40px,-10px);
   transform-origin:top left;
-  image-rendering:pixelated;
+  image-rendering:auto;
 }
 #vp-zoom-close{
   position:absolute;top:14px;right:14px;
@@ -478,7 +483,8 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   #col-right{display:none;}
 
   /* Creation screen */
-  .cc-wrap{padding:20px 16px;}
+  #creation-screen{align-items:flex-start;}
+  .cc-wrap{padding:20px 16px;margin:16px 12px;}
   .cc-wrap h1{font-size:1.5rem;}
   .cc-two{grid-template-columns:1fr;}
   .cc-pill{padding:11px 14px;font-size:.88rem;min-height:44px;}
@@ -990,6 +996,7 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
         <button class="ltab active" data-tab="meas">Measurements</button>
         <button class="ltab" data-tab="desc">Description</button>
         <button class="ltab" data-tab="habits">Habits</button>
+        <button class="ltab" data-tab="journal">Journal</button>
       </div>
 
       <!-- MEASUREMENTS TAB -->
@@ -1035,6 +1042,13 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
       <!-- HABITS TAB -->
       <div class="ltab-panel" id="tab-habits">
         <div id="habits-content"></div>
+      </div>
+
+      <!-- JOURNAL TAB -->
+      <div class="ltab-panel" id="tab-journal">
+        <div id="journal-content" style="font-family:'Lora',serif;font-size:.78rem;line-height:1.7;color:var(--ink2);">
+          <p style="color:var(--ink3);font-style:italic;">No entries yet.</p>
+        </div>
       </div>
     </div>
 
@@ -1507,33 +1521,21 @@ async function renderCharacter(animate=true){
   if(drawPending)return;
   drawPending=true;
 
-  // Fade out
   if(animate){
     const fade=document.getElementById('canvas-fade');
     fade.style.opacity='0.7';
     await new Promise(r=>setTimeout(r,150));
   }
 
+  // ── Offscreen canvas: draw all sprite layers in order ──
   const off=document.createElement('canvas');
   off.width=off.height=512;
   const offCtx=off.getContext('2d');
+  // Disable pixellation on the offscreen canvas
+  offCtx.imageSmoothingEnabled=true;
+  offCtx.imageSmoothingQuality='high';
 
-  // Draw arm separately with its own glow pass so it matches other body parts
-  // (arm gets drawn first in PARTS order but then gets overlapped by body/belly/etc.)
-  // We draw arm into a dedicated layer and composite with shadow BEFORE the body
-  const armFolder = PART_FOLDER["arm"];
-  const armSrc = `https://raw.githubusercontent.com/piritaargenta/life/refs/heads/main/viewport/${armFolder}/${S.arm.stage}.png`;
-  try{
-    const armImg = await loadImg(armSrc);
-    offCtx.shadowColor='white'; offCtx.shadowBlur=4;
-    offCtx.drawImage(armImg, S.arm.x, S.arm.y);
-    offCtx.shadowColor='transparent'; offCtx.shadowBlur=0;
-    offCtx.drawImage(armImg, S.arm.x, S.arm.y);
-  }catch(e){}
-
-  // Draw all other parts (skip arm since already drawn)
   for(const part of PARTS){
-    if(part==="arm") continue; // already drawn above
     const folder=getFolder(part);
     const stage=S[part].stage;
     const {x,y}=S[part];
@@ -1541,13 +1543,25 @@ async function renderCharacter(animate=true){
     try{const img=await loadImg(src);offCtx.drawImage(img,x,y);}catch(e){}
   }
 
+  // ── Main canvas: glow pass then clean pass ──
+  // The glow is a soft white outline applied to the whole composited sprite.
+  // We draw it twice: once with shadow (creates glow outline), once sharp on top.
   ctx.clearRect(0,0,512,512);
-  ctx.shadowColor='white';ctx.shadowBlur=4;
-  ctx.drawImage(off,0,0);
-  ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+
+  // Glow pass — very subtle, just enough to separate character from background
+  ctx.globalAlpha=0.6;
+  ctx.shadowColor='rgba(255,255,255,0.9)';
+  ctx.shadowBlur=5;
   ctx.drawImage(off,0,0);
 
-  // Fade back in
+  // Clean sharp pass on top
+  ctx.globalAlpha=1;
+  ctx.shadowColor='transparent';
+  ctx.shadowBlur=0;
+  ctx.drawImage(off,0,0);
+
   if(animate){
     const fade=document.getElementById('canvas-fade');
     fade.style.opacity='0';
@@ -6043,6 +6057,451 @@ function triggerContextEvent(){
   if(typeof fn==="function") fn();
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  FEATURE: JOURNAL SYSTEM
+//  Significant story events are archived with date and searchable.
+// ═══════════════════════════════════════════════════════════════════════════════
+function journalAdd(title, body, tags=[]){
+  G.journal = G.journal||[];
+  G.journal.push({
+    week: G.week, year: G.year, weekOfYear: G.weekOfYear,
+    date: weekToDate(G.weekOfYear, G.year),
+    title, body, tags
+  });
+  if(G.journal.length > 200) G.journal.shift(); // cap at 200
+  updateJournal();
+}
+
+function updateJournal(){
+  const el = document.getElementById('journal-content');
+  if(!el) return;
+  const entries = (G.journal||[]).slice().reverse(); // newest first
+  if(!entries.length){
+    el.innerHTML='<p style="color:var(--ink3);font-style:italic;">No entries yet.</p>';
+    return;
+  }
+  el.innerHTML = entries.map(e=>`
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line);">
+      <div style="font-size:.63rem;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;">${e.date}</div>
+      <div style="font-weight:600;color:var(--ink);margin-bottom:4px;">${e.title}</div>
+      <div style="color:var(--ink2);">${e.body}</div>
+      ${e.tags.length?`<div style="margin-top:5px;">${e.tags.map(t=>`<span style="font-size:.6rem;padding:1px 6px;background:var(--bg3);color:var(--ink3);margin-right:4px;">${t}</span>`).join('')}</div>`:''}
+    </div>`).join('');
+}
+
+// Journal: intercept storyEntry to auto-log significant events
+// We do this by storing a reference AFTER the original is defined, using a wrapper.
+// Since function declarations hoist, we must use a variable assignment approach.
+const storyEntryOrig = storyEntry; // capture the real function (defined earlier)
+// Override via global assignment — works because we're in the same scope
+window._storyEntryWithJournal = function(title, body, fxArr){
+  storyEntryOrig(title, body, fxArr);
+  const significant=["birth","breakup","eviction","social services","homeless","fired","promoted","surgery","pregnant","new home","moving in","started","first","lasik","haircut","hospital","therapy","quitting","left without","job","diagnosis"];
+  const lc=(title+body).toLowerCase();
+  if(significant.some(kw=>lc.includes(kw))){
+    G.journal=G.journal||[];
+    G.journal.push({week:G.week,year:G.year,weekOfYear:G.weekOfYear,date:weekToDate(G.weekOfYear,G.year),title,body:typeof body==='string'?body.slice(0,160):'',tags:[]});
+    if(G.journal.length>200) G.journal.shift();
+    updateJournal();
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  FEATURE: SEASONAL EVENTS
+//  Calendar-aware events tied to real months (using weekOfYear).
+// ═══════════════════════════════════════════════════════════════════════════════
+function getSeason(){
+  const w = G.weekOfYear;
+  if(w<=12) return "winter";
+  if(w<=24) return "spring";
+  if(w<=37) return "summer";
+  if(w<=49) return "autumn";
+  return "winter";
+}
+
+function checkSeasonalEvents(){
+  const w = G.weekOfYear;
+  // Christmas — week 51/52
+  if((w===51||w===52) && !G.flags[`xmas_${G.year}`]){
+    G.flags[`xmas_${G.year}`]=true;
+    triggerChristmasEvent();
+  }
+  // Summer — week 26 (mid-July)
+  if(w===26 && !G.flags[`summer_${G.year}`]){
+    G.flags[`summer_${G.year}`]=true;
+    triggerSummerEvent();
+  }
+  // New Year — week 1
+  if(w===1 && G.week>1 && !G.flags[`newyear_${G.year}`]){
+    G.flags[`newyear_${G.year}`]=true;
+    triggerNewYearEvent();
+  }
+  // Spring — week 14 (Easter-ish)
+  if(w===14 && !G.flags[`spring_${G.year}`]){
+    G.flags[`spring_${G.year}`]=true;
+    storyEntry("Spring","The city shakes off winter. People are outside. The light lasts longer. Something shifts in you too.",[{type:"stat",label:"+mood"}]);
+    G.mood=clamp(G.mood+5); G.energy=clamp(G.energy+8);
+  }
+  // Seasonal mood modifiers
+  const season=getSeason();
+  if(season==="winter" && G.week%4===0){ G.mood=clamp(G.mood-2); G.energy=clamp(G.energy-3); }
+  if(season==="summer" && G.week%4===0){ G.mood=clamp(G.mood+2); G.energy=clamp(G.energy+2); }
+}
+
+function triggerChristmasEvent(){
+  storyEntry("Christmas","The city goes quiet in a specific way. Lights everywhere. The air smells different. It's hard not to feel something.");
+  setActions([
+    {label:"🎄 Embrace it — celebrate",fn:()=>{
+      G.happy=clamp(G.happy+15); G.savings-=120; gainFat(3,"balanced");
+      G.weeklyAlcohol+=8; G.drinkingWeeks++;
+      storyEntry("Christmas celebrations","Mulled wine, decent food, people you like. Worth every euro.",[{type:"stat",label:"+happiness"},{type:"bad",label:"−€120"}]);
+      journalAdd("Christmas","You celebrated properly this year. Good food, company, and more mulled wine than planned.",["seasonal"]);
+      mainMenuActions();
+    }},
+    {label:"Stay in — low-key",fn:()=>{
+      G.mood=clamp(G.mood+5); G.savings-=30;
+      storyEntry("Quiet Christmas","A good film, decent food, your own company. Restful.",[]);
+      mainMenuActions();
+    }},
+    {label:"It's just another day",fn:()=>{
+      G.depressionScore=clamp(G.depressionScore+5);
+      storyEntry("Ignoring it","You scroll past everyone's perfect photos and eat toast. You're fine.",[{type:"bad",label:"−mood"}]);
+      mainMenuActions();
+    }},
+  ]);
+}
+
+function triggerSummerEvent(){
+  storyEntry("High summer","The city empties. The ones who stay inherit it — long evenings, outdoor tables, the heat rising from the pavement at 10pm.");
+  setActions([
+    {label:"🌊 Book a trip — holiday",fn:()=>{
+      if(G.savings<400){ storyEntry("Can't afford it","Not this year.",[{type:"bad",label:"no funds"}]); mainMenuActions(); return; }
+      G.savings-=400; G.happy=clamp(G.happy+20); G.mood=clamp(G.mood+18);
+      G.depressionScore=clamp(G.depressionScore-10);
+      storyEntry("Holiday","A week somewhere warm. Completely switched off. You come back feeling like yourself again.",[{type:"stat",label:"+happiness"},{type:"bad",label:"−€400"}]);
+      journalAdd("Summer holiday","You took a proper holiday. First one in a while.",["seasonal","travel"]);
+      mainMenuActions();
+    }},
+    {label:"🍺 Enjoy the city",fn:()=>{
+      G.happy=clamp(G.happy+10); G.social=clamp((G.social||50)+8);
+      G.savings-=60; G.drinksPerWeek+=3;
+      storyEntry("City summer","Long evenings on terraces. The city is yours.",[{type:"stat",label:"+mood"}]);
+      mainMenuActions();
+    }},
+    {label:"Work through it",fn:()=>{
+      G.savings+=Math.round(G.salary*0.1); G.energy=clamp(G.energy-10);
+      storyEntry("Working summer","Everyone else is on holiday. You get things done.",[{type:"stat",label:"+savings"}]);
+      mainMenuActions();
+    }},
+  ]);
+}
+
+function triggerNewYearEvent(){
+  storyEntry("New Year","Another year. You think about the one that just ended — what happened, what didn't, who you were.");
+  setActions([
+    {label:"Make resolutions",fn:()=>{
+      G.conf=clamp(G.conf+6); G.depressionScore=clamp(G.depressionScore-5);
+      G.happy=clamp(G.happy+8);
+      storyEntry("Resolutions","You write three things down. You mean all of them. You'll see how many survive February.",[{type:"stat",label:"+motivation"}]);
+      journalAdd("New Year resolutions","A new year. New intentions. Real ones, this time.",["seasonal"]);
+      mainMenuActions();
+    }},
+    {label:"Reflect — no promises",fn:()=>{
+      G.depressionScore=clamp(G.depressionScore-3); G.mood=clamp(G.mood+5);
+      storyEntry("Reflection","You don't make promises you can't keep. Just take stock. It's more honest.",[]);
+      mainMenuActions();
+    }},
+    {label:"It's arbitrary — ignore it",fn:()=>{
+      storyEntry("Just another week","The Gregorian calendar is a social construct. You're fine.",[]);
+      mainMenuActions();
+    }},
+  ]);
+}
+
+// Hook into passiveWeeklyEffects
+const _passiveOrig = passiveWeeklyEffects;
+// (we can't safely patch passiveWeeklyEffects since it's called inside advanceWeeks — instead we hook advanceWeeks)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  FEATURE: BODY IMAGE SYSTEM
+//  How the player *feels* about their body vs actual measurements.
+//  Affects confidence and depression independently.
+// ═══════════════════════════════════════════════════════════════════════════════
+function calcBodyImageScore(){
+  // Based on: bmi distance from personal ideal, comparison to past self, partner feedback
+  const bmi = calcBMI();
+  const weight = calcWeight();
+  G.bodyImageIdeal = G.bodyImageIdeal || 22; // target bmi (adjusts with time)
+  const bmiDelta = Math.abs(bmi - G.bodyImageIdeal);
+  let score = 60; // start neutral
+  if(bmiDelta < 2) score += 20;
+  else if(bmiDelta < 5) score += 5;
+  else if(bmiDelta < 10) score -= 15;
+  else score -= 30;
+  // Fitness improves body image regardless of weight
+  score += Math.round((G.fitness-50)/5);
+  // Depression worsens perceived body image
+  score -= Math.round(G.depressionScore/6);
+  // Acne hits body image
+  if(G.flags.acne) score -= 10;
+  // Confidence modifies body image perception
+  score += Math.round((G.conf-50)/8);
+  G.bodyImageScore = clamp(score, 0, 100);
+  return G.bodyImageScore;
+}
+
+function updateBodyImage(){
+  const score = calcBodyImageScore();
+  // Body image affects confidence and mood (separate from actual weight)
+  if(score < 25){
+    G.conf = clamp(G.conf - 0.5);
+    G.depressionScore = clamp(G.depressionScore + 0.5);
+  } else if(score > 70){
+    G.conf = clamp(G.conf + 0.3);
+  }
+}
+
+// Body image events — triggered occasionally
+function checkBodyImageEvent(){
+  const score = calcBodyImageScore();
+  if(score < 25 && Math.random() < 0.08){
+    storyEntry("Mirror","You catch yourself in a mirror. The thought is immediate and unkind. You know it's not entirely fair. That doesn't make it quieter.");
+    setActions([
+      {label:"Be gentle with yourself",fn:()=>{ G.depressionScore=clamp(G.depressionScore-4); G.conf=clamp(G.conf+3); storyEntry("Self-compassion","You push back on the thought. It takes effort. It's worth it.",[{type:"stat",label:"+self-acceptance"}]); mainMenuActions(); }},
+      {label:"Use it as motivation",fn:()=>{ G.bingeTendency=clamp(G.bingeTendency-5); G.fitness=clamp(G.fitness+2); storyEntry("Channelled it","You lace up. The feeling becomes fuel. Just don't make this the only relationship you have with exercise.",[{type:"stat",label:"+motivation"}]); mainMenuActions(); }},
+      {label:"Spiral a bit",fn:()=>{ G.depressionScore=clamp(G.depressionScore+8); G.mood=clamp(G.mood-10); storyEntry("Rough hour","The thought spiral takes a while. You come out the other side feeling wrung out.",[{type:"bad",label:"−mood"}]); mainMenuActions(); }},
+    ]);
+  } else if(score > 75 && Math.random() < 0.06){
+    storyEntry("A good day","You catch yourself in a mirror. The thought isn't unkind. For a moment you just... feel okay in your skin. It's worth noticing.");
+    G.conf=clamp(G.conf+5); G.happy=clamp(G.happy+6);
+    mainMenuActions();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  FEATURE: PUBLIC TRANSPORT vs CAR COMMUTE
+//  Changes weekly time budget, costs, fitness, and mood.
+// ═══════════════════════════════════════════════════════════════════════════════
+function getCommuteMode(){
+  if(G.car && G.car!=="None") return "car";
+  if(G.bike) return "bike";
+  return "transit";
+}
+function getCommuteHoursWeekly(){
+  const mode = getCommuteMode();
+  if(mode==="car")    return 3;   // 30min/day × 5
+  if(mode==="bike")   return 4;   // 40min/day × 5 (slower but doors-to-doors)
+  return 5;                       // transit: 50min/day × 5
+}
+function getCommuteWeeklyCost(){
+  const mode = getCommuteMode();
+  if(mode==="car")    return Math.round((G.transportCost||80)/4); // monthly fuel / 4 weeks
+  if(mode==="bike")   return 2;   // bike maintenance
+  return Math.round((G.transportCost||60)/4); // transit pass / 4
+}
+function commutePassiveEffect(){
+  const mode = getCommuteMode();
+  if(mode==="bike"){ G.fitness=clamp(G.fitness+0.5); G.health=clamp(G.health+0.3); }
+  if(mode==="transit"){ /* neutral, but exposes to random events */ }
+  if(mode==="car"){ G.fitness=clamp(G.fitness-0.2); } // sedentary effect over time
+  // Random transit event
+  if(mode==="transit" && Math.random()<0.04){
+    const evts=["You miss the connecting train. Twenty minutes standing in the cold.","Someone plays music out loud on the metro. You develop opinions.","A stranger asks for directions. You actually know the answer. Small win.","The bus is packed. You read the news over someone's shoulder. Regret it."];
+    storyEntry("Commute",evts[Math.floor(Math.random()*evts.length)],[]);
+  }
+}
+// Add bike purchase option to housing/transport
+function openTransportMenu(){
+  storyEntry("Transport", `You currently commute by ${getCommuteMode()}. ${G.car&&G.car!=="None"?"Car: "+G.car:G.bike?"You have a bike.":"Public transport."}`);
+  setActions([
+    !G.bike && G.savings>=200 ? {label:"🚲 Buy a bicycle — €200", fn:()=>{ G.savings-=200; G.bike=true; storyEntry("New bike","It's a good one. You feel smug and also slightly virtuous.",[{type:"stat",label:"eco commute"},{type:"bad",label:"−€200"}]); mainMenuActions(); }} : null,
+    G.bike ? {label:"🚲 Sell the bike", fn:()=>{ G.savings+=80; G.bike=false; storyEntry("Sold the bike","€80 back. You've convinced yourself public transport is fine.",[{type:"bad",label:"−bike"}]); mainMenuActions(); }} : null,
+    {label:"🚌 Check transit pass (monthly)", fn:()=>{ storyEntry("Transit pass",`Monthly pass costs approx €${G.transportCost||60}/mo. ${G.car?"You have a car but could switch.":"You rely on public transport."}`); mainMenuActions(); }},
+    {label:"Back", fn:()=>mainMenuActions()},
+  ].filter(Boolean));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  FEATURE: SLEEP QUALITY (distinct from sleep quantity)
+//  Quality is affected by: noise, stress, alcohol, screens, anxiety.
+//  Poor quality = bad energy even with 8h sleep.
+// ═══════════════════════════════════════════════════════════════════════════════
+function calcSleepQuality(){
+  let quality = 80; // baseline good
+  // Housemate noise
+  const noisyMate = (G.housemates||[]).find(h=>h.personality==="noisy"||h.personality==="party");
+  if(noisyMate && G.housingTier===0) quality -= (noisyMate.tension||0)*3 + 10;
+  // Stress and depression
+  quality -= Math.round(G.depressionScore/5);
+  quality -= Math.round((G.relationshipDrama||0)/8);
+  // Alcohol before bed
+  if(G.weeklyAlcohol>7) quality -= 12;
+  // Screens
+  if(G.screenHoursPerDay>6) quality -= 8;
+  // Anxiety trait
+  if((G.traits||[]).includes("anxious")) quality -= 10;
+  // Positive: own place, good relationship
+  if(G.housingTier>=1) quality += 8;
+  const partner = G.partnerID ? G.relationships.find(r=>r.id===G.partnerID) : null;
+  if(partner && partner.closeness>60 && (G.relationshipDrama||0)<30) quality += 8;
+  G.sleepQuality = clamp(quality, 10, 100);
+  return G.sleepQuality;
+}
+
+function applySleepQualityEffect(){
+  const qty = G.sleepHoursPerNight || 7;
+  const quality = calcSleepQuality();
+  // Energy formula: both quantity and quality matter
+  const baseEnergy = qty>=8?95:qty>=7?80:qty>=6?60:40;
+  const qualityMult = quality/100;
+  const effectiveEnergy = Math.round(baseEnergy * (0.4 + 0.6*qualityMult));
+  // Gradual drift toward effective energy (not instant)
+  G.energy = clamp(Math.round(G.energy*0.6 + effectiveEnergy*0.4), 10, 100);
+  // Very poor sleep triggers event
+  if(quality < 30 && Math.random() < 0.2){
+    const reasons = [
+      noisyMate?"The noise from the flat keeps you up":"The anxiety won't let you rest",
+      "You wake at 3am with your mind already running",
+      "You spend an hour staring at the ceiling doing mental arithmetic about your finances",
+    ].filter(Boolean);
+    const noisyMate2 = (G.housemates||[]).find(h=>h.personality==="noisy"||h.personality==="party");
+    const msg = noisyMate2 && G.housingTier===0 ? `The noise from ${noisyMate2.name}'s room keeps you up.` : reasons[Math.floor(Math.random()*reasons.length)];
+    storyEntry("Bad night",msg,[{type:"bad",label:"−energy"}]);
+    G.energy=clamp(G.energy-10);
+    G.depressionScore=clamp(G.depressionScore+2);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  FEATURE: RELATIONSHIP DEPTH & COMPATIBILITY
+//  Partners reveal compatibility over time through conversation topics.
+//  Incompatibility builds tension; compatibility builds lasting happiness.
+// ═══════════════════════════════════════════════════════════════════════════════
+const COMPATIBILITY_TOPICS = [
+  {id:"kids",       label:"Children",       q:"Do you want kids someday?"},
+  {id:"money",      label:"Money habits",   q:"Are you a saver or a spender?"},
+  {id:"lifestyle",  label:"Lifestyle pace", q:"Do you like a busy social life or something quieter?"},
+  {id:"future",     label:"Future plans",   q:"Where do you see yourself in five years?"},
+  {id:"values",     label:"Core values",    q:"What matters most to you?"},
+  {id:"intimacy",   label:"Intimacy",       q:"How important is physical closeness to you?"},
+];
+
+function openDeepConversation(partner){
+  const done = partner.compatTopics = partner.compatTopics||{};
+  const remaining = COMPATIBILITY_TOPICS.filter(t=>!done[t.id]);
+  if(!remaining.length){
+    storyEntry("No more to discover",`You and ${partner.name} have talked through everything that matters. You know each other.`,[]);
+    mainMenuActions(); return;
+  }
+  const topic = remaining[Math.floor(Math.random()*remaining.length)];
+  storyEntry(`Deep conversation — ${topic.label}`,`You and ${partner.name} end up talking properly. The question surfaces: "${topic.q}"`);
+  // Generate partner position randomly (seeded by partner id + topic)
+  const partnerSeed = (partner.id||0) + topic.id.charCodeAt(0);
+  const partnerView = partnerSeed % 3; // 0=agree, 1=different, 2=opposite
+  setActions([
+    {label:"Share your honest view — agree",fn:()=>resolveCompatTopic(partner,topic,"agree",partnerView)},
+    {label:"Share your view — you differ",fn:()=>resolveCompatTopic(partner,topic,"differ",partnerView)},
+    {label:"Dodge the question",fn:()=>{ storyEntry("Avoided it","You skirt the topic. They notice.",[{type:"bad",label:"−closeness"}]); partner.closeness=clamp(partner.closeness-5); mainMenuActions(); }},
+  ]);
+}
+
+function resolveCompatTopic(partner, topic, yourView, partnerView){
+  partner.compatTopics = partner.compatTopics||{};
+  partner.compatScore  = partner.compatScore||50;
+  const agree = (yourView==="agree" && partnerView===0)||(yourView==="differ" && partnerView===1);
+  partner.compatTopics[topic.id] = yourView;
+  if(agree){
+    partner.closeness=clamp(partner.closeness+12);
+    partner.compatScore=clamp(partner.compatScore+8);
+    G.happy=clamp(G.happy+8); G.relationshipDrama=clamp((G.relationshipDrama||0)-5);
+    storyEntry(`On ${topic.label}`,`You're on the same page. It matters more than you'd thought.`,[{type:"stat",label:"+compatibility"}]);
+  } else {
+    partner.closeness=clamp(partner.closeness+3);
+    partner.compatScore=clamp(partner.compatScore-10);
+    G.relationshipDrama=clamp((G.relationshipDrama||0)+8);
+    storyEntry(`On ${topic.label}`,`You see it differently. The conversation is honest but leaves something unresolved between you.`,[{type:"bad",label:"incompatibility"}]);
+    if(partner.compatScore<25){
+      storyEntry("Fundamental differences",`You're realising that you and ${partner.name} want different things at a fairly deep level. It doesn't mean the relationship is over. But it complicates it.`,[{type:"bad",label:"compatibility risk"}]);
+    }
+  }
+  journalAdd(`Conversation with ${partner.name}`,`Talked about ${topic.label}. ${agree?"You're aligned.":"You see it differently."}`,["relationship"]);
+  mainMenuActions();
+}
+
+// Patch coupleSerious to add deep conversation option
+(function(){
+  const _orig = coupleSerious;
+  coupleSerious = function(partner){
+    storyEntry(`Talking to ${partner.name}`,"You sit down and actually talk. The difficult kind.");
+    const drama = G.relationshipDrama||0;
+    const compat = partner.compatScore||50;
+    setActions([
+      drama>40?{label:"Address the tension",fn:()=>{G.relationshipDrama=clamp(drama-30);partner.closeness=clamp(partner.closeness+15);storyEntry("Cleared the air","It's uncomfortable but necessary. Things feel lighter after.",[]); advanceWeeks(1);mainMenuActions();}}:null,
+      {label:"💬 Have a deep conversation",fn:()=>openDeepConversation(partner)},
+      {label:"Bring up having children",fn:()=>discussChildren(partner)},
+      {label:"Talk about moving in together",fn:()=>discussMoveIn(partner)},
+      {label:"Confess something",fn:()=>confessToPartner(partner)},
+      compat<25?{label:"⚠ Acknowledge the incompatibility",cls:"warn",fn:()=>{ storyEntry("The honest conversation","You name it. The things you want differently. It doesn't go easily, but it's real.",[{type:"bad",label:"difficult truth"}]); partner.closeness=clamp(partner.closeness+8); G.depressionScore=clamp(G.depressionScore-5); mainMenuActions(); }}:null,
+      {label:"Back",fn:()=>mainMenuActions()},
+    ].filter(Boolean));
+  };
+})();
+
+// Hook new weekly systems into advanceWeeks using a post-call approach.
+// Since advanceWeeks is already defined, we wrap it with a variable.
+(function(){
+  const _orig = advanceWeeks; // local capture at this moment
+  advanceWeeks = function(n=1){
+    _orig(n);
+    checkSeasonalEvents();
+    updateBodyImage();
+    applySleepQualityEffect();
+    commutePassiveEffect();
+    if(Math.random()<0.08) checkBodyImageEvent();
+  };
+})();
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ADD TRANSPORT & JOURNAL TO MENUS (via CATS patch)
+// ═══════════════════════════════════════════════════════════════════════════════
+// Patch openHousingMenu to include transport option
+(function(){
+  openHousingMenu = function(){
+    const inShared = G.housingTier <= 0;
+    const hm = G.housemates||[];
+    storyEntry("🏠 Housing", `You're currently ${G.housing}. Rent: €${G.rent}/mo. Commute: ${getCommuteMode()} (~${getCommuteHoursWeekly()}h/week).`);
+    const acts = [
+      inShared&&hm.length  ? {label:`👥 Housemates (${hm.length})`,           fn:()=>openHousematesMenu()} : null,
+      inShared&&hm.length<3? {label:"🔍 Find a new housemate",                fn:()=>findNewHousemate()} : null,
+      inShared&&hm.length&&hm.some(h=>(h.tension||0)>3)
+                           ? {label:"🗣 Address flatmate issues",              fn:()=>addressHousemateIssues()} : null,
+      G.salary>0&&G.housingTier<=0&&G.savings>=1400
+                           ? {label:"🏠 Get your own flat — €700/mo (+€1,400 deposit)", fn:()=>upgradeHousing(1,"Own flat",700)} : null,
+      G.salary>0&&G.housingTier<=0&&G.savings>=1900
+                           ? {label:"🏠 Nicer own flat — €950/mo (+€1,900 deposit)",   fn:()=>upgradeHousing(1,"Nice flat",950)} : null,
+      G.savings>30000&&G.housingTier<2
+                           ? {label:"Buy a small flat (€120k, €900/mo mortgage)",fn:()=>buyProperty(1,"Small flat",900,120000)} : null,
+      G.savings>80000&&G.housingTier<3
+                           ? {label:"Buy a house (€280k, €1,400/mo)",fn:()=>buyProperty(2,"House",1400,280000)} : null,
+      {label:"🚌 Transport options",                                           fn:()=>openTransportMenu()},
+      G.car==="None"&&G.licence&&G.savings>5000
+                           ? {label:"🚗 Buy a used car — €4,000",fn:()=>buyCar("Second-hand hatchback",4000)} : null,
+      G.car!=="None"&&G.savings>20000
+                           ? {label:"🚗 Upgrade car — €18,000",fn:()=>buyCar("New family car",18000)} : null,
+      {label:"Back",fn:()=>mainMenuActions()},
+    ].filter(Boolean);
+    setActions(acts);
+  };
+})();
+
+// Update journal display when tab is switched
+document.querySelectorAll('.ltab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(btn.dataset.tab==='journal') updateJournal();
+  });
+});
 
 </script>
 </body>
