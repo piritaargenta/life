@@ -310,33 +310,63 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
 @media(max-width:700px){
   html,body{overflow:auto;}
   #game{height:auto;min-height:100svh;}
-  #topbar{padding:0 12px;gap:8px;height:44px;}
+  #topbar{padding:0 12px;gap:6px;height:52px;flex-wrap:nowrap;}
+  .tb-brand{font-size:1rem;}
+  .tb-info{font-size:.8rem;}
   .tb-date{display:none;}
-  .tb-btn{padding:3px 8px;font-size:.65rem;}
+  .tb-btn{padding:5px 10px;font-size:.72rem;min-height:36px;}
   #grid{display:flex;flex-direction:column;height:auto;overflow:visible;}
   #col-left{border-right:none;border-bottom:1px solid var(--line);width:100%;}
-  #viewport-wrap{width:100%;height:72vw;max-height:360px;}
+  #viewport-wrap{width:100%;height:68vw;max-height:320px;}
   #characterCanvas{
-    /* recalc: vw/512 * 1.087 */
     transform:scale(calc(100vw / 512 * 1.087)) translate(-40px,-10px);
   }
-  .ltab-panel{max-height:200px;}
+  .ltabs{gap:0;}
+  .ltab{padding:12px 4px;font-size:.72rem;}
+  .ltab-panel{max-height:220px;padding:12px 14px;}
+  .meas-row{padding:9px 0;}
+  .meas-lbl{font-size:.82rem;}
+  .meas-val{font-size:.92rem;}
+  .habit-row{padding:10px 0;}
+  .habit-name{font-size:.84rem;}
+  .habit-val{font-size:.8rem;}
   #col-mid{height:auto;}
-  #story-scroll{height:auto;min-height:180px;max-height:40vh;}
-  #action-bar{position:sticky;bottom:0;z-index:40;padding:10px 14px 12px;}
-  .abar-grid{gap:5px;}
-  .a-btn{padding:9px 10px;font-size:.8rem;}
-  #week-planner-bar{padding:7px 14px;}
+  #story-scroll{height:auto;min-height:220px;max-height:45vh;padding:18px 16px;}
+  .story-entry h3{font-size:1.1rem;}
+  .story-entry p{font-size:.9rem;line-height:1.75;}
+  #action-bar{position:sticky;bottom:0;z-index:40;padding:12px 14px 16px;}
+  .abar-label{font-size:.7rem;margin-bottom:10px;}
+  .abar-grid{gap:7px;}
+  .a-btn{padding:12px 14px;font-size:.86rem;min-height:44px;line-height:1.25;}
+  #week-planner-bar{padding:8px 14px;min-height:48px;}
+  .wplan-label{font-size:.7rem;}
+  .wplan-pill{font-size:.76rem;padding:5px 10px;}
+  .wplan-commit{padding:8px 16px;font-size:.78rem;min-height:40px;}
   #col-right{
-    display:grid;grid-template-columns:1fr 1fr;
+    display:flex;flex-direction:column;
     gap:0;padding:0;border-left:none;border-top:1px solid var(--line);
   }
-  #col-right>div{padding:10px 12px;border-bottom:1px solid var(--line);}
-  #col-right>div:nth-child(odd){border-right:1px solid var(--line);}
+  #col-right>div{padding:14px 16px;border-bottom:1px solid var(--line);}
+  .rsec-title{font-size:.7rem;padding-bottom:10px;margin-bottom:12px;}
+  .stat-row{margin-bottom:10px;}
+  .stat-name{font-size:.82rem;width:76px;}
+  .stat-bar-bg{height:4px;}
+  .stat-num{font-size:.79rem;width:28px;}
+  .kv-row{padding:8px 0;font-size:.83rem;}
+  .kv-val{font-size:.8rem;}
+  .rel-entry{padding:10px 0;}
+  .rel-name{font-size:.84rem;}
+  .rel-detail{font-size:.76rem;}
+  .week-grid{grid-template-columns:1fr 1fr;gap:7px;}
+  .wk-btn{padding:11px 6px;font-size:.78rem;min-height:44px;}
   .cc-wrap{padding:22px 16px;}
   .cc-wrap h1{font-size:1.5rem;}
   .cc-two{grid-template-columns:1fr;}
-  .week-grid{grid-template-columns:1fr 1fr;}
+  .cc-pill{padding:10px 16px;font-size:.84rem;min-height:40px;}
+  .cc-trait{padding:10px 12px;font-size:.82rem;min-height:40px;}
+  .cc-input{padding:12px 14px;font-size:1rem;}
+  .cc-btn-start{padding:16px;font-size:1.05rem;}
+  #col-right .bill-row{padding:8px 0;font-size:.82rem;}
 }
 
 /* Left tabs */
@@ -594,6 +624,25 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
   color:var(--ink);font-size:.78rem;outline:none;
 }
 
+/* Bill rows */
+.bill-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid var(--line);font-size:.74rem;
+}
+.bill-row:last-child{border-bottom:none;}
+.bill-key{color:var(--ink2);}
+.bill-val{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--red);}
+.bill-val.pos{color:var(--green);}
+.bill-val.warn{color:var(--amber);}
+.budget-summary{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;margin-top:4px;border-top:1px solid var(--line2);
+  font-size:.78rem;font-weight:500;
+}
+.budget-ok{color:var(--green);}
+.budget-tight{color:var(--amber);}
+.budget-bad{color:var(--red);}
+
 /* Misc utils */
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 .mono{font-family:'IBM Plex Mono',monospace;}
@@ -838,10 +887,22 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
         <div class="rsec-title">Finances</div>
         <div class="kv-row"><span class="kv-key">Job</span><span class="kv-val" id="kv-job">Unemployed</span></div>
         <div class="kv-row"><span class="kv-key">Salary (gross)</span><span class="kv-val" id="kv-gross">€0/mo</span></div>
-        <div class="kv-row"><span class="kv-key">Tax</span><span class="kv-val" id="kv-tax">€0/mo</span></div>
-        <div class="kv-row"><span class="kv-key">Rent/Mortgage</span><span class="kv-val" id="kv-rent">€0/mo</span></div>
-        <div class="kv-row"><span class="kv-key">Net take-home</span><span class="kv-val" id="kv-net">€0/mo</span></div>
+        <div class="kv-row"><span class="kv-key">Income tax</span><span class="kv-val" id="kv-tax">€0/mo</span></div>
+        <div class="kv-row"><span class="kv-key">Social security</span><span class="kv-val" id="kv-nic">€0/mo</span></div>
+        <div class="kv-row"><span class="kv-key">Net take-home</span><span class="kv-val" id="kv-takehome">€0/mo</span></div>
+        <div class="rsec-title" style="margin-top:10px">Monthly Bills</div>
+        <div class="bill-row"><span class="bill-key">Rent/Mortgage</span><span class="bill-val" id="kv-rent">€0</span></div>
+        <div class="bill-row"><span class="bill-key">Utilities</span><span class="bill-val" id="kv-utilities">€0</span></div>
+        <div class="bill-row"><span class="bill-key">Food budget</span><span class="bill-val" id="kv-foodbill">€0</span></div>
+        <div class="bill-row"><span class="bill-key">Transport</span><span class="bill-val" id="kv-transport">€0</span></div>
+        <div class="bill-row"><span class="bill-key">Subscriptions</span><span class="bill-val" id="kv-subs">€0</span></div>
+        <div class="bill-row" id="kv-debt-row" style="display:none"><span class="bill-key">Debt repayment</span><span class="bill-val" id="kv-debtpay">€0</span></div>
+        <div class="budget-summary">
+          <span>Monthly net</span>
+          <span id="kv-net" class="budget-ok">€0</span>
+        </div>
         <div class="kv-row"><span class="kv-key">Savings</span><span class="kv-val" id="kv-save">€0</span></div>
+        <div class="kv-row" id="kv-debt-display" style="display:none"><span class="kv-key">Total debt</span><span class="kv-val" style="color:var(--red)" id="kv-debt-total">€0</span></div>
       </div>
 
       <div>
@@ -918,6 +979,20 @@ function calcTax(annualGross){
   if(annualGross<=50000) return Math.round(2600+(annualGross-25000)*0.30);
   return Math.round(2600+7500+(annualGross-50000)*0.42);
 }
+// Social security / NIC (approx 12% of gross above threshold)
+function calcNIC(annualGross){
+  if(annualGross<=9000) return 0;
+  return Math.round((annualGross-9000)*0.12);
+}
+// Calculate total monthly bills (excluding rent)
+function calcMonthlyBills(){
+  const u = G.utilities || 80;
+  const f = G.foodBudget || 150;
+  const t = G.transportCost || (G.car&&G.car!=="None"?120:60);
+  const s = G.subscriptions || 15;
+  const d = G.debtRepayment || 0;
+  return {utilities:u, food:f, transport:t, subs:s, debt:d, total:u+f+t+s+d};
+}
 
 // ═══════════════════════════════════════════════════════
 //  GAME STATE
@@ -957,6 +1032,15 @@ function initState(preset,hairStyle,breastTend){
     mood:60, libido:55, conf:55, appetite:55,
     // finance
     job:"Unemployed", jobTier:0, salary:0, savings:200,
+    // bills & economics
+    utilities:80,          // monthly utilities (electric, water, internet)
+    foodBudget:150,        // estimated monthly food spend
+    transportCost:60,      // bus/metro/fuel
+    subscriptions:15,      // streaming, phone plan etc
+    debt:0,                // total personal debt (excl. mortgage)
+    debtRepayment:0,       // monthly debt repayment
+    creditScore:650,       // 300-850 range
+    overdraft:0,           // how far into overdraft they are
     // housing
     housing:"Renting (shared flat)", rent:350,
     housingTier:0,
@@ -1266,12 +1350,34 @@ function updateStats(){
   setEl('kv-job',G.job);
   const gross=G.salary;
   const annualTax=calcTax(gross*12);
+  const annualNIC=calcNIC(gross*12);
   const monthlyTax=Math.round(annualTax/12);
-  const net=gross-monthlyTax;
+  const monthlyNIC=Math.round(annualNIC/12);
+  const takeHome=gross-monthlyTax-monthlyNIC;
+  const bills=calcMonthlyBills();
+  const totalOut=G.rent+bills.total;
+  const net=takeHome-totalOut;
   setEl('kv-gross',gross?`€${gross.toLocaleString()}/mo`:"—");
   setEl('kv-tax',gross?`−€${monthlyTax.toLocaleString()}/mo`:"—");
-  setEl('kv-rent',`−€${G.rent.toLocaleString()}/mo`);
-  setEl('kv-net',gross?`€${(net-G.rent).toLocaleString()}/mo`:"—");
+  setEl('kv-nic',gross?`−€${monthlyNIC.toLocaleString()}/mo`:"—");
+  setEl('kv-takehome',gross?`€${takeHome.toLocaleString()}/mo`:"—");
+  setEl('kv-rent',`−€${G.rent.toLocaleString()}`);
+  setEl('kv-utilities',`−€${bills.utilities}`);
+  setEl('kv-foodbill',`−€${bills.food}`);
+  setEl('kv-transport',`−€${bills.transport}`);
+  setEl('kv-subs',`−€${bills.subs}`);
+  // Debt row visibility
+  const debtRow=document.getElementById('kv-debt-row');
+  const debtDisp=document.getElementById('kv-debt-display');
+  if(debtRow) debtRow.style.display=G.debtRepayment>0?'flex':'none';
+  if(debtDisp) debtDisp.style.display=G.debt>0?'flex':'none';
+  setEl('kv-debtpay',`−€${G.debtRepayment}`);
+  setEl('kv-debt-total',`€${G.debt.toLocaleString()}`);
+  const netEl=document.getElementById('kv-net');
+  if(netEl){
+    netEl.textContent=gross?(net>=0?`+€${net.toLocaleString()}`:`−€${Math.abs(net).toLocaleString()}`):gross===0?`−€${totalOut}`:"—";
+    netEl.className=net>=0?'budget-ok':net>-200?'budget-tight':'budget-bad';
+  }
   setEl('kv-save',`€${Math.round(G.savings).toLocaleString()}`);
   setEl('kv-housing',G.housing);
   setEl('kv-car',G.car);
@@ -1450,14 +1556,36 @@ function passiveWeeklyEffects(){
   if(!G.salary){ G.happy=clamp(G.happy-1); G.conf=clamp(G.conf-1); }
   else { G.weeksEmployed++; }
 
-  // Monthly salary payment
-  if(G.weekOfYear%4===1&&G.salary>0){
-    const gross=G.salary;
-    const monthlyTax=Math.round(calcTax(gross*12)/12);
-    const net=gross-monthlyTax-G.rent;
-    G.savings+=net;
-    setEl('tb-week-info',`<span style="color:var(--green)">+€${(net>0?net:0).toLocaleString()} salary</span>`);
-    setTimeout(()=>setEl('tb-week-info',''),3000);
+  // Monthly salary payment + bill deductions
+  if(G.weekOfYear%4===1){
+    if(G.salary>0){
+      const gross=G.salary;
+      const monthlyTax=Math.round(calcTax(gross*12)/12);
+      const monthlyNIC=Math.round(calcNIC(gross*12)/12);
+      const bills=calcMonthlyBills();
+      const net=gross-monthlyTax-monthlyNIC-G.rent-bills.total;
+      G.savings+=net;
+      if(net<0){
+        G.overdraft=clamp(G.overdraft+Math.abs(net),0,5000);
+        G.creditScore=clamp(G.creditScore-5,300,850);
+      }
+      const label=net>=0?`+€${net.toLocaleString()} salary`:`−€${Math.abs(net).toLocaleString()} deficit`;
+      setEl('tb-week-info',`<span style="color:${net>=0?'var(--green)':'var(--red)'}">${label}</span>`);
+      setTimeout(()=>setEl('tb-week-info',''),4000);
+    } else {
+      // Unemployed: still pay bills from savings
+      const bills=calcMonthlyBills();
+      const totalOut=G.rent+bills.utilities+bills.transport+bills.subs+bills.debt;
+      G.savings=Math.max(G.savings-totalOut,-G.overdraft-5000);
+      if(G.savings<0){
+        G.overdraft=clamp(Math.abs(G.savings),0,5000);
+        G.creditScore=clamp(G.creditScore-8,300,850);
+      }
+      if(totalOut>0){
+        setEl('tb-week-info',`<span style="color:var(--red)">−€${totalOut} bills</span>`);
+        setTimeout(()=>setEl('tb-week-info',''),4000);
+      }
+    }
   }
 
   // ── Pregnancy progression ──
@@ -1511,7 +1639,34 @@ function passiveWeeklyEffects(){
     }
   }
 
-  // ── Aging ──
+  // ── Savings interest ──
+  if(G.flags.savingsAccount && G.savings>0 && G.weekOfYear%4===0){
+    const interest=Math.round(G.savings*0.03/12);
+    if(interest>0) G.savings+=interest;
+  }
+
+  // ── Debt interest accrual (weekly) ──
+  if(G.debt>0){
+    const weeklyInterest=Math.round(G.debt*0.08/52);
+    G.debt+=weeklyInterest;
+    if(G.week%8===0){
+      storyEntry("Debt interest","Your debt has grown slightly with interest this month.",[{type:"bad",label:"+€"+weeklyInterest*4+" interest"}]);
+    }
+  }
+
+  // ── Credit score slow recovery ──
+  if(G.savings>0 && G.overdraft===0 && G.creditScore<700){
+    G.creditScore=clamp(G.creditScore+0.1,300,850);
+  }
+
+  // ── Financial anxiety ──
+  if(G.savings<0||G.overdraft>500){
+    G.depressionScore=clamp(G.depressionScore+2);
+    G.mood=clamp(G.mood-2);
+    if(G.week%4===0) storyEntry("Financial stress","The numbers don't add up this month. The anxiety is background noise you can't turn off.",[{type:"bad",label:"−mood"}]);
+  }
+
+
   const ageStage = G.age<30?0:G.age<45?1:G.age<60?2:3;
   if(ageStage !== G.agingStage){
     G.agingStage = ageStage;
@@ -2490,27 +2645,66 @@ function hangWithFriend(f){
 //  CAREER SYSTEM
 // ═══════════════════════════════════════════════════════
 const JOBS=[
+  // Tier 0 — entry level, no skills needed
   {tier:0,title:"Café barista",sal:900,type:"hospitality",req:{hospitality:0},active:true,desc:"On your feet all day. Physically demanding, poorly paid."},
   {tier:0,title:"Warehouse picker",sal:1100,type:"manual",req:{manual:0},active:true,desc:"Heavy lifting, nights. Your body will feel it."},
   {tier:0,title:"Supermarket cashier",sal:950,type:"hospitality",req:{hospitality:0},active:true,desc:"Soul-sapping but steady."},
   {tier:0,title:"Cleaner",sal:850,type:"manual",req:{manual:0},active:true,desc:"Early mornings, physical work, invisible to everyone."},
   {tier:0,title:"Call centre agent",sal:1000,type:"office",req:{office:0},active:false,desc:"Headset on, soul off. Sedentary and relentless."},
+  {tier:0,title:"Fast food worker",sal:880,type:"hospitality",req:{hospitality:0},active:true,desc:"Fryers, frantic pace, minimum wage. At least there's leftover food."},
+  {tier:0,title:"Market trader",sal:950,type:"hospitality",req:{hospitality:0},active:true,desc:"Up before dawn, outdoors in all weather. Keeps you lean."},
+  {tier:0,title:"Dog walker",sal:750,type:"manual",req:{manual:0},active:true,desc:"Part-time, fresh air, and dogs. Good for fitness, unreliable income."},
+  {tier:0,title:"Factory worker",sal:1050,type:"manual",req:{manual:0},active:true,desc:"Repetitive, loud, physically taxing. The shifts are long."},
+  {tier:0,title:"Clerical assistant",sal:1000,type:"office",req:{office:0},active:false,desc:"Filing, printing, making tea. The bottom rung of office life."},
+
+  // Tier 1 — some experience or basic skill
   {tier:1,title:"Office admin",sal:1400,type:"office",req:{office:10},active:false,desc:"Sedentary. Eight hours at a desk. Snacks in the drawer."},
   {tier:1,title:"Delivery driver",sal:1300,type:"manual",req:{manual:10,driving:20},active:true,desc:"Requires a licence. Long days in the car."},
   {tier:1,title:"Waitress",sal:1200,type:"hospitality",req:{hospitality:20},active:true,desc:"Tips can be good. Active job."},
   {tier:1,title:"Gym receptionist",sal:1050,type:"fitness",req:{fitness:0},active:true,desc:"Free gym membership perk. Social, physical environment."},
   {tier:1,title:"Carer",sal:1150,type:"manual",req:{manual:5},active:true,desc:"Emotionally demanding. Physically active. Underpaid."},
+  {tier:1,title:"Retail assistant",sal:1100,type:"hospitality",req:{hospitality:10},active:true,desc:"Standing behind a till or folding clothes. Repetitive but sociable."},
+  {tier:1,title:"Security guard",sal:1250,type:"manual",req:{manual:0},active:true,desc:"Shift work, long nights, mostly quiet. Gets you on your feet."},
+  {tier:1,title:"Kitchen porter",sal:1000,type:"manual",req:{manual:0},active:true,desc:"Washing up and hauling stock. Brutal on the back, honest work."},
+  {tier:1,title:"Receptionist",sal:1300,type:"office",req:{office:10},active:false,desc:"Front desk, phone, calendar. The face of the company."},
+  {tier:1,title:"Social media assistant",sal:1200,type:"office",req:{office:5},active:false,desc:"Posting, scheduling, commenting. Blurs the line between work and doom-scroll."},
+  {tier:1,title:"Estate agent assistant",sal:1350,type:"office",req:{office:10},active:false,desc:"Viewings, admin, cold calls. Commission-adjacent."},
+
+  // Tier 2 — intermediate, career building
   {tier:2,title:"Personal trainer",sal:1800,type:"fitness",req:{fitness:20},active:true,desc:"You need to look the part. Keeps you moving."},
   {tier:2,title:"Junior accountant",sal:2000,type:"office",req:{office:30,education:20},active:false,desc:"First serious office career."},
   {tier:2,title:"Store manager",sal:2200,type:"hospitality",req:{hospitality:40},active:false,desc:"Managing people. More stress, more pay."},
   {tier:2,title:"Sales executive",sal:2400,type:"office",req:{office:25},active:false,desc:"Commission-based. Hustle required."},
   {tier:2,title:"Nurse",sal:2100,type:"manual",req:{manual:15,education:30},active:true,desc:"Demanding. Rewarding. Shift work."},
+  {tier:2,title:"Teaching assistant",sal:1600,type:"office",req:{education:25},active:true,desc:"Working in schools. Physically active, emotionally draining."},
+  {tier:2,title:"Paramedic",sal:2200,type:"manual",req:{manual:20,education:30},active:true,desc:"High stress, high purpose. Shift work keeps your body irregular."},
+  {tier:2,title:"Graphic designer",sal:1900,type:"office",req:{office:20,education:20},active:false,desc:"Creative, sedentary. Lots of screen time."},
+  {tier:2,title:"IT support technician",sal:2100,type:"office",req:{office:30},active:false,desc:"Desk-based. You fix other people's problems all day."},
+  {tier:2,title:"Barista manager",sal:1700,type:"hospitality",req:{hospitality:35},active:true,desc:"Running the café floor. On your feet, always."},
+  {tier:2,title:"Real estate agent",sal:2600,type:"office",req:{office:20,education:10},active:false,desc:"Commission makes or breaks you. Hustle-heavy."},
+  {tier:2,title:"Yoga instructor",sal:1500,type:"fitness",req:{fitness:15},active:true,desc:"Classes morning and evening. Your body stays limber."},
+  {tier:2,title:"Event coordinator",sal:1900,type:"hospitality",req:{hospitality:30,office:15},active:true,desc:"Weekends consumed. On your feet non-stop during events."},
+
+  // Tier 3 — established career
   {tier:3,title:"Department manager",sal:3500,type:"office",req:{office:50,education:30},active:false,desc:"A real career now. The meetings multiply."},
   {tier:3,title:"Fitness coach / YouTuber",sal:2800,type:"fitness",req:{fitness:40},active:true,desc:"Building a brand. Inconsistent income but growing."},
   {tier:3,title:"HR manager",sal:3200,type:"office",req:{office:45,education:25},active:false,desc:"You know everyone's secrets. Sedentary."},
+  {tier:3,title:"Software developer",sal:3800,type:"office",req:{office:50,education:40},active:false,desc:"Remote-friendly, very sedentary, well paid."},
+  {tier:3,title:"Accountant",sal:3400,type:"office",req:{office:50,education:40},active:false,desc:"Numbers all day. Your mind stays sharp; your body doesn't."},
+  {tier:3,title:"Physiotherapist",sal:2900,type:"fitness",req:{fitness:30,education:35},active:true,desc:"Active work, helping people. Keeps you body-aware."},
+  {tier:3,title:"Police officer",sal:2700,type:"manual",req:{manual:25,education:15},active:true,desc:"Shifts, stress, and staying physically ready. Pension is good."},
+  {tier:3,title:"Marketing manager",sal:3200,type:"office",req:{office:40,education:25},active:false,desc:"Campaigns, decks, and data. Very sedentary."},
+  {tier:3,title:"Head chef",sal:3000,type:"hospitality",req:{hospitality:50},active:true,desc:"Running a kitchen. Long, physical, high-pressure hours."},
+  {tier:3,title:"Freelance consultant",sal:3600,type:"office",req:{office:45,education:30},active:false,desc:"Own hours, inconsistent income. Liberating and terrifying."},
+  {tier:3,title:"Nurse practitioner",sal:3300,type:"manual",req:{manual:30,education:50},active:true,desc:"Advanced nursing role. Demanding, respected, and active."},
+
+  // Tier 4 — senior / high earner
   {tier:4,title:"Senior manager",sal:5000,type:"office",req:{office:70,education:40},active:false,desc:"The grind has paid off. Your calendar is someone else's now."},
   {tier:4,title:"Business owner",sal:8000,type:"office",req:{office:80,education:50},active:false,desc:"Your own thing. High risk, high reward."},
   {tier:4,title:"Head of fitness brand",sal:7000,type:"fitness",req:{fitness:70,education:20},active:true,desc:"Built from nothing. Your face is the brand."},
+  {tier:4,title:"Doctor / GP",sal:6000,type:"manual",req:{manual:40,education:70},active:true,desc:"Took years to get here. Active, intellectually intense."},
+  {tier:4,title:"Finance director",sal:7500,type:"office",req:{office:80,education:60},active:false,desc:"The money person. Sedentary. Powerful."},
+  {tier:4,title:"Tech startup founder",sal:5000,type:"office",req:{office:70,education:50},active:false,desc:"Volatile income, obsessive hours. Could be worth millions, could be nothing."},
 ];
 
 // ── SURROGACY — separate career option ──────────────────────────────────────
@@ -2540,15 +2734,40 @@ function openJobMenu(){
     const reqs=Object.entries(j.req);
     return reqs.every(([sk,min])=>(G.skills[sk]||0)>=min);
   });
-  storyEntry("Job listings","You look through the available positions.");
+  // Sort by salary desc, show current job first
+  available.sort((a,b)=>b.sal-a.sal);
+  const categories = [...new Set(available.map(j=>j.type))];
+  
+  const currentTier = G.salary>0 ? (JOBS.find(j=>j.title===G.job)||{tier:-1}).tier : -1;
+  const upgrades = available.filter(j=>j.sal>G.salary);
+  const allJobs = available.slice(0, 8);
+  
+  storyEntry("Job listings",`${available.length} positions you qualify for. ${upgrades.length>0?`${upgrades.length} would be a pay increase.`:""}`);
   setActions([
-    ...available.slice(0,5).map(j=>({
-      label:`${j.title} — €${j.sal}/mo`,
-      cls:j.sal>G.salary?"good":undefined,
+    ...allJobs.map(j=>({
+      label:`${j.active?"🏃":"💺"} ${j.title} — €${j.sal.toLocaleString()}/mo`,
+      cls:j.sal>G.salary?"good":j.title===G.job?"pri":undefined,
       fn:()=>takeJob(j)
     })),
-    {label:"Study / take a course",fn:()=>openStudyMenu()},
-    {label:"Back",fn:()=>mainMenuActions()},
+    available.length>8?{label:`+${available.length-8} more jobs…`,fn:()=>openJobMenuExpanded()}:null,
+    {label:"📚 Study / take a course",fn:()=>openStudyMenu()},
+    {label:"💼 Budget & finances",fn:()=>openBudgetMenu()},
+    {label:"← Back",fn:()=>mainMenuActions()},
+  ].filter(Boolean));
+}
+function openJobMenuExpanded(){
+  const available=JOBS.filter(j=>{
+    const reqs=Object.entries(j.req);
+    return reqs.every(([sk,min])=>(G.skills[sk]||0)>=min);
+  }).sort((a,b)=>b.sal-a.sal);
+  storyEntry("All available jobs","Every position you qualify for right now.");
+  setActions([
+    ...available.map(j=>({
+      label:`${j.active?"🏃":"💺"} ${j.title} — €${j.sal.toLocaleString()}/mo`,
+      cls:j.sal>G.salary?"good":j.title===G.job?"pri":undefined,
+      fn:()=>takeJob(j)
+    })),
+    {label:"← Back",fn:()=>openJobMenu()},
   ]);
 }
 function takeJob(job){
@@ -2564,16 +2783,84 @@ function takeJob(job){
 }
 
 function openStudyMenu(){
-  storyEntry("Evening classes","Investing time in yourself.");
+  storyEntry("Education & Training","Investing time in yourself. Each course unlocks better jobs.");
   setActions([
-    {label:"Business / admin course (3mo, €400)",fn:()=>study("office",15,400,12)},
-    {label:"IT course (3mo, €500)",fn:()=>study("office",20,500,12)},
-    {label:"Driving lessons (6wk, €800)",fn:()=>learnDriving()},
-    {label:"Hospitality cert (6wk, €200)",fn:()=>study("hospitality",15,200,6)},
-    {label:"Personal training cert (3mo, €600)",fn:()=>study("manual",15,600,12)},
-    {label:"University degree (3yr, €8,000)",fn:()=>openUniversityMenu()},
-    {label:"Back",fn:()=>openJobMenu()},
+    {label:"📊 Business / admin (3mo, €400)",fn:()=>study("office",15,400,12)},
+    {label:"💻 IT / computing (3mo, €500)",fn:()=>study("office",20,500,12)},
+    {label:"🚗 Driving lessons (6wk, €800)",fn:()=>learnDriving()},
+    {label:"🍽 Hospitality cert (6wk, €200)",fn:()=>study("hospitality",15,200,6)},
+    {label:"💪 Personal training cert (3mo, €600)",fn:()=>study("manual",15,600,12)},
+    {label:"🏋 Fitness coaching diploma (4mo, €900)",fn:()=>study("fitness",25,900,16)},
+    {label:"🎨 Design / creative course (3mo, €450)",fn:()=>study("office",18,450,12)},
+    {label:"📣 Marketing & social media (2mo, €350)",fn:()=>study("office",15,350,8)},
+    {label:"🏥 Healthcare / first aid cert (4mo, €700)",fn:()=>study("manual",20,700,16)},
+    {label:"🏛 University degree (3yr, €8,000)",fn:()=>openUniversityMenu()},
+    {label:"💰 Accountancy qualification (1yr, €3,000)",fn:()=>study("office",40,3000,52)},
+    {label:"← Back",fn:()=>openJobMenu()},
   ]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  BUDGET & FINANCIAL MANAGEMENT MENU
+// ═══════════════════════════════════════════════════════
+function openBudgetMenu(){
+  const bills=calcMonthlyBills();
+  const gross=G.salary;
+  const monthlyTax=Math.round(calcTax(gross*12)/12);
+  const monthlyNIC=Math.round(calcNIC(gross*12)/12);
+  const takeHome=gross-monthlyTax-monthlyNIC;
+  const totalOut=G.rent+bills.total;
+  const net=takeHome-totalOut;
+  const creditLabel=G.creditScore>=750?"Excellent":G.creditScore>=670?"Good":G.creditScore>=580?"Fair":"Poor";
+  
+  storyEntry("Finances & Budget",`Monthly take-home: €${takeHome.toLocaleString()}. Total outgoings: €${totalOut.toLocaleString()}. Net: ${net>=0?"€"+net.toLocaleString():"−€"+Math.abs(net).toLocaleString()}. Credit score: ${G.creditScore} (${creditLabel}).`);
+  setActions([
+    {label:"✂️ Cut subscriptions (−€10/mo)",cond:G.subscriptions>5,fn:()=>{ G.subscriptions=Math.max(5,G.subscriptions-10); storyEntry("Cancelled subscriptions","You cancel a few things you barely used. Every bit helps.",[{type:"stat",label:"-€10/mo bills"}]); openBudgetMenu(); }},
+    {label:"🔌 Shop for cheaper utilities",fn:()=>{ const save=10+Math.floor(Math.random()*30); G.utilities=Math.max(50,G.utilities-save); storyEntry("Better utility deal",`You find a cheaper energy tariff. €${save}/mo saved.`,[{type:"stat",label:"-€"+save+"/mo"}]); openBudgetMenu(); }},
+    G.debt>0?{label:`💳 Pay off debt (€${Math.min(G.savings,1000).toLocaleString()})`,disabled:G.savings<100,fn:()=>payOffDebt()}:null,
+    G.debt>0?{label:"📋 Set up debt repayment plan",fn:()=>setupDebtPlan()}:null,
+    {label:"💳 Take out a personal loan",disabled:G.creditScore<550||G.debt>5000,fn:()=>takeLoan()},
+    {label:"📈 Open a savings account",disabled:G.savings<500,fn:()=>openSavingsAccount()},
+    G.overdraft>0?{label:`⚠️ Clear overdraft (−€${G.overdraft})`,disabled:G.savings<G.overdraft,fn:()=>{ G.savings-=G.overdraft; G.overdraft=0; storyEntry("Overdraft cleared","Back in the black.",[]); openBudgetMenu(); }}:null,
+    {label:"← Back",fn:()=>mainMenuActions()},
+  ].filter(Boolean));
+}
+function payOffDebt(){
+  const pay=Math.min(G.savings,Math.min(G.debt,1000));
+  G.savings-=pay; G.debt-=pay;
+  if(G.debt<=0){G.debt=0;G.debtRepayment=0;}
+  G.creditScore=clamp(G.creditScore+3,300,850);
+  storyEntry("Debt payment",`€${pay.toLocaleString()} paid off. ${G.debt>0?`€${G.debt.toLocaleString()} remaining.`:"Debt cleared!"}`,[{type:"stat",label:G.debt===0?"debt free":"-€"+pay}]);
+  updateStats(); openBudgetMenu();
+}
+function setupDebtPlan(){
+  const monthly=Math.min(Math.round(G.debt/24),200);
+  G.debtRepayment=monthly;
+  storyEntry("Debt repayment plan",`€${monthly}/month until paid off. It'll take about ${Math.ceil(G.debt/monthly)} months. Better than nothing.`,[{type:"stat",label:"plan in place"}]);
+  updateStats(); openBudgetMenu();
+}
+function takeLoan(){
+  storyEntry("Personal loan","How much do you need? Loans accrue 8% annual interest.");
+  setActions([
+    {label:"€500 short-term loan",fn:()=>doLoan(500,8)},
+    {label:"€2,000 loan",fn:()=>doLoan(2000,8)},
+    {label:"€5,000 loan",fn:()=>doLoan(5000,8)},
+    {label:"← Cancel",fn:()=>openBudgetMenu()},
+  ]);
+}
+function doLoan(amount, rate){
+  G.savings+=amount; G.debt+=amount;
+  const monthly=Math.round(amount/24*(1+rate/100));
+  G.debtRepayment+=monthly;
+  G.creditScore=clamp(G.creditScore-10,300,850);
+  storyEntry("Loan approved",`€${amount.toLocaleString()} in your account. Monthly repayment: €${monthly}. Don't spend it all at once.`,[{type:"stat",label:"+€"+amount},{type:"bad",label:"debt: €"+G.debt}]);
+  updateStats(); mainMenuActions();
+}
+function openSavingsAccount(){
+  if(G.flags.savingsAccount){ storyEntry("Already have one","Your savings are in a high-interest account already.",[]);mainMenuActions();return;}
+  G.flags.savingsAccount=true;
+  storyEntry("Savings account","You move your savings into a proper account. 3% annual interest. Small but consistent."),[];
+  mainMenuActions();
 }
 function study(skill,gain,cost,weeks){
   if(G.savings<cost){storyEntry("Can't afford it",`You need €${cost} but only have €${Math.round(G.savings)}.`,[]);mainMenuActions();return;}
@@ -2823,6 +3110,7 @@ function mainMenuActions(){
     !hasJob?{label:"💼 Find work",  fn:()=>openJobMenu()}:null,
     hasJob?{label:"💼 Career",      fn:()=>openJobMenu()}:null,
     {label:"📚 Study",              fn:()=>openStudyMenu()},
+    {label:"💰 Budget & finances",  fn:()=>openBudgetMenu()},
     {label:"🤰 Surrogacy",         fn:()=>openSurrogacyMenu()},
     // Assets
     {label:"🏠 Housing",            fn:()=>openHousingMenu()},
@@ -2832,6 +3120,19 @@ function mainMenuActions(){
       ? {label:"⏩ End week →", cls:"pri", fn:()=>commitWeek()}
       : {label:"⏩ Skip a week",          fn:()=>{advanceWeeks(1);renderCharacter();mainMenuActions();}},
   ].filter(Boolean));
+  const wg = document.getElementById('week-grid');
+  if(!wg) return;
+  // Remove any existing Free Will button before re-adding
+  const existing = wg.querySelector('.freeWillBtn');
+  if(existing) existing.remove();
+  const btn = document.createElement('button');
+  btn.className = 'wk-btn freeWillBtn';
+  btn.style.gridColumn='1/-1';
+  btn.style.borderColor='var(--acc2)';
+  btn.style.color='var(--acc2)';
+  btn.textContent = '✦ Free Will this week';
+  btn.onclick = ()=>openFreeWillMenu();
+  wg.prepend(btn);
 }
 
 // queued (non-branching) versions of activities
@@ -3607,7 +3908,7 @@ function getWeeklyFreeWillChoices(){
 
 function openFreeWillMenu(){
   const choices = getWeeklyFreeWillChoices();
-  storyEntry("Free choices","These are things you could do on your own initiative this week — no external push needed. Not everything is always available.");
+  storyEntry("Free Will","These are things you could do on your own initiative this week — driven by your own desires and choices, not external push. Not everything is always available.");
   setActions([
     ...choices.map(fw=>({
       label: fw.emoji+" "+fw.label,
@@ -3845,20 +4146,190 @@ function triggerContextEvent(){
   if(typeof fn==="function") fn();
 }
 
-// Wire up free will menu into mainMenuActions via a button in the right panel
-// We add it by patching the right-column HTML on game start
-function injectFreeWillButton(){
-  const wg = document.getElementById('week-grid');
-  if(!wg) return;
-  const btn = document.createElement('button');
-  btn.className = 'wk-btn';
-  btn.style.gridColumn='1/-1';
-  btn.style.borderColor='var(--acc2)';
-  btn.style.color='var(--acc2)';
-  btn.textContent = '✦ Free choices this week';
-  btn.onclick = ()=>openFreeWillMenu();
-  wg.prepend(btn);
-}
+// ── ADDITIONAL RANDOM EVENTS ────────────────────────────────────────────────
+RANDOM_EVENTS.push(
+  ()=>{
+    // Utility bill spike
+    const spike=40+Math.round(Math.random()*80);
+    G.savings-=spike;G.utilities+=15;
+    storyEntry("Utility bill spike",`Your energy bill is significantly higher this month. €${spike} more than expected. You turn the heating down.`,[{type:"bad",label:`−€${spike}`}]);
+    updateStats();
+  },
+  ()=>{
+    // Subscription trap
+    storyEntry("Subscription creep","You check your bank statement and find four direct debits you barely remember signing up for.");
+    setActions([
+      {label:"Cancel the ones you don't use",fn:()=>{ const save=20+Math.round(Math.random()*40); G.subscriptions=Math.max(5,G.subscriptions-save); G.happy=clamp(G.happy+3); storyEntry("Cancelled",`€${save}/mo freed up.`,[{type:"stat",label:"-€"+save+"/mo"}]); mainMenuActions(); }},
+      {label:"Leave it — can't be bothered",fn:()=>{ G.subscriptions+=10; storyEntry("Letting it ride","You'll deal with it next month. You won't.",[{type:"bad",label:"+€10/mo wasted"}]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{
+    // Random fine
+    const fines=["Parking fine","Speeding ticket","Library fine","Public transport penalty"];
+    const fine=fines[Math.floor(Math.random()*fines.length)];
+    const amt=40+Math.round(Math.random()*160);
+    G.savings-=amt;
+    storyEntry(fine,`€${amt}. Annoying and entirely your own fault.`,[{type:"bad",label:`−€${amt}`}]);
+    updateStats();
+  },
+  ()=>{
+    // A stranger is kind
+    G.happy=clamp(G.happy+8); G.mood=clamp(G.mood+6);
+    storyEntry("A small kindness","Someone holds a door open longer than they need to. Someone lets you go first. Nothing significant. But you feel it.",[]); 
+  },
+  ()=>{
+    // Local news moment
+    storyEntry("A protest outside","You walk past a group of people holding signs. Something about housing, or wages, or both.");
+    setActions([
+      {label:"Stop and join them for a bit",fn:()=>{ G.mood=clamp(G.mood+6); G.happy=clamp(G.happy+5); storyEntry("Standing for something","An hour on the street. You feel connected to something larger than your own week.",[{type:"stat",label:"+solidarity"}]); mainMenuActions(); }},
+      {label:"Walk past — not your cause",fn:()=>{ storyEntry("Walked past","You read the signs on the way. You think about it later.",[]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{
+    if(G.salary<1200) return;
+    // Tax return / overpayment
+    const refund=100+Math.round(Math.random()*400);
+    G.savings+=refund;
+    storyEntry("Tax refund",`You were slightly overpaying. €${refund} lands in your account from the revenue office.`,[{type:"stat",label:`+€${refund}`}]);
+    updateStats();
+  },
+  ()=>{
+    // Phone broken / replacement
+    storyEntry("Your phone screen cracks","One bad drop. The screen is a spiderweb of glass.");
+    setActions([
+      {label:"Fix it (€80)",disabled:G.savings<80,fn:()=>{ G.savings-=80; storyEntry("Fixed","Good as new, almost.",[{type:"bad",label:"−€80"}]); mainMenuActions(); }},
+      {label:"Live with it",fn:()=>{ G.mood=clamp(G.mood-4); storyEntry("Cracked screen","You squint through it for weeks.",[{type:"bad",label:"−mood"}]); mainMenuActions(); }},
+      {label:"Buy a new phone (€350)",disabled:G.savings<350,fn:()=>{ G.savings-=350; G.happy=clamp(G.happy+5); storyEntry("New phone","Smooth glass. Everything faster. Brief happiness.",[{type:"bad",label:"−€350"}]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{
+    // Health scare
+    storyEntry("A health scare","Something that probably means nothing. But you notice it and your mind goes places.");
+    setActions([
+      {label:"Go to the doctor immediately",fn:()=>{ G.savings-=50; G.health=clamp(G.health+3); storyEntry("Doctor visit","It was nothing. But you feel better for checking. €50 and two hours of your day.",[{type:"stat",label:"peace of mind"}]); mainMenuActions(); }},
+      {label:"Look it up online",fn:()=>{ G.depressionScore=clamp(G.depressionScore+8); G.mood=clamp(G.mood-10); storyEntry("Dr. Google","You emerge convinced you have three things you don't have. The anxiety is real though.",[{type:"bad",label:"health anxiety"}]); mainMenuActions(); }},
+      {label:"Ignore it and hope",fn:()=>{ storyEntry("Ignoring it","Probably fine. You tell yourself probably fine.",[]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{
+    // Cost of living pressure
+    storyEntry("Cost of living","Everything costs more than it did last year. Groceries, fuel, rent. You notice it every time you spend anything.");
+    G.foodBudget=clamp(G.foodBudget+10,100,400);
+    G.utilities=clamp(G.utilities+5,50,250);
+    storyEntry("Prices up","Your monthly bills creep higher. Nothing you can do about it directly.",[{type:"bad",label:"+bills"}]);
+    updateStats();
+  }
+);
+
+// ── ADDITIONAL WORK EVENTS ────────────────────────────────────────────────────
+WORK_EVENTS.push(
+  ()=>{ // Salary review
+    if(G.salary===0) return;
+    storyEntry("Annual salary review","It's that time of year. Your manager calls you in.");
+    setActions([
+      {label:"Make your case confidently",fn:()=>{ const success=Math.random()<(G.conf>60?0.6:0.4); if(success){ const rise=Math.round(G.salary*0.07); G.salary+=rise; storyEntry("Rise granted",`€${rise}/mo more. They seem pleased with your performance.`,[{type:"stat",label:"+€"+rise+"/mo"}]); } else { storyEntry("No rise this year","Market conditions, they say. Budget constraints. You nod and smile.",[{type:"bad",label:"no change"}]); } mainMenuActions(); }},
+      {label:"Say nothing and see what they offer",fn:()=>{ const offer=Math.floor(Math.random()*4); if(offer>1){ const rise=Math.round(G.salary*0.03); G.salary+=rise; storyEntry("Small increase",`€${rise}/mo. Token offer. You accept.`,[{type:"stat",label:"+€"+rise+"/mo"}]); } else storyEntry("No offer made","You wait. Nothing comes.",[{type:"bad",label:"nothing offered"}]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{ // Team lunch
+    if(G.salary===0) return;
+    gainFat(4,"meat"); G.social=clamp((G.social||50)+6); G.happy=clamp(G.happy+7);
+    storyEntry("Work team lunch","The company pays. A long table, everyone slightly more human than usual. You eat more than you meant to.",[{type:"gain",label:"+calories"},{type:"stat",label:"+morale"}]);
+    mainMenuActions();
+  },
+  ()=>{ // Remote work option
+    if(G.salary<1500) return;
+    storyEntry("Remote work offer","Your company is trialling working from home. You can do it two days a week.");
+    setActions([
+      {label:"Take it — fewer commutes",fn:()=>{ G.transportCost=Math.max(20,G.transportCost-30); G.fitness=clamp(G.fitness-3); G.mood=clamp(G.mood+8); storyEntry("Working from home","You get an extra hour back. You also eat directly from the fridge all day.",[{type:"stat",label:"-commute"},{type:"bad",label:"+sedentary"}]); mainMenuActions(); }},
+      {label:"Stay in the office — structure helps",fn:()=>{ G.mood=clamp(G.mood+4); storyEntry("Office life","You keep coming in. The routine matters to you.",[{type:"stat",label:"+structure"}]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{ // Office politics
+    if(G.salary===0) return;
+    storyEntry("Office politics","There's a reshuffling happening above you. Two managers competing for the same senior role. Everyone is picking sides without saying so.");
+    setActions([
+      {label:"Align with the likely winner",fn:()=>{ const right=Math.random()<0.55; G.conf=clamp(G.conf+(right?8:-10)); storyEntry(right?"Right call":"Wrong horse",right?"Your read was accurate. You're on the right side.":"The other one got the role. You feel the frost.",[{type:right?"stat":"bad",label:right?"positioned well":"misjudged it"}]); mainMenuActions(); }},
+      {label:"Stay neutral — do your job",fn:()=>{ G.mood=clamp(G.mood+3); storyEntry("Switzerland","You concentrate on the work. Both managers notice your impartiality. Or your cowardice. Hard to tell.",[{type:"neu",label:"neutral"}]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{ // Unexpected day off
+    if(G.salary===0) return;
+    G.energy=clamp(G.energy+20); G.mood=clamp(G.mood+15); G.happy=clamp(G.happy+8);
+    gainFat(3,"balanced");
+    storyEntry("Unexpected day off","Your manager cancels the day due to a systems issue. You have the whole day unexpectedly free.",[{type:"stat",label:"+energy"},{type:"stat",label:"+mood"}]);
+    mainMenuActions();
+  },
+  ()=>{ // Complaint about you
+    if(G.salary===0) return;
+    storyEntry("A complaint has been filed","Someone — a client, a customer, a colleague — has made a formal complaint. Your manager reads it to you.");
+    setActions([
+      {label:"Accept responsibility and apologise",fn:()=>{ G.conf=clamp(G.conf-5); G.depressionScore=clamp(G.depressionScore+5); storyEntry("Accountability","You take it on the chin. It stings. You improve.",[{type:"bad",label:"−confidence (short term)"}]); mainMenuActions(); }},
+      {label:"Dispute it — it's unfair",fn:()=>{ const success=Math.random()<0.4; storyEntry(success?"Dispute upheld":"Dispute rejected",success?"They review the evidence and find in your favour.":"HR sides with the complainant. Your record has a note.",[{type:success?"stat":"bad",label:success?"vindicated":"noted"}]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{ // Side hustle idea
+    storyEntry("A side hustle idea","Someone mentions their side gig — reselling, tutoring, making things and selling them online. You've been thinking about supplementing your income.");
+    setActions([
+      {label:"Start selling things online",fn:()=>{ const earn=100+Math.floor(Math.random()*400); G.savings+=earn; G.energy=clamp(G.energy-5); storyEntry("Side hustle",`You list some things. Pack some boxes. €${earn} trickles in.`,[{type:"stat",label:"+€"+earn}]); mainMenuActions(); }},
+      {label:"Start tutoring / teaching",disabled:(G.skills.education||0)<20,fn:()=>{ const earn=150+Math.floor(Math.random()*300); G.savings+=earn; storyEntry("Tutoring",`A few evenings a week helping someone study. €${earn} this month.`,[{type:"stat",label:"+€"+earn}]); mainMenuActions(); }},
+      {label:"Too tired for more work",fn:()=>{ storyEntry("Not right now","You file the idea away for when you have more bandwidth.",[]); mainMenuActions(); }},
+    ]);
+  }
+);
+
+// ── ADDITIONAL SOCIAL EVENTS ─────────────────────────────────────────────────
+SOCIAL_EVENTS.push(
+  ()=>{ // Someone asks to borrow money
+    if(!G.relationships.length||G.savings<200) return;
+    const r=G.relationships[Math.floor(Math.random()*G.relationships.length)];
+    const amt=100+Math.round(Math.random()*400);
+    storyEntry(`${r.name} needs money`,`${r.name} asks to borrow €${amt}. They're vague about why but they seem genuinely stressed.`);
+    setActions([
+      {label:`Lend €${amt}`,disabled:G.savings<amt,fn:()=>{ G.savings-=amt; r.closeness=clamp(r.closeness+15); r.owes=amt; storyEntry("Lent money",`You give them €${amt}. They promise to pay it back. Some people do.`,[{type:"stat",label:"+closeness"},{type:"bad",label:`−€${amt} (maybe)`}]); mainMenuActions(); }},
+      {label:"Offer half",disabled:G.savings<amt/2,fn:()=>{ G.savings-=Math.round(amt/2); r.closeness=clamp(r.closeness+8); storyEntry("Compromise","Half now, see how they go.",[{type:"bad",label:`−€${Math.round(amt/2)}`}]); mainMenuActions(); }},
+      {label:"Say you don't have it",fn:()=>{ r.closeness=clamp(r.closeness-10); storyEntry("Turned them down","They seem disappointed. The relationship shifts a little.",[{type:"bad",label:"−closeness"}]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{ // Making a new friend
+    const p=generatePerson();
+    p.type="acquaintance";
+    storyEntry("A new face","Someone new in your orbit — at work, at the gym, through a mutual friend. You talk for a while.");
+    setActions([
+      {label:"Make an effort to know them",fn:()=>{ G.relationships.push(p); p.closeness+=20; G.happy=clamp(G.happy+8); G.social=clamp((G.social||50)+8); storyEntry(`Getting to know ${p.name}`,`${p.name}, ${p.age}. You find you have things in common. An easy afternoon.`,[{type:"stat",label:"new friend"}]); mainMenuActions(); }},
+      {label:"Polite but don't pursue it",fn:()=>{ storyEntry("Moved on","Pleasant but you've enough on your plate.",[]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{ // Falling out with a friend
+    const friends=G.relationships.filter(r=>r.type==="friend");
+    if(!friends.length) return;
+    const f=friends[Math.floor(Math.random()*friends.length)];
+    storyEntry(`Tension with ${f.name}`,`Something said, or not said. ${f.name} is clearly upset with you. You're not entirely sure why.`);
+    setActions([
+      {label:"Reach out and talk it through",fn:()=>{ const resolved=Math.random()<0.65; f.closeness=clamp(f.closeness+(resolved?10:-5)); storyEntry(resolved?"Resolved":"Unresolved",resolved?"You talk it out. It's uncomfortable for twenty minutes and then it isn't.":"The call doesn't go well. Things are left hanging.",[{type:resolved?"stat":"bad",label:resolved?"repaired":"unresolved"}]); mainMenuActions(); }},
+      {label:"Give them space",fn:()=>{ f.closeness=clamp(f.closeness-8); storyEntry("Radio silence","You don't reach out. Neither do they. Time passes.",[{type:"bad",label:"−closeness"}]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{ // Someone comes out to you
+    if(!G.relationships.length) return;
+    const r=G.relationships[Math.floor(Math.random()*G.relationships.length)];
+    storyEntry(`${r.name} tells you something`,`${r.name} asks to meet for coffee. They're nervous. They tell you something personal — something about who they are.`);
+    setActions([
+      {label:"Receive it with warmth",fn:()=>{ r.closeness=clamp(r.closeness+25); G.happy=clamp(G.happy+8); storyEntry("Trusted","It clearly meant a lot to them to tell you. You feel that weight and honour it.",[{type:"stat",label:"+closeness"},{type:"stat",label:"+trust"}]); mainMenuActions(); }},
+      {label:"Listen but don't know what to say",fn:()=>{ r.closeness=clamp(r.closeness+8); storyEntry("Awkward but kind","You fumble a bit with the words but your intent is clear. They appreciate it.",[{type:"stat",label:"+closeness"}]); mainMenuActions(); }},
+    ]);
+  },
+  ()=>{ // Friend gets a promotion
+    const friends=G.relationships.filter(r=>r.type==="friend");
+    if(!friends.length) return;
+    const f=friends[Math.floor(Math.random()*friends.length)];
+    storyEntry(`${f.name} gets promoted`,`${f.name} messages to say they've been promoted. Big salary jump. Title change. Group chat explodes.`);
+    setActions([
+      {label:"Celebrate them genuinely",fn:()=>{ f.closeness=clamp(f.closeness+12); G.happy=clamp(G.happy+5); storyEntry("You're happy for them","The joy is real. Mostly.",[]); mainMenuActions(); }},
+      {label:"Feel the comparison creeping in",fn:()=>{ G.depressionScore=clamp(G.depressionScore+6); G.mood=clamp(G.mood-8); storyEntry("Comparison","You congratulate them and feel small for how long it takes to mean it.",[{type:"bad",label:"comparison −mood"}]); mainMenuActions(); }},
+    ]);
+  }
+);
 
 </script>
 </body>
