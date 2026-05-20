@@ -442,6 +442,20 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   .abar-label{font-size:.8rem;margin-bottom:12px;letter-spacing:.08em;}
   .abar-grid{gap:9px;}
   .a-btn{padding:14px 16px;font-size:.95rem;min-height:52px;line-height:1.3;}
+  /* Category buttons: full width grid on mobile */
+  .abar-cats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+  .acat-btn{font-size:.82rem;padding:10px 4px;text-align:center;}
+  /* Dropdowns: fixed bottom sheet on mobile */
+  .acat-drop{
+    position:fixed;bottom:0;left:0;right:0;top:auto;
+    max-height:60vh;overflow-y:auto;
+    border:none;border-top:2px solid var(--line);
+    border-radius:0;
+    padding-bottom:env(safe-area-inset-bottom,16px);
+  }
+  .acat-drop button{
+    padding:16px 20px;font-size:1rem;min-height:58px;
+  }
 
   /* Right column — hidden, data shown in drawer */
   #col-right{display:none;}
@@ -833,6 +847,16 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   </div>
 
   <div class="cc-section">
+    <label class="cc-label">City <span style="color:var(--ink3);font-size:.68rem">— affects salaries, rent & cost of living</span></label>
+    <div class="cc-row" id="cc-cities">
+      <button class="cc-pill" data-city="lisbon">🇵🇹 Lisbon <span style="font-size:.65rem;opacity:.7">Easy</span></button>
+      <button class="cc-pill sel" data-city="berlin">🇩🇪 Berlin <span style="font-size:.65rem;opacity:.7">Medium</span></button>
+      <button class="cc-pill" data-city="london">🇬🇧 London <span style="font-size:.65rem;opacity:.7">Hard</span></button>
+    </div>
+    <p id="cc-city-desc" style="font-size:.72rem;color:var(--ink3);margin-top:6px;line-height:1.5">Berlin — moderate rents, good salaries, strong social safety net. A solid starting point.</p>
+  </div>
+
+  <div class="cc-section">
     <label class="cc-label">Starting body</label>
     <div class="cc-row" id="cc-presets">
       <button class="cc-pill" data-p="lean">Very lean</button>
@@ -1021,7 +1045,8 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
       <div id="week-planner-bar">
         <span class="wplan-label">This week:</span>
         <span id="wplan-pills"><span class="wplan-empty">nothing planned yet</span></span>
-        <button class="wplan-commit" id="wplan-commit-btn" onclick="commitWeek()" disabled>End week →</button>
+        <span id="energy-tracker" style="font-size:.7rem;color:var(--ink3);white-space:nowrap;font-family:'IBM Plex Mono',monospace;"></span>
+        <button class="wplan-commit" id="wplan-commit-btn" onclick="commitWeek()">End week →</button>
       </div>
       <div id="action-bar">
         <div class="abar-label">Plan your week — pick a category</div>
@@ -1111,8 +1136,13 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
 //  CONSTANTS
 // ═══════════════════════════════════════════════════════
 const H = 160; // height cm fixed
-const KG_PER_UNIT = 35/(439-171);
-const KG_BASE     = 50 - 171*KG_PER_UNIT;
+// Weight sum for each preset (belly+arm+butt+thighs+breast stages):
+// lean:35+10+30+9+20=104, slim:60+20+60+21+50=211, average:135+30+90+41+75=371, chubby:268+50+120+81+110=629, heavy:470+90+180+120+160=1020
+// Target weights: lean~38kg, slim~55kg, average~72kg, chubby~95kg, heavy~150kg (visually calibrated)
+// KG = KG_BASE + sum * KG_PER_UNIT => solve for two anchor points (lean & heavy)
+// 38 = KG_BASE + 104*KPU ; 150 = KG_BASE + 1020*KPU => 112 = 916*KPU => KPU=0.1223
+const KG_PER_UNIT = 112 / 916; // ~0.1223 kg per stage-sum unit
+const KG_BASE     = 38 - 104 * KG_PER_UNIT; // anchored at lean preset
 const PARTS = ["body","belly","arm","butt","thighs","breast","hair"];
 const BELLY_V = ["Belly","Belly1","Belly2","Belly3","Belly4"];
 const HAIR_V  = ["HairTied","HairLoose"];
@@ -1263,14 +1293,187 @@ function initState(preset,hairStyle,breastTend){
     agingStage:0, // 0=young 1=some lines 2=visible age 3=elderly look
     // misc
     breastTend:50, preset:"slim",
+    // housemates
+    housemates:[],
+    // weekly time budget (hours) — set fresh each end-week
+    weeklyFreeHours:0,
+    // city
+    city:"berlin",
+    // reputation (hidden)
+    reputation:{ office:0, hospitality:0, manual:0, fitness:0, creative:0, social:0 },
+    repHistory:[], quitCount:0, firedCount:0,
     // achievements / milestones logged
     milestones:[],
   };
 }
 
 // ═══════════════════════════════════════════════════════
-//  CANVAS / RENDERING
+//  CITY SYSTEM — affects all economic values
 // ═══════════════════════════════════════════════════════
+const CITIES = {
+  lisbon: {
+    name:"Lisbon", flag:"🇵🇹", difficulty:"Easy",
+    desc:"Lisbon — lower rents and modest salaries. A relaxed pace. Harder to build savings quickly, but easier to stay afloat.",
+    salaryMult:  0.75,  // salaries are 75% of base
+    rentBase:    220,   // shared flat starting rent
+    foodMult:    0.80,  // food is 20% cheaper
+    utilsMult:   0.85,
+    transportBase: 40,
+    currency:    "€",
+    startSavings: 150,
+  },
+  berlin: {
+    name:"Berlin", flag:"🇩🇪", difficulty:"Medium",
+    desc:"Berlin — moderate rents, good salaries, strong social safety net. A solid starting point.",
+    salaryMult:  1.00,
+    rentBase:    350,
+    foodMult:    1.00,
+    utilsMult:   1.00,
+    transportBase: 60,
+    currency:    "€",
+    startSavings: 200,
+  },
+  london: {
+    name:"London", flag:"🇬🇧", difficulty:"Hard",
+    desc:"London — high salaries but brutal rents and cost of living. Money flows in both directions quickly.",
+    salaryMult:  1.40,
+    rentBase:    650,
+    foodMult:    1.30,
+    utilsMult:   1.25,
+    transportBase: 120,
+    currency:    "£",
+    startSavings: 300,
+  },
+};
+let G_CITY = CITIES.berlin; // active city config
+
+function applyCity(cityKey){
+  G_CITY = CITIES[cityKey] || CITIES.berlin;
+  G.city = cityKey;
+  G.rent = G_CITY.rentBase;
+  G.utilities = Math.round(80 * G_CITY.utilsMult);
+  G.foodBudget = Math.round(150 * G_CITY.foodMult);
+  G.transportCost = G_CITY.transportBase;
+  G.savings = G_CITY.startSavings;
+}
+
+// Wrap salary scaling — call when assigning job salary
+function cityScaledSalary(baseSal){
+  return Math.round(baseSal * G_CITY.salaryMult);
+}
+
+// ═══════════════════════════════════════════════════════
+//  REPUTATION SYSTEM (hidden from player)
+//  Tracks professional & social standing per field.
+//  Affects job availability, ease of hire, and events.
+// ═══════════════════════════════════════════════════════
+// rep: -100 (blacklisted) to +100 (excellent standing)
+// Fields: office, hospitality, manual, fitness, creative, social
+function initReputation(){
+  G.reputation = { office:0, hospitality:0, manual:0, fitness:0, creative:0, social:0 };
+  G.repHistory = []; // [{week, field, change, reason}]
+  G.quitCount  = 0;  // times quit without notice
+  G.firedCount = 0;
+}
+function changeRep(field, delta, reason){
+  if(!G.reputation) initReputation();
+  G.reputation[field] = clamp((G.reputation[field]||0)+delta, -100, 100);
+  G.repHistory = G.repHistory||[];
+  if(Math.abs(delta)>=3) G.repHistory.push({week:G.week, field, change:delta, reason});
+  if(G.repHistory.length>30) G.repHistory.shift();
+}
+// Returns a hire-difficulty multiplier 0.1–1.5 for a given job type
+function getRepHireChance(field){
+  const rep = (G.reputation||{})[field]||0;
+  if(rep< -60) return 0.1;   // blacklisted effectively
+  if(rep< -30) return 0.35;
+  if(rep<   0) return 0.65;
+  if(rep<  30) return 1.0;
+  if(rep<  60) return 1.2;
+  return 1.4; // excellent reputation → better chance & faster hire
+}
+// Call when leaving a job
+function recordJobLeave(reason){
+  // reason: "quit_notice"|"quit_no_notice"|"fired"|"redundancy"
+  const field = jobTypeFromTitle(G.job);
+  G.quitCount = G.quitCount||0;
+  G.firedCount= G.firedCount||0;
+  if(reason==="quit_no_notice"){ changeRep(field,-15,"Left without notice"); G.quitCount++; }
+  else if(reason==="quit_notice"){ changeRep(field,-5,"Resigned with notice"); G.quitCount++; }
+  else if(reason==="fired")      { changeRep(field,-25,"Dismissed"); G.firedCount++; }
+  else if(reason==="redundancy") { changeRep(field,+2,"Redundancy — left professionally"); }
+}
+function jobTypeFromTitle(title){
+  if(!title) return "office";
+  const t=title.toLowerCase();
+  if(t.includes("bar")||t.includes("wait")||t.includes("hotel")||t.includes("retail")) return "hospitality";
+  if(t.includes("driver")||t.includes("warehouse")||t.includes("delivery")||t.includes("construct")) return "manual";
+  if(t.includes("personal train")||t.includes("gym")||t.includes("coach")) return "fitness";
+  if(t.includes("design")||t.includes("creative")||t.includes("photo")||t.includes("media")) return "creative";
+  return "office";
+}
+
+// ═══════════════════════════════════════════════════════
+//  SAVE / LOAD SYSTEM
+// ═══════════════════════════════════════════════════════
+const SAVE_KEY = "life_sim_save_v1";
+
+function saveGame(){
+  try {
+    const data = {
+      G, S,
+      activeHobby: activeHobby||null,
+      weekQueue: weekQueue.map(a=>({emoji:a.emoji, label:a.label, energyCost:a.energyCost})),
+      storyHTML: document.getElementById('story-scroll')?.innerHTML||"",
+      storyCount,
+      cityKey: G.city||"berlin",
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    toast("Game saved ✓");
+  } catch(e){ toast("Save failed: "+e.message); }
+}
+
+function loadGame(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw){ toast("No save found."); return false; }
+    const data = JSON.parse(raw);
+    G = data.G;
+    S = data.S;
+    activeHobby = data.activeHobby||null;
+    storyCount  = data.storyCount||0;
+    G_CITY = CITIES[data.cityKey||"berlin"]||CITIES.berlin;
+    // Restore story
+    const ss = document.getElementById('story-scroll');
+    if(ss && data.storyHTML) ss.innerHTML = data.storyHTML;
+    // Restore week queue as no-op stubs (fns can't be serialised)
+    weekQueue = [];
+    weeklyEventsDone.clear();
+    renderWeekQueue();
+    updateDateDisplay();
+    updateStats();
+    renderCharacter(false);
+    document.getElementById('creation-screen').style.display='none';
+    document.getElementById('game').style.display='flex';
+    setEl('tb-name', G.name);
+    setEl('tb-age', G.age);
+    const mdt=document.getElementById('mob-drawer-title');
+    if(mdt) mdt.textContent=G.name+', age '+G.age;
+    mainMenuActions();
+    toast(`Loaded — week ${G.week}, ${G_CITY.name}`);
+    return true;
+  } catch(e){ toast("Load failed: "+e.message); return false; }
+}
+
+function hasSave(){
+  return !!localStorage.getItem(SAVE_KEY);
+}
+
+function deleteSave(){
+  localStorage.removeItem(SAVE_KEY);
+  toast("Save deleted.");
+}
 const canvas=document.getElementById('characterCanvas');
 const ctx=canvas.getContext('2d');
 let drawPending=false;
@@ -1346,7 +1549,12 @@ function calcWeight(){
   return Math.max(35, KG_BASE+sum*KG_PER_UNIT);
 }
 function calcWaist(){return 50+(S.belly.stage-1)/250*250;}
-function calcBust(){return 75+Math.pow(S.breast.stage/301,0.8)*225;}
+// Band (underbust/ribcage circumference) is determined by belly/torso size
+function calcBand(){return Math.round(60 + Math.pow(S.belly.stage/251,0.6)*90);}
+// Cup projection is determined by breast stage — mapped to cup difference over band
+function calcCupDiff(){return Math.pow(S.breast.stage/301,0.75)*30;} // 0-30cm cup diff
+// Bust = band + cup projection (approximate full bust circumference)
+function calcBust(){return calcBand() + calcCupDiff();}
 function calcHips(){return 75+Math.pow(S.butt.stage/351,0.75)*225;}
 function calcBMI(){return calcWeight()/(H/100)**2;}
 function bmiCat(bmi){
@@ -1358,18 +1566,20 @@ function bmiCat(bmi){
   return            {l:"Morbidly Obese",c:"bmi-mo"};
 }
 function calcBraSize(){
-  const bust=calcBust();
-  const band=Math.round((bust-12)/5)*5;
-  const diff=bust-band;
+  const band=calcBand();
+  const cupDiff=calcCupDiff();
+  // Round band to nearest even number (UK sizing convention)
+  const bandSize=Math.max(28, Math.round(band/2)*2);
   const cups=["AA","A","B","C","D","DD","E","F","FF","G","GG","H","HH","J","JJ","K","KK"];
-  const cupIdx=Math.max(0,Math.min(cups.length-1,Math.floor((diff-1)/2.5)));
-  return `${band}${cups[cupIdx]}`;
+  const cupIdx=Math.max(0,Math.min(cups.length-1,Math.floor(cupDiff/2.5)));
+  return `${bandSize}${cups[cupIdx]}`;
 }
 function updateMeasurements(){
   const w=calcWeight(),bmi=calcBMI(),cat=bmiCat(bmi);
   setEl('m-weight',`${w.toFixed(1)}<span class="meas-sub">kg</span>`);
   setEl('m-bmi',`${bmi.toFixed(1)}<span class="bmi-tag ${cat.c}">${cat.l}</span>`);
   setEl('m-waist',`${calcWaist().toFixed(0)}<span class="meas-sub">cm</span>`);
+  // Bust shows full circumference (band + projection)
   setEl('m-bust',`${calcBust().toFixed(0)}<span class="meas-sub">cm</span>`);
   setEl('m-hips',`${calcHips().toFixed(0)}<span class="meas-sub">cm</span>`);
   setEl('m-bra',calcBraSize());
@@ -1412,12 +1622,14 @@ function updateDesc(){
   else if(bv==="Belly3"&&S.belly.stage>50) paras.push(`<p>A saggy, pendulous belly hangs low, skin gathering in loose folds.</p>`);
   else if(bv==="Belly4"&&S.belly.stage>50) paras.push(`<p>A heavy, apron-like flap of fat hangs from the lower abdomen — the result of years of excess and poor diet.</p>`);
 
-  // ── Bust ──
-  if(bs<82) paras.push(`<p>The chest is completely flat.</p>`);
-  else if(bs<92) paras.push(`<p>A modest bust, unassuming and neat.</p>`);
-  else if(bs>=100&&bs<115) paras.push(`<p>A full, heavy bust that attracts its share of attention.</p>`);
-  else if(bs>=115&&bs<140) paras.push(`<p>The breasts are very large — ${calcBraSize()}, difficult to find bras for, strain on the back.</p>`);
-  else if(bs>=140) paras.push(`<p>The chest is extraordinary in size — ${calcBraSize()}. Back pain is a constant companion. Movement is genuinely hindered.</p>`);
+  // ── Bust — described by cup size (breast stage), not circumference ──
+  const cupDiff=calcCupDiff();
+  if(cupDiff<3) paras.push(`<p>The chest is very flat — barely any breast tissue to speak of.</p>`);
+  else if(cupDiff<7) paras.push(`<p>A modest, understated bust. Small and neat.</p>`);
+  else if(cupDiff<12) paras.push(`<p>An average-sized bust. Proportionate and unremarkable — in the best way.</p>`);
+  else if(cupDiff<18) paras.push(`<p>A full bust that fills clothes well and draws its share of attention.</p>`);
+  else if(cupDiff<24) paras.push(`<p>The breasts are large — ${calcBraSize()}. Finding well-fitted bras is a chore. The back notices the weight.</p>`);
+  else paras.push(`<p>The chest is exceptionally large — ${calcBraSize()}. Back pain is a constant companion. Movement is genuinely hindered. Off-the-shelf bras don't fit.</p>`);
 
   // Surgery notes
   if(f.surgery_breast>0) paras.push(`<p><em>There are faint scars beneath each breast — the work of a surgeon's hand.</em></p>`);
@@ -1872,6 +2084,9 @@ function passiveWeeklyEffects(){
     if(Math.random()<0.05) r.closeness=clamp(r.closeness-5);
   });
 
+  // ── Housemate passive effects ──
+  updateHousemateEffects();
+
   // ── Relationship tension ──
   if(G.partnerID){
     G.relationshipDrama=clamp(G.relationshipDrama+(G.depressionScore>50?3:G.happy<40?2:G.smoking>5?1:0));
@@ -1885,6 +2100,7 @@ function passiveWeeklyEffects(){
   G.weeklyDairy=0;G.weeklyAlcohol=0;G.weeklyCarbs=0;
   G.weeklyMeat=0;G.weeklyJunk=0;G.weeklyHealthy=0;
   G.gymVisitsPerWeek=0;
+  weeklyEventsDone.clear();
   // Rotate job listings weekly
   G.weeklyJobPool=null;
 
@@ -2148,24 +2364,6 @@ function applyFoodProfile(p){
 function applyGroceryProfile(p,story=false){ applyFoodProfile(p); }
 
 // ── HOME COOKING uses pantry ──────────────────────────────────────────────────
-function doHomeCook(){
-  const hadFood=consumeFromPantry(7);
-  if(!hadFood){
-    G.savings-=12;
-    storyEntry("Empty fridge","Nothing to cook. You make do with whatever scraps are left and end up ordering something anyway. You really need to shop.",[{type:"bad",label:"pantry empty"},{type:"bad",label:"−€12"}]);
-    return;
-  }
-  const profileKey=G.pantry?.key||"mixed";
-  const p=FOOD_PROFILES[profileKey]||FOOD_PROFILES.mixed;
-  G.weeklyHealthy+=Math.round((p.healthy||0)*0.4);
-  G.weeklyJunk   +=Math.round((p.junk||0)*0.3);
-  G.happy =clamp(G.happy+4);
-  G.health=clamp(G.health+((p.healthy||0)>50?4:2));
-  G.savings+=18; // cheaper than eating out
-  const q=p.junk>50?"You heat up frozen things and ready meals.":p.healthy>60?"You cook properly — it's actually satisfying.":"A mixed week of decent home cooking.";
-  storyEntry("Cooking at home",`${q} ${pantryStatusText()}`,[{type:"stat",label:"+health"},{type:"stat",label:"saves €18"}]);
-}
-
 // ═══════════════════════════════════════════════════════
 //  WEEK ACTION HANDLER (right panel quick buttons)
 // ═══════════════════════════════════════════════════════
@@ -2289,7 +2487,7 @@ function drinkNight(drinks, flavour){
       {type:"bad",label:"−energy"},
     ].filter(Boolean));
   }
-  mainMenuActions();
+  mainMenuActions(); // no week advance — this is a one-time social event
 }
 function drinkSober(){
   G.mood=clamp(G.mood+5); G.happy=clamp(G.happy+4);
@@ -3053,22 +3251,364 @@ function openUniversityMenu(){
 // ═══════════════════════════════════════════════════════
 //  HOUSING / PROPERTY
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  HOUSEMATE SYSTEM — rich, organic characters
+// ═══════════════════════════════════════════════════════
+
+// Physical appearance fragments
+const HM_BUILDS  = ["slight and angular","stocky and broad-shouldered","tall and lanky","compact and athletic","comfortably soft around the middle","wiry, always in motion","heavyset, takes up space without apologising"];
+const HM_HAIR   = ["close-cropped hair","messy hair that probably looks intentional","hair always scraped back","a shaved head","wild curly hair","neatly gelled hair that never moves","hair dyed an optimistic colour"];
+const HM_STYLE  = ["lives in hoodies and joggers","perpetually in vintage band T-shirts","dresses like they're always about to go somewhere smarter than here","always looks slightly underdressed for the occasion","favours linen and earth tones in a vaguely aspirational way","in gym wear roughly 70% of the time","dresses with genuine effort — it shows"];
+const HM_FACE   = ["a warm, open face","sharp eyes that miss nothing","a resting expression that could be calm or could be judging — hard to tell","tired eyes, deep-set","an easy grin that disarms people","a face that takes a while to read","the kind of face that's described as 'kind' by everyone who meets them"];
+
+const HM_PERSONALITIES = [
+  {
+    type:"chill", emoji:"😊",
+    shortDesc:"Quiet, clean, keeps to themselves.",
+    longDesc:"They wash up after themselves, they pay rent on time, and they never appear between midnight and 8am. On the surface, ideal. Slightly opaque — you've lived together three months and you're still not sure what they actually do for fun.",
+    influence:null
+  },
+  {
+    type:"party", emoji:"🎉",
+    shortDesc:"Sociable and loud. The flat is never truly quiet.",
+    longDesc:"They know everyone. Strangers pass through the kitchen on weekend mornings holding mugs they don't own. There's a warmth to it — they always invite you — but the 3am music and the bass through your wall have started to feel personal.",
+    influence:null
+  },
+  {
+    type:"smoker", emoji:"🚬",
+    shortDesc:"Smokes indoors despite the house rules. The flat smells.",
+    longDesc:"They light up at the kitchen window with it cracked exactly two centimetres, like that makes a difference. Their corner of the lounge smells like a pub from the nineties. You've found ash in strange places. They're otherwise perfectly fine company — chatty, generous with biscuits — which makes the smoking somehow more annoying.",
+    influence:"smoking" // may push player toward smoking
+  },
+  {
+    type:"messy", emoji:"🧹",
+    shortDesc:"The dishes are always theirs. The hoover is always yours.",
+    longDesc:"Not malicious — just entirely oblivious to the shared nature of a flat. Mugs accumulate on their side of the sofa in a kind of archaeology. They'll clean when asked, immediately and cheerfully, which is maybe worse because it proves they could always do it.",
+    influence:null
+  },
+  {
+    type:"noisy", emoji:"🔊",
+    shortDesc:"Zero awareness of shared living. Music at all hours.",
+    longDesc:"They own one volume. Late-night phone calls, laugh-track TV at midnight, friends talking loudly in the hallway at 2am. You've started sleeping with a pillow over your head. They're not awful — they've apologised three or four times — but it keeps happening.",
+    influence:null
+  },
+  {
+    type:"clingy", emoji:"🤗",
+    shortDesc:"Always wants to talk when you want to decompress.",
+    longDesc:"They materialise in the kitchen the moment you get home, as if they've been waiting. Not in a threatening way — in a lonely one. They have a lot to say. They remember everything you've mentioned. Some evenings it's lovely. Other evenings you eat dinner in your room with the door closed.",
+    influence:null
+  },
+  {
+    type:"promiscuous", emoji:"💘",
+    shortDesc:"Rotating partners. Thin walls. You know more than you want to.",
+    longDesc:"A different person at breakfast every few weeks. They're relaxed about it — almost aggressively relaxed, like it's a statement. The walls do nothing. You've started putting on headphones proactively. They're actually good company otherwise — fun, unbothered, occasionally leave excellent leftovers in the fridge.",
+    influence:null
+  },
+  {
+    type:"tidy", emoji:"🧽",
+    shortDesc:"Does more than their share. You feel faintly guilty.",
+    longDesc:"The bathroom was never cleaner. There's always washing-up liquid. They bought a new kitchen sponge without being asked and didn't mention it once. You've started doing the bins before they get a chance, mostly out of self-respect.",
+    influence:null
+  },
+  {
+    type:"fitness", emoji:"🏋",
+    shortDesc:"Up at 6am. Protein shakes in the fridge. Evangelical about it.",
+    longDesc:"They get up before your alarm and come back smelling like effort. The fridge is a third theirs, a third yours, and a third unlabelled containers of meal prep. They haven't pushed it on you — yet — but there's an implicit judgement in every protein bar wrapper.",
+    influence:"exercise" // may push player toward gym
+  },
+  {
+    type:"drinker", emoji:"🍺",
+    shortDesc:"A bottle of something open every evening. Cheerfully functional.",
+    longDesc:"They have a very reasonable relationship with alcohol, they'll tell you, while cracking a can at 6pm on a Tuesday. There's always wine in the kitchen. They're fun company — genuinely funny, emotionally open in a way that might be the drink — and the flat has a sort of low-level pub atmosphere that's easier to join than resist.",
+    influence:"drinking" // may normalise/encourage drinking
+  },
+  {
+    type:"foodie", emoji:"🍳",
+    shortDesc:"Cooks elaborate things. The kitchen smells extraordinary.",
+    longDesc:"There are herbs growing on the windowsill. They've asked you twice if you want to eat with them, genuinely, not out of politeness. The fridge contains things you don't recognise. Once they left you a portion covered in clingfilm with a post-it note, and it was the best thing you'd eaten in three weeks.",
+    influence:"eating" // improves food quality if you eat with them
+  },
+  {
+    type:"anxious", emoji:"😟",
+    shortDesc:"Worries constantly. About the bills, the weather, everything.",
+    longDesc:"They track every utility usage. They've emailed the landlord six times. There's always a window left slightly open they're convinced is a security risk. It comes from somewhere real — you can tell — but living with it is its own kind of atmospheric pressure. You've started double-checking the front door before bed.",
+    influence:null
+  },
+];
+
+const HM_NAMES_POOL = [
+  "Jake","Priya","Leo","Carmen","Finn","Aisha","Tomás","Nora","Reza","Bea",
+  "Dylan","Yuki","Marco","Ida","Seb","Zara","Curtis","Ines","Miko","Freddie",
+  "Ananya","Cal","Lupe","Rowan","Simone","Heath","Viv","Omar","Petra","Eli"
+];
+
+function generateHousemate(){
+  // Pick an unused name if possible
+  const used = (G.housemates||[]).map(h=>h.name);
+  const available = HM_NAMES_POOL.filter(n=>!used.includes(n));
+  const namePool = available.length ? available : HM_NAMES_POOL;
+  const name = namePool[Math.floor(Math.random()*namePool.length)];
+
+  const p = HM_PERSONALITIES[Math.floor(Math.random()*HM_PERSONALITIES.length)];
+
+  // Generate a physical description
+  const build = HM_BUILDS[Math.floor(Math.random()*HM_BUILDS.length)];
+  const hair  = HM_HAIR[Math.floor(Math.random()*HM_HAIR.length)];
+  const style = HM_STYLE[Math.floor(Math.random()*HM_STYLE.length)];
+  const face  = HM_FACE[Math.floor(Math.random()*HM_FACE.length)];
+  const age   = 18 + Math.floor(Math.random()*12);
+  const physDesc = `${age}, ${build}, ${hair}, ${face}. ${style}.`;
+
+  return {
+    name, age,
+    personality: p.type,
+    emoji:       p.emoji,
+    shortDesc:   p.shortDesc,
+    longDesc:    p.longDesc,
+    physDesc,
+    influence:   p.influence,
+    closeness:   15 + Math.floor(Math.random()*20),
+    tension:     0,
+    weeksLived:  0,
+    influenceWeeks: 0, // how many weeks of lifestyle influence
+  };
+}
+
+function hmFullDesc(h){
+  return `<strong>${h.physDesc}</strong>\n\n${h.longDesc}`;
+}
+
 function openHousingMenu(){
-  storyEntry("Housing","Your living situation. It affects everything.");
-  setActions([
-    G.savings>8000&&G.housingTier<1?{label:"Rent your own flat (€700/mo)",fn:()=>upgradeHousing(1,"Own flat",700)}:null,
-    G.savings>30000&&G.housingTier<2?{label:"Buy a small flat (€120k mortgage, €900/mo)",fn:()=>buyProperty(1,"Small flat",900,120000)}:null,
-    G.savings>80000&&G.housingTier<3?{label:"Buy a house (€280k, €1,400/mo)",fn:()=>buyProperty(2,"House",1400,280000)}:null,
-    G.car==="None"&&G.licence&&G.savings>5000?{label:"Buy a used car (€4,000)",fn:()=>buyCar("Second-hand hatchback",4000)}:null,
-    G.car!=="None"&&G.savings>20000?{label:"Upgrade car (€18,000)",fn:()=>buyCar("New family car",18000)}:null,
+  const inShared = G.housingTier <= 0;
+  const hm = G.housemates||[];
+  storyEntry("🏠 Housing", `You're currently ${G.housing}. Rent: €${G.rent}/mo.`);
+
+  const acts = [
+    inShared&&hm.length  ? {label:`👥 Housemates (${hm.length})`,           fn:()=>openHousematesMenu()} : null,
+    inShared&&hm.length<3? {label:"🔍 Find a new housemate",                fn:()=>findNewHousemate()} : null,
+    inShared&&hm.length&&hm.some(h=>(h.tension||0)>3)
+                         ? {label:"🗣 Address flatmate issues",              fn:()=>addressHousemateIssues()} : null,
+    G.salary>0&&G.housingTier<=0&&G.savings>=1400
+                         ? {label:"🏠 Get your own flat — €700/mo (+€1,400 deposit)", fn:()=>upgradeHousing(1,"Own flat",700)} : null,
+    G.salary>0&&G.housingTier<=0&&G.savings>=1900
+                         ? {label:"🏠 Nicer own flat — €950/mo (+€1,900 deposit)",   fn:()=>upgradeHousing(1,"Nice flat",950)} : null,
+    G.savings>30000&&G.housingTier<2
+                         ? {label:"Buy a small flat (€120k, €900/mo mortgage)",fn:()=>buyProperty(1,"Small flat",900,120000)} : null,
+    G.savings>80000&&G.housingTier<3
+                         ? {label:"Buy a house (€280k, €1,400/mo)",fn:()=>buyProperty(2,"House",1400,280000)} : null,
+    G.car==="None"&&G.licence&&G.savings>5000
+                         ? {label:"🚗 Buy a used car — €4,000",fn:()=>buyCar("Second-hand hatchback",4000)} : null,
+    G.car!=="None"&&G.savings>20000
+                         ? {label:"🚗 Upgrade car — €18,000",fn:()=>buyCar("New family car",18000)} : null,
     {label:"Back",fn:()=>mainMenuActions()},
+  ].filter(Boolean);
+
+  setActions(acts);
+}
+
+function openHousematesMenu(){
+  const hm = G.housemates||[];
+  if(!hm.length){ storyEntry("No housemates","You live alone.",[]);mainMenuActions();return; }
+  const lines = hm.map(h=>`${h.emoji} <strong>${h.name}</strong> — ${h.shortDesc}${h.tension>2?" <em>⚠ tension building</em>":""}`).join("<br>");
+  storyEntry("Your housemates", lines);
+  setActions([
+    ...hm.map(h=>({
+      label:`${h.emoji} ${h.name}${h.tension>2?" ⚠":""}`,
+      fn:()=>openHousemateDetail(h)
+    })),
+    {label:"Back",fn:()=>openHousingMenu()},
+  ]);
+}
+
+function openHousemateDetail(h){
+  storyEntry(h.name, hmFullDesc(h)+`\n\nCloseness: ${h.closeness}/100 · Tension: ${h.tension||0} · Living together ${h.weeksLived||0} weeks.`);
+  setActions([
+    {label:"☕ Have a proper chat",fn:()=>{
+      h.closeness=clamp(h.closeness+8); G.social=clamp((G.social||50)+5);
+      const flavours=[
+        `You end up talking longer than you planned. ${h.name} is surprisingly easy company.`,
+        `A mug of tea, an hour. You learn something about them you didn't expect.`,
+        `They're more interesting than you gave them credit for.`,
+        `Comfortable, easy conversation. You feel better for it.`,
+      ];
+      storyEntry(`Chatting with ${h.name}`,flavours[Math.floor(Math.random()*flavours.length)],[{type:"stat",label:"+closeness"}]);
+      openHousematesMenu();
+    }},
+    h.tension>0?{label:"🗣 Address the tension",fn:()=>resolveHousemateTension(h)}:null,
+    h.influence?{label:`${influenceLabel(h)} (they're nudging your habits)`,cls:"warn",fn:()=>resistInfluence(h)}:null,
+    {label:"❌ Ask them to leave",cls:"bad",fn:()=>kickHousemate(h)},
+    {label:"Back",fn:()=>openHousematesMenu()},
   ].filter(Boolean));
 }
+
+function influenceLabel(h){
+  const labels={smoking:"🚬 Talk about the smoking pressure",drinking:"🍺 Talk about the drinking normalisation",exercise:"🏋 Acknowledge the fitness influence",eating:"🍳 Accept their cooking invitation"};
+  return labels[h.influence]||"Talk about their habits";
+}
+
+function resistInfluence(h){
+  if(h.influence==="smoking"){
+    storyEntry(`Talking to ${h.name} about smoking`,"You tell them it's getting to you — not the smoking itself, just the constant availability of it.");
+    setActions([
+      {label:"Ask them to keep it outside",fn:()=>{ if(Math.random()<0.6){ h.tension=(h.tension||0)+1; storyEntry("They agree, reluctantly","They're a bit put out. They'll manage.",[]); } else { storyEntry("They're annoyed","They remind you it's their home too.",[{type:"bad",label:"tension"}]); h.tension=(h.tension||0)+2; } openHousematesMenu(); }},
+      {label:"Accept that you've been tempted",cls:"warn",fn:()=>{ if(G.cigarettesPerDay===0){ G.cigarettesPerDay=1; G.smokingWeeks=1; storyEntry("You try one","It's right there. You've been watching them for weeks. One won't hurt, you tell yourself.",[{type:"bad",label:"first cigarette"}]); } openHousematesMenu(); }},
+    ]);
+  } else if(h.influence==="drinking"){
+    storyEntry(`The drinking culture with ${h.name}`,"There's always something open. You've found yourself reaching for a glass almost automatically.");
+    setActions([
+      {label:"Set a quiet personal limit",fn:()=>{ G.drinksPerWeek=Math.max(0,G.drinksPerWeek-3); storyEntry("Pulling back","You decide to be more deliberate about it.",[{type:"stat",label:"−drinking"}]); openHousematesMenu(); }},
+      {label:"Lean into it — it's fine",fn:()=>{ G.drinksPerWeek+=3; G.drinkingWeeks++; G.happy=clamp(G.happy+5); storyEntry("Going with it","A glass in the evening becomes the rhythm.",[{type:"warn",label:"+drinking"}]); openHousematesMenu(); }},
+    ]);
+  } else if(h.influence==="exercise"){
+    storyEntry(`${h.name}'s fitness routine`,"They haven't pressured you. But watching someone leave for a run every morning has its effect.");
+    setActions([
+      {label:"Join them one morning",fn:()=>{ doRunQ(); G.fitness=clamp(G.fitness+3); h.closeness=clamp(h.closeness+10); storyEntry("Morning run together","It's genuinely good. They're encouraging without being irritating.",[{type:"stat",label:"+fitness"},{type:"stat",label:"+closeness"}]); openHousematesMenu(); }},
+      {label:"Not ready for that",fn:()=>{ storyEntry("Not yet","You watch them go from the kitchen window.",[]); openHousematesMenu(); }},
+    ]);
+  } else if(h.influence==="eating"){
+    storyEntry(`Eating with ${h.name}`,"The meals they make smell incredible. They've left you a note again.");
+    setActions([
+      {label:"Eat together this week",fn:()=>{ G.weeklyHealthy+=30; G.happy=clamp(G.happy+8); h.closeness=clamp(h.closeness+12); storyEntry("Dinner together","Proper food, good company. Your body notices the difference.",[{type:"stat",label:"+health"},{type:"stat",label:"+closeness"}]); openHousematesMenu(); }},
+      {label:"Politely decline",fn:()=>{ storyEntry("Next time","You say next time. You mean it, roughly.",[]); openHousematesMenu(); }},
+    ]);
+  } else { openHousematesMenu(); }
+}
+
+function resolveHousemateTension(h){
+  storyEntry(`Talking to ${h.name}`,"You sit them down. You try to be direct without being a dick about it.");
+  const success = Math.random() < (h.closeness>50?0.65:h.closeness>30?0.45:0.3);
+  if(success){
+    h.tension=Math.max(0,(h.tension||0)-3); h.closeness=clamp(h.closeness+10);
+    G.mood=clamp(G.mood+5);
+    const res=[
+      "It's awkward for a bit, then it genuinely clears. You understand each other a bit better.",
+      "They take it well. Better than you expected. Things feel lighter.",
+      "A productive conversation. They didn't know it was bothering you that much.",
+    ];
+    storyEntry("Resolved",res[Math.floor(Math.random()*res.length)],[{type:"stat",label:"tension reduced"}]);
+  } else {
+    h.tension=(h.tension||0)+1; h.closeness=clamp(h.closeness-5); G.mood=clamp(G.mood-5);
+    const unres=[
+      "The conversation goes sideways. They get defensive. Things feel worse, not better.",
+      "They agree to your face and then nothing changes. Possibly worse than before.",
+      "They accuse you of being difficult. You wonder if they have a point.",
+    ];
+    storyEntry("Unresolved",unres[Math.floor(Math.random()*unres.length)],[{type:"bad",label:"tension +1"}]);
+  }
+  openHousematesMenu();
+}
+
+function kickHousemate(h){
+  storyEntry(`Asking ${h.name} to leave`,"You pick a calm moment. You explain it isn't personal. It partially is.");
+  setActions([
+    {label:"Go through with it",cls:"bad",fn:()=>{
+      G.housemates=(G.housemates||[]).filter(x=>x.name!==h.name);
+      // Rent rises without their contribution
+      const increase=Math.round(150+Math.random()*100);
+      G.rent=Math.min(G.rent+increase,1800);
+      G.mood=clamp(G.mood-5);
+      const gone=[
+        `They're gone within the month. The flat is quieter — arguably too quiet. Your rent is now €${G.rent}/mo.`,
+        `They take it gracefully, which somehow makes it harder. The room is empty inside a week. Rent: €${G.rent}/mo.`,
+        `They're annoyed but they go. You check the bathroom. It's already cleaner.`,
+      ];
+      storyEntry(`${h.name} is gone`,gone[Math.floor(Math.random()*gone.length)],[{type:"bad",label:`rent: €${G.rent}/mo`}]);
+      updateStats(); openHousingMenu();
+    }},
+    {label:"Back down — not the right moment",fn:()=>{ storyEntry("Backed down","You decide it's not worth the drama. For now.",[]); openHousematesMenu(); }},
+  ]);
+}
+
+function findNewHousemate(){
+  const hm = generateHousemate();
+  storyEntry("Prospective housemate",`${hm.name} answers your ad.\n\n${hm.physDesc}\n\n${hm.longDesc}`);
+  setActions([
+    {label:`Accept ${hm.name}`,cls:"good",fn:()=>{
+      G.housemates=G.housemates||[];
+      G.housemates.push(hm);
+      const drop=Math.round(100+Math.random()*100);
+      G.rent=Math.max(150,G.rent-drop);
+      G.happy=clamp(G.happy+(["chill","friendly","foodie","tidy"].includes(hm.personality)?8:-2));
+      storyEntry(`${hm.name} moves in`,`They take the spare room. Rent drops by €${drop}/mo. You'll see how this goes.`,[{type:"stat",label:`rent: €${G.rent}/mo`}]);
+      updateStats(); openHousingMenu();
+    }},
+    {label:"Keep looking",fn:()=>{ storyEntry("Not this one","You decide to keep looking.",[]); openHousingMenu(); }},
+  ]);
+}
+
+function addressHousemateIssues(){
+  const troubled=(G.housemates||[]).filter(h=>(h.tension||0)>3);
+  if(!troubled.length){ openHousematesMenu(); return; }
+  const h=troubled[0];
+  storyEntry("Something needs to be said",`Things with ${h.name} have been building for a while. ${h.shortDesc} It can't keep going like this.`);
+  setActions([
+    {label:"Call a flat meeting",fn:()=>resolveHousemateTension(h)},
+    {label:"Leave a note instead",fn:()=>{
+      h.tension=Math.max(0,(h.tension||0)-1); h.closeness=clamp(h.closeness-3);
+      storyEntry("The note","You write it and rewrite it. It ends up polite to the point of meaninglessness. Something, at least.",[{type:"bad",label:"still unresolved"}]);
+      openHousingMenu();
+    }},
+    {label:"Ignore it — not today",fn:()=>{ storyEntry("Avoidance","You let it sit. It grows.",[{type:"bad",label:"tension accumulates"}]); openHousingMenu(); }},
+  ]);
+}
+
+// Weekly housemate passive effects
+function updateHousemateEffects(){
+  if(G.housingTier!==0) return;
+  (G.housemates||[]).forEach(h=>{
+    h.weeksLived=(h.weeksLived||0)+1;
+
+    // Passive tension by type
+    if(h.personality==="party"&&Math.random()<0.25)  h.tension=(h.tension||0)+0.5;
+    if(h.personality==="smoker"&&Math.random()<0.35) { h.tension=(h.tension||0)+0.4; G.health=clamp(G.health-0.25); }
+    if(h.personality==="messy"&&Math.random()<0.2)   h.tension=(h.tension||0)+0.5;
+    if(h.personality==="noisy"&&Math.random()<0.25)  { h.tension=(h.tension||0)+0.4; G.mood=clamp(G.mood-1); }
+    if(h.personality==="anxious"&&Math.random()<0.15){ G.depressionScore=clamp(G.depressionScore+0.5); }
+    if(h.personality==="tidy")                       G.mood=clamp(G.mood+0.4);
+    if(h.personality==="friendly"&&Math.random()<0.2){ h.closeness=clamp(h.closeness+2); G.happy=clamp(G.happy+1); }
+    if(h.personality==="foodie"&&Math.random()<0.15) { G.weeklyHealthy+=5; G.happy=clamp(G.happy+0.5); }
+
+    // Lifestyle influence — passive pressure builds over weeks
+    if(h.influence){
+      h.influenceWeeks=(h.influenceWeeks||0)+1;
+      const wks=h.influenceWeeks;
+      if(h.influence==="smoking"&&G.cigarettesPerDay===0&&wks>4&&Math.random()<0.08){
+        // Passive exposure nudges toward first cigarette
+        G.bingeTendency=clamp(G.bingeTendency+1);
+      }
+      if(h.influence==="drinking"&&wks>2&&Math.random()<0.12){
+        G.drinksPerWeek=Math.min(G.drinksPerWeek+1, G.drinksPerWeek+2);
+        G.drinkingWeeks++;
+      }
+      if(h.influence==="exercise"&&G.gymVisitsPerWeek===0&&wks>3&&Math.random()<0.1){
+        G.fitness=clamp(G.fitness+1); // ambient motivation
+      }
+    }
+
+    // High tension → mood drag
+    if((h.tension||0)>5&&Math.random()<0.2){ G.depressionScore=clamp(G.depressionScore+1.5); G.mood=clamp(G.mood-2); }
+    // Good closeness → happiness
+    if(h.closeness>65&&Math.random()<0.15) G.happy=clamp(G.happy+1);
+
+    // Passive closeness drift (strangers become familiar)
+    if(h.closeness<60&&Math.random()<0.08) h.closeness=clamp(h.closeness+1);
+  });
+}
+
 function upgradeHousing(tier,name,rent){
-  G.housingTier=tier;G.housing=name;G.rent=rent;
-  G.happy=clamp(G.happy+15);G.conf=clamp(G.conf+8);
-  storyEntry("New home",`You move into your own ${name.toLowerCase()}. A real sense of independence.`,[]);
-  updateStats();mainMenuActions();
+  const deposit = rent*2;
+  if(G.savings<deposit){
+    storyEntry("Not enough savings",`You'd need €${deposit} as a deposit.`,[]);
+    openHousingMenu(); return;
+  }
+  G.savings-=deposit;
+  G.housingTier=tier; G.housing=name; G.rent=rent;
+  G.housemates=[]; // own place, no housemates
+  G.happy=clamp(G.happy+15); G.conf=clamp(G.conf+8);
+  storyEntry("New home",
+    `You move into your own ${name.toLowerCase()}. €${deposit} gone as deposit. The first night of real quiet feels strange and then wonderful.`,
+    [{type:"stat",label:"independence"},{type:"bad",label:`−€${deposit} deposit`}]);
+  updateStats(); mainMenuActions();
 }
 function buyProperty(tier,name,mortgage,price){
   if(G.savings<price*0.1){storyEntry("Can't afford the deposit","You need a 10% deposit.",[]);mainMenuActions();return;}
@@ -3197,13 +3737,508 @@ function triggerRandomEvent(){
 }
 
 // ═══════════════════════════════════════════════════════
-//  WEEK PLANNER SYSTEM
-//  Players queue up multiple activities; committing ends the week.
+//  ENERGY & WEEKLY ACTIVITY SYSTEM
+//  Energy is a weekly budget. Activities cost energy.
+//  One-time social events don't advance time.
 // ═══════════════════════════════════════════════════════
-let weekQueue = []; // {emoji, label, fn}
+const MAX_ENERGY_ACTIONS = 6; // max queued activities per week
+let weekQueue = []; // {emoji, label, fn, energyCost}
+let weeklyEventsDone = new Set(); // tracks one-time events done this week
 
-function queueActivity(emoji, label, fn){
-  weekQueue.push({emoji, label, fn});
+function getWeeklyEnergy(){
+  // Based on sleep hours and current energy stat
+  const sleepBonus = (G.sleepHoursPerNight - 7) * 8; // +8 per extra hour, -8 per less
+  return clamp(G.energy + sleepBonus, 10, 100);
+}
+
+function calcQueuedEnergyCost(){
+  return weekQueue.reduce((sum,a)=>(sum+(a.energyCost||0)),0);
+}
+
+function getEnergyColor(remaining){
+  if(remaining>60) return 'var(--green)';
+  if(remaining>30) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+function updateEnergyDisplay(){
+  const maxE = getWeeklyEnergy();
+  const used = calcQueuedEnergyCost();
+  const remaining = maxE - used;
+  const el = document.getElementById('energy-tracker');
+  if(el){
+    el.innerHTML = `<span style="color:${getEnergyColor(remaining)}">⚡ ${remaining}/${maxE} energy</span>`;
+  }
+}
+
+// One-time event: no time advance, no energy cost, can only be done once per week
+function doOneTimeEvent(key, fn){
+  if(weeklyEventsDone.has(key)){
+    toast("You've already done that this week.");
+    return;
+  }
+  weeklyEventsDone.add(key);
+  fn();
+  updateEnergyDisplay();
+}
+
+// ═══════════════════════════════════════════════════════
+//  END WEEK CHOICE SCREEN
+//  Presents the player with lifestyle decisions before committing.
+// ═══════════════════════════════════════════════════════
+// End-week choices run as a sequential queue of steps.
+// Each step shows a prompt + options; picking one runs its fn then advances to the next step.
+// ═══════════════════════════════════════════════════════
+//  TIME MANAGEMENT ENGINE
+// ═══════════════════════════════════════════════════════
+function calcWorkHoursPerWeek(effort){
+  const contract = G.salary<1200?20 : G.salary<2000?37 : 40;
+  if(effort==="overtime") return contract+10;
+  if(effort==="minimal")  return Math.round(contract*0.8);
+  return contract;
+}
+function calcCommuteHours(){
+  return G.car!=="None" ? 3 : 5;
+}
+function calcFreeHours(workH, sleepH){
+  // 168h week − work (weekdays ~5/7) − sleep (every night) − commute (weekdays)
+  const workPart = workH * 5/7;
+  const sleepPart = sleepH * 7;
+  const commute = calcCommuteHours(); // total per week
+  return Math.max(0, Math.round(168 - workPart - sleepPart - commute));
+}
+
+const ACTIVITY_HOURS = {
+  gym:5, run:3, yoga:2, cook:5, grocery:2, selfcare:4, study:8, hobby:6, social:4
+};
+
+// ═══════════════════════════════════════════════════════
+//  END-WEEK SEQUENTIAL FLOW
+// ═══════════════════════════════════════════════════════
+let _endWeekAborted = false;
+let _ewState = {};
+
+function openEndWeekChoices(){
+  _endWeekAborted = false;
+  _ewState = { workEffort:"normal", sleepH:G.sleepHoursPerNight||7, freeH:0, remainingH:0 };
+
+  const steps = [];
+
+  // ── 1: Sleep ──
+  steps.push({
+    title:"😴 How much sleep this week?",
+    body:"More sleep = more energy but fewer free hours for activities. Less sleep = more time but real physical and mental costs.",
+    acts:[
+      {label:"🌙 8h — well rested (fewer free hours)",fn:()=>{
+        _ewState.sleepH=8; G.sleepHoursPerNight=8;
+        G.energy=clamp(G.energy+15); G.mood=clamp(G.mood+8);
+        G.depressionScore=clamp(G.depressionScore-2);
+        storyEntry("Good sleep","Early nights. You feel sharp and human.",[{type:"stat",label:"+energy +mood"}]);
+      }},
+      {label:"🛏 7h — balanced",fn:()=>{
+        _ewState.sleepH=7; G.sleepHoursPerNight=7;
+        storyEntry("Normal sleep","Seven hours. Functional.",[]); 
+      }},
+      {label:"⏰ 6h — more time, tiredness builds",cls:"warn",fn:()=>{
+        _ewState.sleepH=6; G.sleepHoursPerNight=6;
+        G.energy=clamp(G.energy-10); G.mood=clamp(G.mood-5);
+        G.depressionScore=clamp(G.depressionScore+2);
+        storyEntry("Short nights","More hours in the day, but you feel it.",[{type:"bad",label:"−energy −mood"}]);
+      }},
+      {label:"🌃 5h — maximum time, real cost",cls:"bad",fn:()=>{
+        _ewState.sleepH=5; G.sleepHoursPerNight=5;
+        G.energy=clamp(G.energy-22); G.mood=clamp(G.mood-12);
+        G.health=clamp(G.health-3); G.depressionScore=clamp(G.depressionScore+5);
+        storyEntry("Sleep deprivation","Running on nothing. Your body is keeping score.",[{type:"bad",label:"−health −energy −mood"}]);
+      }},
+    ]
+  });
+
+  // ── 2: Work effort ──
+  if(G.salary > 0){
+    const contract = G.salary<1200?20 : G.salary<2000?37 : 40;
+    steps.push({
+      title:"💼 Work effort this week",
+      body:`Your contract is ${contract}h/week. You can coast, show up properly, or push for overtime. Overtime costs free time but may earn extra.`,
+      acts:[
+        {label:`😴 Minimum — ~${Math.round(contract*0.8)}h (risk of being noticed)`,cls:"warn",fn:()=>{
+          _ewState.workEffort="minimal";
+          G.energy=clamp(G.energy+8);
+          if(Math.random()<0.25){
+            G.conf=clamp(G.conf-6); G.savings-=Math.round(G.salary*0.05);
+            storyEntry("Performance warning","Your manager notices the drop-off. A quiet word.",[{type:"bad",label:"docked pay"}]);
+          } else {
+            storyEntry("Coasted","You do the minimum. Undetected this week.",[]); 
+          }
+        }},
+        {label:`✅ Normal — ${contract}h (as contracted)`,fn:()=>{
+          _ewState.workEffort="normal";
+          storyEntry("Standard week","You put in the contracted hours.",[]); 
+        }},
+        {label:`🔥 Overtime — ${contract+10}h (bonus chance)`,cls:"good",fn:()=>{
+          _ewState.workEffort="overtime";
+          G.energy=clamp(G.energy-15); G.health=clamp(G.health-2);
+          G.depressionScore=clamp(G.depressionScore+3);
+          const bonus=Math.random()<0.65 ? Math.round(G.salary*0.1+Math.random()*G.salary*0.1) : 0;
+          if(bonus){ G.savings+=bonus; storyEntry("Overtime",`Long hours. €${bonus} bonus lands.`,[{type:"stat",label:"+€"+bonus},{type:"bad",label:"−energy"}]); }
+          else storyEntry("Overtime, no bonus","Long hours. Your manager noticed — no bonus yet.",[{type:"bad",label:"−energy"}]);
+        }},
+      ]
+    });
+  }
+
+  // ── 3: Free time allocation (dynamic) ──
+  steps.push({ title:"__freetime__", dynamic:true });
+
+  // ── 4: Food (dynamic) ──
+  steps.push({ title:"__food__", dynamic:true });
+
+  // ── 5: Bills (when due) ──
+  if(G.weekOfYear % 4 === 0 || G.overdraft > 0){
+    steps.push({ title:"__bills__", dynamic:true });
+  }
+
+  // ── 6: Social/housemate event ──
+  const evt = pickWeeklySocialEvent();
+  if(evt) steps.push(evt);
+
+  runEndWeekSteps(steps, 0);
+}
+
+function runEndWeekSteps(steps, idx){
+  if(_endWeekAborted) return;
+  if(idx >= steps.length){
+    setActions([{label:"✅ Close out the week", cls:"pri", fn:()=>finaliseEndWeek()}]);
+    return;
+  }
+  const step = steps[idx];
+  const next = ()=>{ if(!_endWeekAborted) runEndWeekSteps(steps, idx+1); };
+
+  // Dynamic step dispatch
+  if(step.dynamic || (step.title||"").startsWith("__")){
+    const tag = step.title;
+    if(tag==="__freetime__"){ showFreeTimeStep(steps, idx); return; }
+    if(tag==="__food__"){     showFoodStep(steps, idx); return; }
+    if(tag==="__bills__"){    showBillsStep(steps, idx); return; }
+  }
+
+  storyEntry(step.title, step.body);
+  setActions(step.acts.map(a=>({...a, fn:()=>{ a.fn(); next(); }})));
+}
+
+// ── Free time step ────────────────────────────────────────────────────────────
+function showFreeTimeStep(steps, idx){
+  const workH = calcWorkHoursPerWeek(_ewState.workEffort);
+  const sleepH = _ewState.sleepH;
+  const freeH  = calcFreeHours(workH, sleepH);
+  _ewState.freeH = freeH;
+  if(!_ewState.remainingH) _ewState.remainingH = freeH; // initialise once
+
+  const rem = _ewState.remainingH;
+  storyEntry(
+    `🗓 Free time — ${rem}h left this week`,
+    `Work: ~${Math.round(workH*5/7)}h · Sleep: ${sleepH*7}h · Commute: ~${calcCommuteHours()}h → ${freeH}h free total. ${rem<freeH?`You've used ${freeH-rem}h so far. `:``}Add activities or move on.`
+  );
+
+  const act = (emoji, label, hours, fn, cls)=>({
+    label:`${emoji} ${label} — ${hours}h`,
+    cls: hours>rem?"":"(cls||'')",
+    disabled: hours>rem,
+    fn:()=>{
+      _ewState.remainingH -= hours;
+      weekQueue.push({emoji, label, fn, energyCost:0});
+      renderWeekQueue();
+      showFreeTimeStep(steps, idx); // stay on this step to add more
+    }
+  });
+
+  setActions([
+    act("🏋","Gym sessions",   ACTIVITY_HOURS.gym,      doGymQ,        "good"),
+    act("🏃","Running",        ACTIVITY_HOURS.run,      doRunQ,        "good"),
+    act("🧘","Yoga & rest",    ACTIVITY_HOURS.yoga,     doYoga,        ""),
+    act("🛁","Self-care",      ACTIVITY_HOURS.selfcare, doSelfCare,    ""),
+    act("📚","Study",          ACTIVITY_HOURS.study,    ()=>openStudyMenu(), ""),
+    act("🎨","Hobby",          ACTIVITY_HOURS.hobby,    ()=>openHobbyMenu(), ""),
+    act("👥","See friends",    ACTIVITY_HOURS.social,   ()=>openFriendsMenu(), ""),
+    {label:`✅ Done — ${rem}h remaining, move on`, cls:"pri",
+     fn:()=>runEndWeekSteps(steps, idx+1)},
+  ]);
+}
+
+// ── Food step ─────────────────────────────────────────────────────────────────
+function showFoodStep(steps, idx){
+  const ps = pantryStatus();
+  const hasFood = ps !== "empty";
+  const lowFood  = ps === "low";
+  const body = hasFood
+    ? (lowFood ? `Your pantry is running low (${G.pantry.servings} meals). You might need to shop.`
+               : `Pantry: ${G.pantry.servings} meals stocked.`)
+    : "Your fridge is empty — you need to sort food this week.";
+
+  const rem = _ewState.remainingH;
+  const next = ()=>runEndWeekSteps(steps, idx+1);
+
+  storyEntry("🍽 Food this week", body);
+
+  const acts = [];
+
+  if(hasFood){
+    acts.push({label:"🍳 Cook at home (5h, uses pantry)", cls:"good", fn:()=>{
+      if(rem>=5) _ewState.remainingH-=5;
+      doHomeCook(); next();
+    }});
+  }
+  if(!hasFood || lowFood){
+    acts.push({label:`🛒 Do the groceries (${rem>=2?"2h":"⚠ short on time"})`, fn:()=>{
+      if(rem>=2) _ewState.remainingH-=2;
+      // grocery then come back to food choice
+      openGroceryMenu();
+      // NOTE: grocery menu calls mainMenuActions at end — we'll lose the chain
+      // So we resolve food here and let grocery be standalone
+      next();
+    }});
+  }
+  acts.push({label:"🍕 Takeaway all week (~€70, unhealthy)", cls:"warn", fn:()=>{
+    G.savings-=70; G.weeklyJunk+=60; gainFat(3,"carb");
+    G.health=clamp(G.health-4);
+    storyEntry("Takeaway week","Deliveries every evening. Convenient. Calorie-dense.",[{type:"gain",label:"+weight"},{type:"bad",label:"−€70 −health"}]);
+    next();
+  }});
+  acts.push({label:"🍽 Eat out — choose where", fn:()=>{
+    storyEntry("Eating out","You decide to eat out this week.");
+    setActions([
+      {label:"☕ Cheap eats — cafés & meal deals (~€45)", fn:()=>{
+        G.savings-=45; G.weeklyHealthy+=10; G.happy=clamp(G.happy+4);
+        storyEntry("Cheap eats","Sandwiches, corner cafés. Enough.",[{type:"bad",label:"−€45"}]); next();
+      }},
+      {label:"🍴 Proper restaurants (~€110)", fn:()=>{
+        G.savings-=110; gainFat(1,"meat"); G.happy=clamp(G.happy+12);
+        storyEntry("Restaurants","Good food, real plates. A luxury that feels earned.",[{type:"stat",label:"+mood"},{type:"bad",label:"−€110"}]); next();
+      }},
+      {label:"🥂 Fine dining (~€230)", disabled:G.savings<230, fn:()=>{
+        G.savings-=230; gainFat(2,"meat"); G.happy=clamp(G.happy+20); G.conf=clamp(G.conf+5);
+        storyEntry("Fine dining","White tablecloths. Uncomfortable bill. Every bite worth it.",[{type:"stat",label:"+happiness"},{type:"bad",label:"−€230"}]); next();
+      }},
+    ]);
+  }});
+  if(!hasFood && G.savings<20){
+    acts.push({label:"😶 Skip meals — no money", cls:"bad", fn:()=>{
+      G.health=clamp(G.health-10); G.energy=clamp(G.energy-20); G.mood=clamp(G.mood-15);
+      storyEntry("Not eating","Nothing in the fridge, nothing in the account. You get through on water and whatever's left.",[{type:"bad",label:"starving −health −energy"}]);
+      if(G.health<20){
+        G.savings+=150; G.health=clamp(G.health+10);
+        storyEntry("Emergency help","A social worker shows up with food vouchers. Embarrassed and relieved.",[{type:"stat",label:"emergency support"}]);
+      }
+      next();
+    }});
+  }
+
+  setActions(acts);
+}
+
+// ── Bills step ────────────────────────────────────────────────────────────────
+function showBillsStep(steps, idx){
+  const bills = calcMonthlyBills();
+  const totalOut = G.rent + bills.total;
+  const next = ()=>runEndWeekSteps(steps, idx+1);
+
+  storyEntry("💸 Bills & rent",
+    `Monthly bills: €${totalOut} (rent €${G.rent} + bills €${bills.total}). Savings: €${Math.round(G.savings).toLocaleString()}.${G.overdraft>0?" You're €"+G.overdraft.toLocaleString()+" in overdraft.":""}`);
+
+  const acts = [];
+  if(G.savings >= totalOut){
+    acts.push({label:`✅ Pay everything — €${totalOut}`, cls:"good", fn:()=>{
+      G.savings-=totalOut;
+      storyEntry("Bills paid",`€${totalOut} out. Another month settled.`,[{type:"bad",label:`−€${totalOut}`}]); next();
+    }});
+  }
+  if(G.savings>0 && G.savings<totalOut){
+    const partial=Math.round(G.savings);
+    acts.push({label:`⚠ Pay what I have — €${partial}`, cls:"warn", fn:()=>{
+      G.overdraft=clamp(G.overdraft+(totalOut-partial),0,10000);
+      G.savings=0; G.creditScore=clamp(G.creditScore-12,300,850);
+      storyEntry("Partial payment",`Paid €${partial}. Gap goes on overdraft.`,[{type:"bad",label:"credit hit"}]); next();
+    }});
+  }
+  acts.push({label:"🚫 Skip bills this month", cls:"bad", fn:()=>{
+    G.overdraft=clamp(G.overdraft+totalOut,0,10000);
+    G.creditScore=clamp(G.creditScore-20,300,850);
+    G.depressionScore=clamp(G.depressionScore+5); G.mood=clamp(G.mood-8);
+    if(G.overdraft>2000 && Math.random()<0.3){ triggerEviction(); return; }
+    storyEntry("Bills skipped","The letters stack up.",[{type:"bad",label:`+€${totalOut} arrears`}]); next();
+  }});
+
+  setActions(acts);
+}
+
+// ── Weekly social event picker ─────────────────────────────────────────────────
+function pickWeeklySocialEvent(){
+  const pool = [];
+
+  if(G.salary>0) pool.push({
+    title:"🍻 After-work invite",
+    body:"Your colleagues are heading to a bar. Long week — do you join?",
+    acts:[
+      {label:"Go — let loose",fn:()=>{ G.social=clamp((G.social||50)+10); G.happy=clamp(G.happy+8); G.drinksPerWeek+=4; G.drinkingWeeks++; gainFat(1,"alcohol"); G.energy=clamp(G.energy-8); storyEntry("After-work drinks","Pints and work gossip. You feel human again.",[{type:"stat",label:"+social"}]); }},
+      {label:"One drink, then home",fn:()=>{ G.social=clamp((G.social||50)+5); G.happy=clamp(G.happy+4); storyEntry("One drink","You show face. One pint and a graceful exit.",[]); }},
+      {label:"Skip it — too tired",fn:()=>{ G.social=clamp((G.social||50)-3); storyEntry("Stayed home","The sofa wins.",[]); }},
+    ]
+  });
+
+  const friends = G.relationships.filter(r=>r.type==="friend");
+  if(friends.length){
+    const f = friends[Math.floor(Math.random()*friends.length)];
+    pool.push({
+      title:`☕ ${f.name} wants to catch up`,
+      body:`${f.name} messages. A coffee? Lunch? Just to talk.`,
+      acts:[
+        {label:"Meet up",fn:()=>{ f.closeness=clamp(f.closeness+10); G.happy=clamp(G.happy+10); G.social=clamp((G.social||50)+8); if(_ewState.remainingH>=4)_ewState.remainingH-=4; storyEntry(`With ${f.name}`,"A good afternoon. You leave feeling like yourself.",[{type:"stat",label:"+closeness"}]); }},
+        {label:"Rain check",fn:()=>{ f.closeness=clamp(f.closeness-5); storyEntry("Cancelled","You say you're swamped.",[]); }},
+      ]
+    });
+  }
+
+  // Housemate events
+  const partyMate = (G.housemates||[]).find(h=>h.personality==="party");
+  if(partyMate && G.housingTier===0) pool.push({
+    title:`🎉 ${partyMate.name} is throwing a party`,
+    body:`${partyMate.name} announces there's a party Friday night. You didn't get much say in it.`,
+    acts:[
+      {label:"Join in",fn:()=>{ G.happy=clamp(G.happy+10); G.social=clamp((G.social||50)+12); G.drinksPerWeek+=6; gainFat(1,"alcohol"); G.energy=clamp(G.energy-10); partyMate.closeness=clamp(partyMate.closeness+8); storyEntry("Party night","The flat fills with strangers. It's actually a good night.",[{type:"stat",label:"+social"}]); }},
+      {label:"Hide in your room",fn:()=>{ G.mood=clamp(G.mood-5); G.sleepHoursPerNight=Math.max(4,G.sleepHoursPerNight-1); storyEntry("Bass through the wall","3am. You lie there staring at the ceiling.",[{type:"bad",label:"poor sleep"}]); }},
+      {label:"Ask them to keep it down",fn:()=>{ partyMate.closeness=clamp(partyMate.closeness-8); partyMate.tension=(partyMate.tension||0)+1; storyEntry("The conversation","You ask. They look annoyed. It stays loud.",[{type:"bad",label:"flatmate tension"}]); }},
+    ]
+  });
+
+  const smokingMate = (G.housemates||[]).find(h=>h.personality==="smoker");
+  if(smokingMate && G.housingTier===0) pool.push({
+    title:`🚬 ${smokingMate.name} keeps smoking inside`,
+    body:`Despite the agreement, ${smokingMate.name} keeps lighting up in the kitchen. The flat smells.`,
+    acts:[
+      {label:"Confront them directly",fn:()=>{ if(Math.random()<0.5){ smokingMate.closeness=clamp(smokingMate.closeness-5); storyEntry("They apologise","Reluctantly. They move to the balcony. For now.",[{type:"stat",label:"resolved (maybe)"}]); } else { smokingMate.closeness=clamp(smokingMate.closeness-15); smokingMate.tension=(smokingMate.tension||0)+2; storyEntry("Argument","It escalates. They accuse you of being uptight. The atmosphere is awful.",[{type:"bad",label:"flatmate conflict"}]); } }},
+      {label:"Leave passive-aggressive notes",fn:()=>{ smokingMate.closeness=clamp(smokingMate.closeness-8); G.mood=clamp(G.mood-3); storyEntry("Sticky notes","You leave pointed notes. They ignore them. You both pretend it's fine.",[{type:"bad",label:"simmering tension"}]); }},
+      {label:"Let it go this week",fn:()=>{ G.mood=clamp(G.mood-4); G.depressionScore=clamp(G.depressionScore+2); storyEntry("Ignoring it","The smell gets into everything. You say nothing.",[{type:"bad",label:"−mood"}]); }},
+    ]
+  });
+
+  // Additional housemate lifestyle events
+  const drinkerMate = (G.housemates||[]).find(h=>h.personality==="drinker");
+  if(drinkerMate && G.housingTier===0) pool.push({
+    title:`🍺 Evening with ${drinkerMate.name}`,
+    body:`${drinkerMate.name} cracks a bottle and looks over. "Want one?" Simple question. Loaded context.`,
+    acts:[
+      {label:"Join them — just one",fn:()=>{ G.drinksPerWeek+=2; G.drinkingWeeks++; G.happy=clamp(G.happy+6); drinkerMate.closeness=clamp(drinkerMate.closeness+8); storyEntry("One becomes two","You sit down. It's a good evening, actually.",[{type:"warn",label:"+drinking"}]); }},
+      {label:"Thanks, but no",fn:()=>{ storyEntry("Declined","You've got an early start. Or you just don't feel like it. Either way.",[]); }},
+    ]
+  });
+
+  const foodieMate = (G.housemates||[]).find(h=>h.personality==="foodie");
+  if(foodieMate && G.housingTier===0) pool.push({
+    title:`🍳 ${foodieMate.name} made too much`,
+    body:`There's a knock on your door. ${foodieMate.name} is holding a plate covered in clingfilm. "I always make too much. Do you want this?"`,
+    acts:[
+      {label:"Yes — take the plate",fn:()=>{ G.weeklyHealthy+=20; G.happy=clamp(G.happy+8); foodieMate.closeness=clamp(foodieMate.closeness+10); storyEntry("Free dinner","It's excellent. You feel slightly guilty for not cooking more yourself.",[{type:"stat",label:"+health"},{type:"stat",label:"+closeness"}]); }},
+      {label:"No thanks",fn:()=>{ storyEntry("Passed on it","You thank them. They nod and go back.",[]); }},
+    ]
+  });
+
+  const fitnessMate = (G.housemates||[]).find(h=>h.personality==="fitness");
+  if(fitnessMate && G.housingTier===0) pool.push({
+    title:`🏃 ${fitnessMate.name} invites you on a run`,
+    body:`They knock at 6:45am. You're half-asleep. "Coming? Just an easy one." ${fitnessMate.name}, for whom there is no such thing as an easy one.`,
+    acts:[
+      {label:"Go — you'll regret it either way",cls:"good",fn:()=>{ doRunQ(); fitnessMate.closeness=clamp(fitnessMate.closeness+10); G.energy=clamp(G.energy-5); storyEntry("The run","It's hard. They're encouraging. You're red-faced and vaguely proud.",[{type:"lose",label:"−fat"},{type:"stat",label:"+closeness"}]); }},
+      {label:"Not today",fn:()=>{ storyEntry("Next time","You roll over. The guilt lasts until about noon.",[]); }},
+    ]
+  });
+
+  const messyMate=(G.housemates||[]).find(h=>h.personality==="messy");
+  if(messyMate&&G.housingTier===0) pool.push({
+    title:`🧹 The kitchen`,
+    body:`${messyMate.name}'s dishes. Always ${messyMate.name}'s dishes. The stack has reached a kind of geological significance.`,
+    acts:[
+      {label:"Do it — it'll make you feel better",fn:()=>{ G.mood=clamp(G.mood+3); messyMate.tension=Math.max(0,(messyMate.tension||0)-0.5); storyEntry("You cleaned it","It took fifteen minutes. You feel righteous and slightly martyred.",[{type:"stat",label:"clean kitchen"}]); }},
+      {label:"Leave it — not your turn",fn:()=>{ messyMate.tension=(messyMate.tension||0)+0.5; G.mood=clamp(G.mood-2); storyEntry("Left it","You step around it. The pile grows one plate taller.",[{type:"bad",label:"tension brewing"}]); }},
+      {label:"Text them about it",fn:()=>{ if(Math.random()<0.5){ messyMate.tension=(messyMate.tension||0)+0.5; storyEntry("They say 'yeah sorry'","The dishes remain.",[{type:"bad",label:"unresolved"}]); } else { storyEntry("They actually do it","You send the text. Twenty minutes later it's done.",[{type:"stat",label:"small win"}]); } }},
+    ]
+  });
+
+  if(!pool.length || Math.random()<0.25) return null;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function finaliseEndWeek(){
+  _endWeekAborted = false;
+  // Run queued activities
+  for(const act of weekQueue) act.fn();
+  weekQueue = [];
+  weeklyEventsDone.clear();
+  renderWeekQueue();
+  advanceWeeks(1);
+  renderCharacter();
+  updateStats();
+  mainMenuActions();
+}
+
+function triggerEviction(){
+  _endWeekAborted = true; // stop the step chain
+  G.housing = "Homeless";
+  G.rent = 0;
+  G.housingTier = -1;
+  G.depressionScore = clamp(G.depressionScore + 25);
+  G.mood = clamp(G.mood - 30);
+  G.happy = clamp(G.happy - 25);
+  storyEntry("Eviction",
+    "The landlord's patience has run out. You come home to find the locks changed. A letter on the door. You are out.",
+    [{type:"bad",label:"evicted"},{type:"bad",label:"homeless"}]);
+  setActions([{
+    label:"Accept help from social services",cls:"good",
+    fn:()=>{
+      G.housing = "Hostel (social services)";
+      G.rent = 50; // minimal contribution
+      G.housingTier = 0;
+      G.savings = Math.max(G.savings, 0); // social services clear immediate debt
+      G.overdraft = 0;
+      G.depressionScore = clamp(G.depressionScore - 5);
+      G.health = clamp(G.health - 5); // hard living takes a toll
+      storyEntry("Social services",
+        "A caseworker finds you a place in a hostel. It's a small, shared room. It's not comfortable. But it's a roof. They help you apply for housing benefit and emergency support. This isn't the end.",
+        [{type:"stat",label:"shelter secured"},{type:"neu",label:"housing benefit started"}]);
+      finaliseEndWeek();
+    }
+  }]);
+}
+
+// ── Starvation / no food check ─────────────────────────────────────────────────
+function checkStarvation(){
+  if(pantryStatus()==="empty" && G.savings < 10){
+    G.health = clamp(G.health - 8);
+    G.energy = clamp(G.energy - 20);
+    G.mood = clamp(G.mood - 15);
+    G.happy = clamp(G.happy - 10);
+    storyEntry("Nothing to eat",
+      "There's nothing in the fridge. Nothing in the cupboards. You haven't had a proper meal in days. Your body is starting to feel it — lightheaded, irritable, exhausted.",
+      [{type:"bad",label:"starving"},{type:"bad",label:"−health"},{type:"bad",label:"−energy"}]);
+    if(G.health < 20){
+      storyEntry("Social services intervene",
+        "A neighbour calls someone. A social worker arrives with emergency food vouchers and checks if you're alright. You're embarrassed and relieved in equal measure. They help you apply for emergency benefits.",
+        [{type:"stat",label:"emergency food"},{type:"stat",label:"benefits started"}]);
+      G.savings += 150; // emergency support
+      G.health = clamp(G.health + 10);
+      G.energy = clamp(G.energy + 15);
+    }
+  }
+}
+
+function queueActivity(emoji, label, fn, energyCost=15){
+  const maxE = getWeeklyEnergy();
+  const used = calcQueuedEnergyCost();
+  if(used + energyCost > maxE + 20){ // allow slight overflow with warning
+    toast(`Not enough energy! Used ${used}/${maxE} already.`);
+    mainMenuActions();
+    return;
+  }
+  weekQueue.push({emoji, label, fn, energyCost});
   renderWeekQueue();
   // Return to main menu actions immediately so more can be added
   mainMenuActions();
@@ -3211,16 +4246,16 @@ function queueActivity(emoji, label, fn){
 
 function renderWeekQueue(){
   const container = document.getElementById('wplan-pills');
-  const btn = document.getElementById('wplan-commit-btn');
+  const energyEl = document.getElementById('energy-tracker');
   if(!weekQueue.length){
-    container.innerHTML = '<span class="wplan-empty">nothing planned yet</span>';
-    btn.disabled = true;
+    container.innerHTML = '<span class="wplan-empty">nothing queued</span>';
+    if(energyEl) energyEl.textContent='';
     return;
   }
   container.innerHTML = weekQueue.map((a,i)=>
     `<span class="wplan-pill" onclick="removeQueueItem(${i})">${a.emoji} ${a.label} ✕</span>`
   ).join('');
-  btn.disabled = false;
+  updateEnergyDisplay();
 }
 
 function removeQueueItem(i){
@@ -3229,15 +4264,13 @@ function removeQueueItem(i){
 }
 
 function commitWeek(){
-  if(!weekQueue.length){ advanceWeeks(1); mainMenuActions(); return; }
-  // Run all queued activities
-  for(const act of weekQueue) act.fn();
-  weekQueue = [];
-  renderWeekQueue();
-  advanceWeeks(1);
-  renderCharacter();
-  updateStats();
-  mainMenuActions();
+  checkStarvation();
+  if(!weekQueue.length && weeklyEventsDone.size === 0){
+    // Just skip straight to end-week choices
+    openEndWeekChoices();
+    return;
+  }
+  openEndWeekChoices();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3266,30 +4299,31 @@ function mainMenuActions(){
     {emoji:"🍽", label:"Food", acts:[
       {label:"🛒 Groceries",       fn:()=>openGroceryMenu()},
       {label:"🍽 Eat out",         fn:()=>openEatOut()},
-      {label:"🍳 Cook at home",    fn:()=>queueActivity("🍳","cook at home", doHomeCook)},
+      {label:"🍳 Cook at home",    fn:()=>queueActivity("🍳","cook at home", doHomeCook, 5)},
     ]},
     {emoji:"💪", label:"Exercise", acts:[
-      !pregnant?{label:"🏋 Gym",   fn:()=>queueActivity("🏋","gym", doGymQ)}:null,
-      !pregnant?{label:"🏃 Run",   fn:()=>queueActivity("🏃","run", doRunQ)}:null,
-      {label:"🧘 Rest / yoga",     fn:()=>queueActivity("🧘","rest & yoga", doYoga)},
+      !pregnant?{label:"🏋 Gym",   fn:()=>queueActivity("🏋","gym", doGymQ, 20)}:null,
+      !pregnant?{label:"🏃 Run",   fn:()=>queueActivity("🏃","run", doRunQ, 15)}:null,
+      {label:"🧘 Rest / yoga",     fn:()=>queueActivity("🧘","rest & yoga", doYoga, 5)},
       {label:"🏋 Gym membership",  fn:()=>openGymMembershipMenu()},
     ].filter(Boolean)},
     {emoji:"👥", label:"Social", acts:[
-      {label:"🍺 Night out",       fn:()=>openBarNight()},
-      {label:"💌 Relationships",   fn:()=>openRelationshipsMenu()},
-      {label:"👥 Friends",         fn:()=>openFriendsMenu()},
+      {label:"🍺 Night out (event)",fn:()=>doOneTimeEvent('bar',()=>openBarNight())},
+      {label:"☕ Meet a friend (event)",fn:()=>doOneTimeEvent('friends',()=>openFriendsMenu())},
+      {label:"💌 Relationships (event)",fn:()=>doOneTimeEvent('date',()=>openRelationshipsMenu())},
     ]},
     {emoji:"🌿", label:"Lifestyle", acts:[
       {label:"🚬 Smoking",         fn:()=>openSmokeMenu()},
       {label:"📱 Social media",    fn:()=>openSocialMediaMenu()},
       {label:"🎲 Gambling",        fn:()=>openGamblingMenu()},
-      {label:"✈ Travel",           fn:()=>openTravelMenu()},
-      {label:"🎨 Hobby",           fn:()=>openHobbyMenu()},
+      {label:"✈ Travel",           fn:()=>queueActivity("✈","travel", ()=>openTravelMenu(), 30)},
+      {label:"🎨 Hobby",           fn:()=>queueActivity("🎨","hobby time", ()=>openHobbyMenu(), 10)},
       {label:"😴 Sleep habits",    fn:()=>openSleepMenu()},
+      {label:"🏠 Home self-care",  fn:()=>doOneTimeEvent('selfcare',doSelfCare)},
     ]},
     {emoji:"💼", label:"Career", acts:[
       {label: hasJob?"💼 Career & jobs":"💼 Find work",  fn:()=>openJobMenu()},
-      {label:"📚 Study",           fn:()=>openStudyMenu()},
+      {label:"📚 Study",           fn:()=>queueActivity("📚","study", ()=>openStudyMenu(), 20)},
       {label:"💰 Budget",          fn:()=>openBudgetMenu()},
     ]},
     {emoji:"🏠", label:"Assets", acts:[
@@ -3331,24 +4365,6 @@ function mainMenuActions(){
   });
 
   grid.appendChild(catsRow);
-
-  // Always-visible bottom row: week queue actions
-  const timeRow = document.createElement('div');
-  timeRow.style.cssText = 'display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;';
-
-  const endBtn = document.createElement('button');
-  if(weekQueue.length){
-    endBtn.className = 'a-btn pri';
-    endBtn.textContent = '⏩ End week →';
-    endBtn.onclick = ()=>commitWeek();
-  } else {
-    endBtn.className = 'a-btn';
-    endBtn.textContent = '⏩ Skip a week';
-    endBtn.onclick = ()=>{advanceWeeks(1);renderCharacter();mainMenuActions();};
-  }
-  timeRow.appendChild(endBtn);
-
-  grid.appendChild(timeRow);
   // Inject Free Will button into week-grid
   const wg = document.getElementById('week-grid');
   if(wg){
@@ -3380,6 +4396,11 @@ function doYoga(){
   G.mood=clamp(G.mood+8);G.health=clamp(G.health+3);G.energy=clamp(G.energy+5);
   storyEntry("Yoga","Slow movement and breathing. Your body thanks you for it.",[{type:"stat",label:"+mood"},{type:"stat",label:"+energy"}]);
 }
+function doSelfCare(){
+  G.mood=clamp(G.mood+12);G.happy=clamp(G.happy+8);G.conf=clamp(G.conf+5);
+  G.depressionScore=clamp(G.depressionScore-3);
+  storyEntry("Self-care day","You take the day for yourself. A bath, a face mask, something good to watch. Nothing dramatic. Just necessary.",[{type:"stat",label:"+mood"},{type:"stat",label:"+confidence"}]);
+}
 function doHomeCook(){
   const hadFood = consumeFromPantry(7); // one week of home cooking = 7 servings
   if(!hadFood){
@@ -3390,7 +4411,7 @@ function doHomeCook(){
     storyEntry("Improvised meals", "The fridge is nearly empty. You cobble together toast, eggs, whatever's left. It's a reminder to do the shopping.", [{type:"bad",label:"pantry empty"},{type:"bad",label:"−€15 emergency shop"}]);
     return;
   }
-  const p = FOOD_PROFILES[G.pantry.profileKey] || FOOD_PROFILES.mixed;
+  const p = FOOD_PROFILES[G.pantry?.key||G.pantry?.profileKey||"mixed"] || FOOD_PROFILES.mixed;
   G.weeklyHealthy += Math.round(p.healthy * 0.5);
   G.weeklyJunk    = Math.max(0, G.weeklyJunk + Math.round(p.junk * 0.3));
   G.happy  = clamp(G.happy + 4);
@@ -3417,9 +4438,9 @@ function buildDebug(){
   inner.innerHTML=''; // always rebuild so weight slider stays in sync
   // ── Weight (kg) slider ──────────────────────────────
   const wdiv=document.createElement('div');wdiv.className='dbg-group';
-  const currentKg=Math.round(KG_BASE+S.body.stage*KG_PER_UNIT);
-  const minKg=Math.round(KG_BASE+1*KG_PER_UNIT);
-  const maxKg=Math.round(KG_BASE+STAGE_MAX.body*KG_PER_UNIT);
+  const currentKg=Math.round(calcWeight());
+  const minKg=Math.round(38); // lean preset target
+  const maxKg=Math.round(200); // heavy+ target
   wdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Weight</strong>`;
   const wValSpan=document.createElement('span');
   wValSpan.style.cssText='font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink2);margin-left:8px;';
@@ -3432,14 +4453,15 @@ function buildDebug(){
   wSl.oninput=()=>{
     const targetKg=parseInt(wSl.value);
     wValSpan.textContent=targetKg+'kg';
-    const targetStage=Math.round((targetKg-KG_BASE)/KG_PER_UNIT);
-    S.body.stage=Math.max(1,Math.min(STAGE_MAX.body,targetStage));
-    // Distribute weight proportionally across body parts
-    const ratio=targetStage/STAGE_MAX.body;
+    // Convert target kg to a ratio across weight parts
+    // KG = KG_BASE + sum*KG_PER_UNIT => sum = (KG - KG_BASE)/KG_PER_UNIT
+    const targetSum=Math.round((targetKg-KG_BASE)/KG_PER_UNIT);
+    const PART_MAXES={belly:STAGE_MAX.belly,arm:STAGE_MAX.arm,butt:STAGE_MAX.butt,thighs:STAGE_MAX.thighs,breast:STAGE_MAX.breast};
+    const totalMax=Object.values(PART_MAXES).reduce((a,b)=>a+b,0);
     for(const p of WEIGHT_PARTS){
-      S[p].stage=Math.round(1+ratio*(STAGE_MAX[p]-1));
+      const frac=PART_MAXES[p]/totalMax;
+      S[p].stage=Math.max(1,Math.min(STAGE_MAX[p],Math.round(targetSum*frac)));
     }
-    G.bodyFatUnits=targetStage;
     renderCharacter();
     // sync all stage sliders in debug panel
     inner.querySelectorAll('[data-dbg-part]').forEach(el=>{
@@ -3583,7 +4605,23 @@ document.querySelectorAll('.ltab').forEach(btn=>{
 //  CHARACTER CREATION LOGIC
 // ═══════════════════════════════════════════════════════
 let ccPreset="slim",ccHairStyle="HairTied",ccGlasses=false,ccBreastTend=50;
-let ccHairColor="Blonde",ccEyeColor="Brown",ccTraits=[];
+let ccHairColor="Blonde",ccEyeColor="Brown",ccTraits=[],ccCity="berlin";
+
+// City picker
+const CITY_DESCS = {
+  lisbon:"Lisbon — lower rents and modest salaries. Relaxed pace, easier to stay afloat. Harder to build savings quickly.",
+  berlin:"Berlin — moderate rents, good salaries, strong social safety net. A solid starting point.",
+  london:"London — high salaries but brutal rents and cost of living. Money flows fast in both directions.",
+};
+document.querySelectorAll('#cc-cities .cc-pill').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#cc-cities .cc-pill').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    ccCity=btn.dataset.city;
+    const desc=document.getElementById('cc-city-desc');
+    if(desc) desc.textContent=CITY_DESCS[ccCity]||"";
+  });
+});
 
 // Color pickers
 document.querySelectorAll('#cc-hair-colors .cc-color').forEach(el=>{
@@ -3662,6 +4700,9 @@ document.getElementById('cc-start').addEventListener('click',()=>{
   G.eyeColor=ccEyeColor;
   G.traits=ccTraits;
 
+  // Apply city
+  applyCity(ccCity);
+
   // Apply trait modifiers
   if(ccTraits.includes("foodie")){G.appetite=75;G.bingeTendency=30;gainFat(5,"balanced");}
   if(ccTraits.includes("athlete")){G.fitness=70;loseFat(8);G.health=85;}
@@ -3684,11 +4725,20 @@ document.getElementById('cc-start').addEventListener('click',()=>{
   updateStats();
 
   renderCharacter(false).then(()=>{
+    // Initialise housemates for shared flat
+    if(G.housingTier===0){
+      const count = 1+Math.floor(Math.random()*2); // 1 or 2 housemates
+      G.housemates=[];
+      for(let i=0;i<count;i++) G.housemates.push(generateHousemate());
+      const names = G.housemates.map(h=>`${h.emoji} ${h.name} (${h.shortDesc})`).join(" and ");
+      storyEntry("Your flatmates",`You share the flat with ${names}.`,[]);
+    }
     // Opening story
+    const cityConfig = G_CITY;
     storyEntry(
-      `${name}, age ${G.age}`,
-      `You exist in a city that doesn't know your name yet. A small flat, a modest savings account, and a life that could go in any direction.
-      ${ccTraits.length?`You're the kind of person who ${traitDesc(ccTraits)}.`:""}
+      `${name}, age ${G.age} — ${cityConfig.name}`,
+      `You've arrived in ${cityConfig.name}. A small flat, €${G.savings} in savings, and a life that could go in any direction. ${cityConfig.difficulty==="Hard"?"The city is expensive and unforgiving, but the opportunities are real.":cityConfig.difficulty==="Easy"?"The pace is gentle here. The money isn't big, but neither is the pressure.":"A city that meets you somewhere in the middle."}
+      ${ccTraits.length?`\nYou're the kind of person who ${traitDesc(ccTraits)}.`:""}
       The mirror reflects back someone at the beginning of something. You're not sure what.`,
       []
     );
@@ -4514,16 +5564,6 @@ const SOCIAL_EVENTS = [
 
 // ── SMART EVENT DISPATCH ─────────────────────────────────────────────────────
 // Replace the blunt triggerRandomEvent with a context-aware version
-function triggerContextEvent(){
-  const pool = [];
-  if(G.salary>0) pool.push(...WORK_EVENTS);
-  pool.push(...SOCIAL_EVENTS);
-  pool.push(...RANDOM_EVENTS);
-  // Weighted: work events only when employed, social always
-  const fn = pool[Math.floor(Math.random()*pool.length)];
-  if(typeof fn==="function") fn();
-}
-
 // ── ADDITIONAL RANDOM EVENTS ────────────────────────────────────────────────
 RANDOM_EVENTS.push(
   ()=>{
@@ -4708,6 +5748,133 @@ SOCIAL_EVENTS.push(
     ]);
   }
 );
+// ── FLAG-BASED EVENTS ──────────────────────────────────────────────────────────
+// These are context-aware events triggered only when the player has specific flags.
+const FLAG_EVENTS = [
+
+  // ── Glasses events ──
+  { cond:()=> G.glasses,
+    fn:()=>{
+      storyEntry("Glasses problem","Your glasses have slipped down your nose so many times today that you've started doing it subconsciously. Someone notices and says you look studious. You're not sure if that's a compliment.");
+      setActions([
+        {label:"Get used to it — they're part of you now",fn:()=>{ G.conf=clamp(G.conf+3); storyEntry("Owned it","You've stopped thinking about them. They're just there.",[]); mainMenuActions(); }},
+        {label:"Look into contact lenses",fn:()=>{ if(G.savings<80){ storyEntry("Too expensive right now","Contacts aren't cheap. You put it off.",[]); mainMenuActions(); return; } G.savings-=80; G.conf=clamp(G.conf+5); G.glasses=false; storyEntry("Contact lenses","You spend a week poking yourself in the eye before it becomes muscle memory. It's worth it.",[{type:"stat",label:"+confidence"},{type:"bad",label:"−€80"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+  { cond:()=> G.glasses && G.relationships.some(r=>r.attracted>50),
+    fn:()=>{
+      const r=G.relationships.find(r=>r.attracted>50);
+      storyEntry(`${r.name} says something`,`${r.name} tells you they find the glasses genuinely attractive. "Serious but approachable," they say. You don't know what to do with that information.`);
+      setActions([
+        {label:"Take it well",fn:()=>{ G.conf=clamp(G.conf+6); r.closeness=clamp(r.closeness+5); storyEntry("Accepted gracefully","You thank them and mean it.",[{type:"stat",label:"+confidence"}]); mainMenuActions(); }},
+        {label:"Deflect awkwardly",fn:()=>{ storyEntry("Deflected","You make a joke that doesn't quite land. The moment passes.",[]); mainMenuActions(); }},
+      ]);
+    }
+  },
+
+  // ── Acne events ──
+  { cond:()=> G.flags.acne,
+    fn:()=>{
+      storyEntry("Skin day","You catch yourself in a mirror at the wrong angle. The breakouts have spread. You cancel soft plans you'd half-made, telling yourself you'll feel better next week.");
+      setActions([
+        {label:"Book a dermatologist appointment",fn:()=>{ if(G.savings<90){ storyEntry("Too expensive right now","You tell yourself you'll go when you have more.",[{type:"bad",label:"avoidance"}]); mainMenuActions(); return; } G.savings-=90; G.depressionScore=clamp(G.depressionScore-5); G.conf=clamp(G.conf+8); storyEntry("Dermatologist","They prescribe a topical. It'll take six weeks. But someone has looked at it properly.",[{type:"stat",label:"treatment started"},{type:"bad",label:"−€90"}]); G.flags.acne=Math.random()<0.5?false:true; mainMenuActions(); }},
+        {label:"Change your diet — cut the junk",fn:()=>{ G.weeklyJunk=Math.max(0,G.weeklyJunk-20); G.foodBudget=clamp(G.foodBudget+10,100,400); storyEntry("Diet change","You start reading labels. Cut the crisps, the chocolate. It's a small change with a quiet cost.",[{type:"stat",label:"diet improving"}]); mainMenuActions(); }},
+        {label:"Push through it — everyone has skin",fn:()=>{ G.conf=clamp(G.conf-4); storyEntry("Carrying on","You remind yourself it doesn't define you. That's easier some days than others.",[]); mainMenuActions(); }},
+      ]);
+    }
+  },
+  { cond:()=> G.flags.acne && G.depressionScore>30,
+    fn:()=>{
+      storyEntry("The mirror again","It's a bad skin week at the end of a bad mood week. The combination is harder than either thing alone. You find yourself avoiding people.");
+      setActions([
+        {label:"Talk to someone about it",fn:()=>{ G.depressionScore=clamp(G.depressionScore-6); G.mood=clamp(G.mood+5); storyEntry("Said something","You tell a friend. They're more understanding than you expected. You feel slightly lighter.",[{type:"stat",label:"−depression"}]); mainMenuActions(); }},
+        {label:"Stay in and rest",fn:()=>{ G.energy=clamp(G.energy+8); G.depressionScore=clamp(G.depressionScore+2); storyEntry("Rested","A quiet weekend. The world waits.",[{type:"bad",label:"isolation"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+
+  // ── Stretch marks ──
+  { cond:()=> G.flags.stretchMarks && !G.flags.stretchMarksEvent,
+    fn:()=>{
+      G.flags.stretchMarksEvent=true;
+      storyEntry("Something you notice","You run your hand along your side and find them. Silver-purple tracks across the skin. Rapid change, recorded permanently. You stand in the bathroom for longer than you planned to.");
+      setActions([
+        {label:"Accept them as part of you",fn:()=>{ G.conf=clamp(G.conf+3); storyEntry("Making peace","They're there. You didn't ask for them. But you carry them gently.",[{type:"stat",label:"+self-acceptance"}]); mainMenuActions(); }},
+        {label:"Look into treatments",fn:()=>{ if(G.savings<150){ storyEntry("Can't afford it right now","Treatments exist. You file it away.",[{type:"bad",label:"later"}]); mainMenuActions(); return; } G.savings-=150; G.conf=clamp(G.conf+5); storyEntry("Cream and oils","No guarantee. But doing something about it helps.",[{type:"stat",label:"self-care"},{type:"bad",label:"−€150"}]); mainMenuActions(); }},
+        {label:"Feel a complicated way about it",fn:()=>{ G.depressionScore=clamp(G.depressionScore+5); G.mood=clamp(G.mood-5); storyEntry("Sitting with it","You're not okay with them yet. That's allowed.",[{type:"bad",label:"−mood"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+
+  // ── Yellow teeth (smoking) ──
+  { cond:()=> G.flags.yellowTeeth && G.cigarettesPerDay>0,
+    fn:()=>{
+      storyEntry("The dentist comment","You go in for a checkup. The hygienist says nothing directly but you watch their expression when they look at your teeth. You've seen it before.");
+      setActions([
+        {label:"Book a whitening treatment (€120)",disabled:G.savings<120,fn:()=>{ G.savings-=120; G.conf=clamp(G.conf+6); storyEntry("Whitening","It doesn't fix everything. But the before-and-after is something.",[{type:"stat",label:"+confidence"},{type:"bad",label:"−€120"}]); mainMenuActions(); }},
+        {label:"Use it as motivation to quit smoking",fn:()=>{ G.bingeTendency=clamp(G.bingeTendency+10); storyEntry("Considering quitting","You stare at the packet. You think about the dentist. You put it back.",[{type:"neu",label:"almost"}]); mainMenuActions(); }},
+        {label:"Ignore it — you've heard it",fn:()=>{ storyEntry("Ignoring it","The dentist says the same thing every time.",[]); mainMenuActions(); }},
+      ]);
+    }
+  },
+
+  // ── Drinking problem ──
+  { cond:()=> G.flags.drinkingProblem && G.drinksPerWeek>14,
+    fn:()=>{
+      storyEntry("Someone says something","A friend — or a colleague, or a family member — says it carefully, like they've rehearsed it. That they're worried. That they've noticed. That they're not judging. The fact that they rehearsed it is somehow the worst part.");
+      setActions([
+        {label:"Hear them out",fn:()=>{ G.depressionScore=clamp(G.depressionScore-5); storyEntry("You listened","You don't commit to anything. But you hear it. It stays.",[{type:"stat",label:"heard"}]); mainMenuActions(); }},
+        {label:"Get defensive",fn:()=>{ G.social=clamp((G.social||50)-8); storyEntry("Pushed back","You tell them you have it under control. The conversation ends badly. They back off, for now.",[{type:"bad",label:"−relationship"}]); mainMenuActions(); }},
+        {label:"Promise to cut back",fn:()=>{ G.drinksPerWeek=Math.max(7,G.drinksPerWeek-5); storyEntry("Promising something","You say you'll cut back. You actually do, a little. The week after is harder.",[{type:"stat",label:"slight reduction"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+
+  // ── Saggy skin ──
+  { cond:()=> G.flags.saggy && !G.flags.saggyEvent,
+    fn:()=>{
+      G.flags.saggyEvent=true;
+      storyEntry("Loose skin","The weight loss was real and you're proud of it. But the skin hasn't caught up. It hangs, especially around the belly and inner arms. You look better in clothes than you do without them.");
+      setActions([
+        {label:"Accept it — it's a record of where you've been",fn:()=>{ G.conf=clamp(G.conf+4); storyEntry("Acceptance","You got here. The skin is part of that story.",[{type:"stat",label:"+self-acceptance"}]); mainMenuActions(); }},
+        {label:"Look into surgery options",fn:()=>{ openSurgeryMenu(); }},
+        {label:"Keep losing weight — it might improve",fn:()=>{ storyEntry("Ongoing","You focus on the body fat. The skin may or may not follow.",[{type:"neu",label:"continuing"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+
+  // ── Pregnancy ──
+  { cond:()=> G.pregnant && G.pregnancyWeek===12,
+    fn:()=>{
+      storyEntry("Telling people","You're starting to show. People are starting to notice. The question is who you tell, and when.");
+      setActions([
+        {label:"Tell work first",fn:()=>{ G.conf=clamp(G.conf+5); storyEntry("Told work","HR is informed. Your manager adjusts expectations. A weight lifts.",[{type:"stat",label:"disclosed"}]); mainMenuActions(); }},
+        {label:"Tell friends and family",fn:()=>{ G.happy=clamp(G.happy+12); G.social=clamp((G.social||50)+10); storyEntry("Telling people","The reactions are mostly warm. Some people cry. One person says something odd. You decide to focus on the warm ones.",[{type:"stat",label:"+happiness"}]); mainMenuActions(); }},
+        {label:"Keep it quiet a little longer",fn:()=>{ G.depressionScore=clamp(G.depressionScore+3); storyEntry("Keeping it quiet","You're not ready. That's fine. There's time.",[{type:"neu",label:"private"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+];
+
+// Add flag events to the main random event trigger
+// FLAG_EVENTS are checked at 40% priority over normal events
+function triggerContextEvent(){
+  // Check if any flag events apply — 40% chance to prioritise one if available
+  const applicable = FLAG_EVENTS.filter(e=>e.cond());
+  if(applicable.length && Math.random()<0.4){
+    applicable[Math.floor(Math.random()*applicable.length)].fn();
+    return;
+  }
+  // Normal event pool
+  const pool = [];
+  if(G.salary>0) pool.push(...WORK_EVENTS);
+  pool.push(...SOCIAL_EVENTS);
+  pool.push(...RANDOM_EVENTS);
+  const fn = pool[Math.floor(Math.random()*pool.length)];
+  if(typeof fn==="function") fn();
+}
+
 
 </script>
 </body>
