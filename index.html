@@ -55,6 +55,41 @@
   --blue:     #4a90d0;
 }
 
+/* ── COLOUR PRESETS — applied via data-colour on <html> ── */
+/* Crimson (default) — already in :root / [data-theme="dark"] */
+
+/* Slate — cool blue-grey */
+[data-colour="slate"] { --acc:#2a5f8a; --acc2:#3a7aaa; --acc3:#4a8a6a; }
+[data-colour="slate"][data-theme="dark"] { --acc:#4a90d0; --acc2:#5aaae0; --acc3:#5aaf7a; }
+
+/* Emerald — deep forest green */
+[data-colour="emerald"] { --acc:#1a6640; --acc2:#2a8a5a; --acc3:#5a7a3a; }
+[data-colour="emerald"][data-theme="dark"] { --acc:#3aaf6a; --acc2:#4abf7a; --acc3:#7abf4a; }
+
+/* Amber — warm gold */
+[data-colour="amber"] { --acc:#a05a00; --acc2:#c07820; --acc3:#7a6000; }
+[data-colour="amber"][data-theme="dark"] { --acc:#d4950a; --acc2:#e4a820; --acc3:#c0a030; }
+
+/* Rose — dusty pink */
+[data-colour="rose"] { --acc:#8a1a50; --acc2:#b03070; --acc3:#6a3060; }
+[data-colour="rose"][data-theme="dark"] { --acc:#c05080; --acc2:#d070a0; --acc3:#9060a0; }
+
+/* Mono — desaturated ink */
+[data-colour="mono"] { --acc:#3a3830; --acc2:#5a5850; --acc3:#4a4840; --bg:#f0f0ee; --bg2:#e4e4e0; --bg3:#d8d8d4; --panel:#fafaf8; }
+[data-colour="mono"][data-theme="dark"] { --acc:#8a8880; --acc2:#9a9890; --acc3:#7a7870; }
+
+/* Ocean — deep teal */
+[data-colour="ocean"] { --acc:#0a5a6a; --acc2:#1a7a8a; --acc3:#1a5a8a; }
+[data-colour="ocean"][data-theme="dark"] { --acc:#2aafbf; --acc2:#3abfcf; --acc3:#3a90cf; }
+
+/* Plum — rich purple */
+[data-colour="plum"] { --acc:#5a1a7a; --acc2:#7a2a9a; --acc3:#3a1a6a; }
+[data-colour="plum"][data-theme="dark"] { --acc:#9a50cf; --acc2:#b060ef; --acc3:#7050cf; }
+
+/* Rust — earthy terracotta */
+[data-colour="rust"] { --acc:#8a3010; --acc2:#b04820; --acc3:#7a4010; }
+[data-colour="rust"][data-theme="dark"] { --acc:#d06030; --acc2:#e07040; --acc3:#c05020; }
+
 /* ═══════════════════════════════════════════════════
    RESET & BASE
 ═══════════════════════════════════════════════════ */
@@ -881,10 +916,10 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
     <label class="cc-label">City <span style="color:var(--ink3);font-size:.66rem">— changes salaries, rent &amp; cost of living</span></label>
     <div class="cc-row" id="cc-cities">
       <button class="cc-pill" data-city="prague">🇨🇿 Prague <span class="cc-pill-sub">Relaxed</span></button>
-      <button class="cc-pill sel" data-city="berlin">🇩🇪 Berlin <span class="cc-pill-sub">Balanced</span></button>
+      <button class="cc-pill sel" data-city="milan">🇮🇹 Milan <span class="cc-pill-sub">Balanced</span></button>
       <button class="cc-pill" data-city="madrid">🇪🇸 Madrid <span class="cc-pill-sub">Intense</span></button>
     </div>
-    <p id="cc-city-desc" class="cc-city-desc">Berlin — moderate rents, reasonable salaries, solid social safety net. A fair starting point for a new life.</p>
+    <p id="cc-city-desc" class="cc-city-desc">Milan — fashion, finance, and ambition. Rents are real, salaries reasonable. The city expects something of you.</p>
   </div>
 
   <div class="cc-section">
@@ -915,10 +950,10 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
     <label class="cc-label">Starting body</label>
     <div class="cc-row" id="cc-presets">
       <button class="cc-pill" data-p="lean">Lean</button>
-      <button class="cc-pill sel" data-p="average">Average</button>
-      <button class="cc-pill" data-p="curvy">Curvy</button>
+      <button class="cc-pill sel" data-p="hourglass">Hourglass</button>
+      <button class="cc-pill" data-p="pear">Pear</button>
     </div>
-    <p class="cc-city-desc" id="cc-body-desc">Average build — proportionate figure, moderate bust. The most common starting point.</p>
+    <p class="cc-city-desc" id="cc-body-desc">Hourglass — slim waist, fuller bust and rounded hips. About 50-52kg. Balanced, proportionate.</p>
   </div>
 
   <div class="cc-section">
@@ -1206,16 +1241,18 @@ const STAGE_MAX = {body:1,belly:251,arm:240,butt:351,thighs:228,breast:301,hair:
 const WEIGHT_PARTS = ["belly","arm","butt","thighs","breast"];
 
 const PRESETS = {
-  // Lean: slim build, smaller bust, narrower hips
-  lean:   {belly:4,  arm:8,  butt:25, thighs:7,  breast:12, hair:140, breastTend:25},
-  // Average: proportionate, moderate bust
-  average:{belly:35, arm:30, butt:90, thighs:41,  breast:75, hair:160, breastTend:50},
-  // Curvy: fuller figure, larger bust, wider hips and butt
-  curvy:  {belly:55, arm:45, butt:140,thighs:90,  breast:130,hair:160, breastTend:70},
-  // Legacy presets kept for save compatibility
-  slim:   {belly:10, arm:20, butt:60, thighs:21,  breast:50, hair:160, breastTend:40},
-  chubby: {belly:68, arm:50, butt:120,thighs:81,  breast:110,hair:160, breastTend:60},
-  heavy:  {belly:120,arm:90, butt:180,thighs:120, breast:160,hair:160, breastTend:55},
+  // Lean (P1): very slim, small bust, narrow hips — ~38kg visual
+  lean:     {belly:4,  arm:8,  butt:25, thighs:7,  breast:12, hair:140, breastTend:20},
+  // Hourglass (P3): slim waist with fuller bust and hips — ~50-52kg visual
+  hourglass:{belly:14, arm:18, butt:70, thighs:25, breast:45, hair:160, breastTend:55},
+  // Pear (P7): heavier on the bottom, smaller bust — ~110-115kg visual
+  pear:     {belly:80, arm:60, butt:130,thighs:100,breast:90, hair:160, breastTend:35},
+  // Legacy presets kept for save-game compatibility
+  average:  {belly:35, arm:30, butt:90, thighs:41, breast:75, hair:160, breastTend:50},
+  curvy:    {belly:55, arm:45, butt:140,thighs:90, breast:130,hair:160, breastTend:70},
+  slim:     {belly:10, arm:20, butt:60, thighs:21, breast:50, hair:160, breastTend:40},
+  chubby:   {belly:68, arm:50, butt:120,thighs:81, breast:110,hair:160, breastTend:60},
+  heavy:    {belly:120,arm:90, butt:180,thighs:120,breast:160,hair:160, breastTend:55},
 };
 
 // Tax brackets (simplified European-style)
@@ -1273,7 +1310,7 @@ function initState(preset,hairStyle,breastTend){
 
   G={
     // time
-    week:1, year:2007, weekOfYear:1,
+    week:1, year:2026, weekOfYear:1,
     // character
     name:"", age:18,
     hairColor:"Blonde", eyeColor:"Brown",
@@ -1321,7 +1358,8 @@ function initState(preset,hairStyle,breastTend){
       yellowTeeth:false, liverSpots:false, drinkingProblem:false,
       smokingProblem:false, chainSmoker:false, alcoholDependency:false,
       bingeEating:false, gamblingProblem:false, screenAddiction:false,
-      bodyDysmorphia:false,
+      bodyDysmorphia:false, cellulite:false, firstPlusShop:false,
+      uniformTight:false, seatEvent:false,
       surgery_breast:0, surgery_bbl:0, surgery_lipo:0,
       developedMyopia:false,
     },
@@ -1369,7 +1407,7 @@ function initState(preset,hairStyle,breastTend){
     // weekly time budget
     weeklyFreeHours:0,
     // city
-    city:"berlin",
+    city:"milan",
     // reputation (hidden)
     reputation:{ office:0, hospitality:0, manual:0, fitness:0, creative:0, social:0 },
     repHistory:[], quitCount:0, firedCount:0,
@@ -1394,14 +1432,14 @@ const CITIES = {
     currency:    "€",
     startSavings: 120,
   },
-  berlin: {
-    name:"Berlin", flag:"🇩🇪", difficulty:"Balanced",
-    desc:"Berlin — moderate rents, reasonable salaries, solid social safety net. A fair starting point for a new life.",
+  milan: {
+    name:"Milan", flag:"🇮🇹", difficulty:"Balanced",
+    desc:"Milan — fashion, finance, and an undercurrent of ambition. Rents are real, salaries reasonable. The city expects something of you.",
     salaryMult:  1.00,
-    rentBase:    350,
-    foodMult:    1.00,
+    rentBase:    380,
+    foodMult:    1.05,
     utilsMult:   1.00,
-    transportBase: 60,
+    transportBase: 65,
     currency:    "€",
     startSavings: 200,
   },
@@ -1417,10 +1455,10 @@ const CITIES = {
     startSavings: 280,
   },
 };
-let G_CITY = CITIES.berlin; // active city config
+let G_CITY = CITIES.milan; // active city config
 
 function applyCity(cityKey){
-  G_CITY = CITIES[cityKey] || CITIES.berlin;
+  G_CITY = CITIES[cityKey] || CITIES.milan;
   G.city = cityKey;
   G.rent = G_CITY.rentBase;
   G.utilities = Math.round(80 * G_CITY.utilsMult);
@@ -1495,10 +1533,16 @@ function saveGame(){
     const data = {
       G, S,
       activeHobby: activeHobby||null,
-      weekQueue: weekQueue.map(a=>({emoji:a.emoji, label:a.label, energyCost:a.energyCost})),
+      hobbyXP: hobbyXP||0,
+      weekQueue: weekQueue.map(a=>({emoji:a.emoji, label:a.label, energyCost:a.energyCost, hours:a.hours})),
       storyHTML: document.getElementById('story-scroll')?.innerHTML||"",
       storyCount,
-      cityKey: G.city||"berlin",
+      cityKey: G.city||"milan",
+      vpScale: _vpScale,
+      vpTx: _vpTx,
+      vpTy: _vpTy,
+      colourPref: document.documentElement.getAttribute('data-colour')||'crimson',
+      theme: document.documentElement.dataset.theme||'dark',
       savedAt: Date.now(),
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -1514,12 +1558,17 @@ function loadGame(){
     G = data.G;
     S = data.S;
     activeHobby = data.activeHobby||null;
+    hobbyXP     = data.hobbyXP||0;
     storyCount  = data.storyCount||0;
-    G_CITY = CITIES[data.cityKey||"berlin"]||CITIES.berlin;
+    G_CITY = CITIES[data.cityKey||"milan"]||CITIES.milan;
+    // Restore viewport transform
+    if(data.vpScale !== undefined){ _vpScale=data.vpScale; _vpTx=data.vpTx; _vpTy=data.vpTy; applyViewportTransform(); }
+    // Restore colour & theme
+    if(data.colourPref) applyColourPreset(data.colourPref);
+    if(data.theme) document.documentElement.dataset.theme = data.theme;
     // Restore story
     const ss = document.getElementById('story-scroll');
     if(ss && data.storyHTML) ss.innerHTML = data.storyHTML;
-    // Restore week queue as no-op stubs (fns can't be serialised)
     weekQueue = [];
     weeklyEventsDone.clear();
     renderWeekQueue();
@@ -1757,90 +1806,151 @@ function updateMeasurements(){
 //  DESCRIPTION SYSTEM
 // ═══════════════════════════════════════════════════════
 function updateDesc(){
-  const w=calcWeight(),bmi=calcBMI(),ws=calcWaist(),bs=calcBust(),hs=calcHips();
-  const bst=S.breast.stage,bt=S.butt.stage;
-  const name=G.name;
+  const w=calcWeight(), bmi=calcBMI(), ws=calcWaist(), bs=calcBust(), hs=calcHips();
+  const name=G.name||"She";
   const f=G.flags;
-
+  const mob=getMobilityLevel?getMobilityLevel():"normal";
   let paras=[];
 
-  // ── Build & appearance ──
+  // ── Overall build — 15 breakpoints ──────────────────────────────────────────
   let bodyDesc="";
-  if(bmi<17.5) bodyDesc=`${name} is strikingly thin — bones visible at the collarbones and hips, limbs almost fragile.`;
-  else if(bmi<19) bodyDesc=`${name} is lean, with a light, slender frame. Not much to grab hold of.`;
-  else if(bmi<22) bodyDesc=`${name} carries a slim, healthy figure. Toned without being muscular.`;
-  else if(bmi<25) bodyDesc=`${name} has a full, natural shape — soft in the right places, nothing excessive.`;
-  else if(bmi<28) bodyDesc=`${name} has a noticeably fuller figure, soft and rounded. Clothes fit snugly.`;
-  else if(bmi<32) bodyDesc=`${name} is carrying a significant amount of extra weight, which shows in the face, belly, and thighs.`;
-  else if(bmi<38) bodyDesc=`${name} is obese. Movement is slower, breathing heavier. The weight is difficult to ignore.`;
-  else bodyDesc=`${name} is morbidly obese. Getting around is a challenge. The body struggles under its own mass.`;
+  if     (bmi<14)   bodyDesc=`${name} is severely emaciated. Every bone presses against the skin. The face is hollowed. Movement is effortful and the body is in distress.`;
+  else if(bmi<16)   bodyDesc=`${name} is dangerously underweight — sharp clavicles, visible ribs, sunken temples. The body is clearly not getting what it needs.`;
+  else if(bmi<17.5) bodyDesc=`${name} is strikingly thin. The collarbones are visible at a glance, the limbs lean and angular. There is barely anything to grab hold of.`;
+  else if(bmi<19)   bodyDesc=`${name} is lean — a light, slender frame that moves easily and wears clothes well. The thinness is noticeable but not alarming.`;
+  else if(bmi<21)   bodyDesc=`${name} has a slim, slightly built figure. Neat, unfussy, proportionate.`;
+  else if(bmi<23)   bodyDesc=`${name} carries a healthy, natural shape. Soft in the right places, nothing excessive. An easy body to be in.`;
+  else if(bmi<25)   bodyDesc=`${name} is at the fuller end of a healthy weight. Rounded and comfortable, a figure that fills clothes without straining them.`;
+  else if(bmi<27.5) bodyDesc=`${name} is slightly overweight — a visible softness to the face and midsection. Not dramatic, but noticeable.`;
+  else if(bmi<30)   bodyDesc=`${name} is noticeably overweight. The extra weight sits primarily on the belly, face, and thighs.`;
+  else if(bmi<33)   bodyDesc=`${name} is obese. Moving requires more effort. Breathing is heavier. The body carries a burden.`;
+  else if(bmi<38)   bodyDesc=`${name} is significantly obese — ${w.toFixed(0)}kg. Everyday movement is laboured, and the weight is impossible to ignore.`;
+  else if(bmi<45)   bodyDesc=`${name} is morbidly obese at ${w.toFixed(0)}kg. Getting around is genuinely difficult. The weight shapes every part of daily life.`;
+  else if(bmi<60)   bodyDesc=`${name} is super-obese — ${w.toFixed(0)}kg. Basic physical tasks are exhausting. The world is not built for a body this size.`;
+  else              bodyDesc=`${name} is immensely, extraordinarily heavy — ${w.toFixed(0)}kg. The body strains under its own weight. Almost all movement has become impossible without assistance.`;
 
   paras.push(`<p>${bodyDesc}</p>`);
 
-  // ── Waist/belly specifics ──
-  if(ws<62) paras.push(`<p>The waist is tiny — a hand could almost wrap around it.</p>`);
-  else if(ws<75) paras.push(`<p>The belly is flat and defined.</p>`);
-  else if(ws>100&&ws<140) paras.push(`<p>A pronounced belly protrudes forward, soft and round. Waist measurement: ${ws.toFixed(0)} cm.</p>`);
-  else if(ws>=140) paras.push(`<p>The belly is enormous — cascading forward in heavy folds. The skin strains. Waist at ${ws.toFixed(0)} cm.</p>`);
+  // ── Mobility ──────────────────────────────────────────────────────────────────
+  if(mob==="reduced")      paras.push(`<p><em>Movement costs more than it used to. The body is working against itself in small ways.</em></p>`);
+  if(mob==="limited")      paras.push(`<p><em>Getting around is genuinely hard. Every distance costs something. Stairs are a negotiation.</em></p>`);
+  if(mob==="very_limited") paras.push(`<p><em>Standard seating doesn't fit. Public transport is off the table. The city has become a different, smaller place.</em></p>`);
+  if(mob==="immobile")     paras.push(`<p><em><strong>Immobile.</strong> ${name} cannot move without assistance. A carer is required for basic daily life.</em></p>`);
+
+  // ── Waist & belly — 12 breakpoints ──────────────────────────────────────────
+  if     (ws<54) paras.push(`<p>The waist is extraordinarily narrow — almost alarmingly so. A hand could nearly encircle it.</p>`);
+  else if(ws<62) paras.push(`<p>The waist is very slim. A defined, clean line between the ribcage and hips.</p>`);
+  else if(ws<70) paras.push(`<p>The belly is flat and defined. A clear waist, soft but not rounded.</p>`);
+  else if(ws<80) paras.push(`<p>A gentle softness at the stomach. The waist is still visible, just less pronounced.</p>`);
+  else if(ws<92) paras.push(`<p>A rounded belly — soft and present, nothing dramatic. The waist has lost some definition.</p>`);
+  else if(ws<105) paras.push(`<p>A pronounced belly that pushes forward noticeably. Clothes sit differently because of it. Waist: ${ws.toFixed(0)} cm.</p>`);
+  else if(ws<120) paras.push(`<p>A large, heavy belly rounds forward. The waistband of any trousers is a negotiation. Waist: ${ws.toFixed(0)} cm.</p>`);
+  else if(ws<140) paras.push(`<p>The abdomen is very large — a dense, heavy mass that shifts when ${name} moves. Waist at ${ws.toFixed(0)} cm.</p>`);
+  else if(ws<165) paras.push(`<p>An enormous belly — it enters a room before ${name} does. It moves independently when walking. ${ws.toFixed(0)} cm around.</p>`);
+  else if(ws<195) paras.push(`<p>The belly is vast and heavy, hanging low, pulling at the back. Every step requires its accommodation. Waist: ${ws.toFixed(0)} cm.</p>`);
+  else            paras.push(`<p>The abdomen is extraordinary in mass — cascading forward in dense, heavy folds. ${ws.toFixed(0)} cm. It is the dominant feature of the body, impossible to ignore or accommodate normally.</p>`);
 
   // Belly shape flavour
   const bv=S.belly.variant;
-  if(bv==="Belly1"&&S.belly.stage>30) paras.push(`<p>The stomach is distended and taut — round like a beach ball, stretched from overindulgence or alcohol.</p>`);
-  else if(bv==="Belly2"&&S.belly.stage>40) paras.push(`<p>The belly droops slightly at the front, heavier than it is firm.</p>`);
-  else if(bv==="Belly3"&&S.belly.stage>50) paras.push(`<p>A saggy, pendulous belly hangs low, skin gathering in loose folds.</p>`);
-  else if(bv==="Belly4"&&S.belly.stage>50) paras.push(`<p>A heavy, apron-like flap of fat hangs from the lower abdomen — the result of years of excess and poor diet.</p>`);
+  const bs_stage=S.belly.stage;
+  if     (bv==="Belly1"&&bs_stage>30) paras.push(`<p>The stomach is taut and distended — swollen and round, hard to the touch, as though over-filled.</p>`);
+  else if(bv==="Belly2"&&bs_stage>40) paras.push(`<p>The belly droops slightly at the front, heavier than it is firm, with a slight overhang at the waistband.</p>`);
+  else if(bv==="Belly3"&&bs_stage>50) paras.push(`<p>A pendulous belly hangs low and forward, the skin gathering in loose folds at the lowest point.</p>`);
+  else if(bv==="Belly4"&&bs_stage>50) paras.push(`<p>A heavy apron of flesh hangs from the lower abdomen, pressing against the thighs, requiring deliberate management when sitting or standing.</p>`);
 
-  // ── Bust — described by cup size (breast stage), not circumference ──
+  // ── Bust — 8 breakpoints ─────────────────────────────────────────────────────
   const cupDiff=calcCupDiff();
-  if(cupDiff<3) paras.push(`<p>The chest is very flat — barely any breast tissue to speak of.</p>`);
-  else if(cupDiff<7) paras.push(`<p>A modest, understated bust. Small and neat.</p>`);
-  else if(cupDiff<12) paras.push(`<p>An average-sized bust. Proportionate and unremarkable — in the best way.</p>`);
-  else if(cupDiff<18) paras.push(`<p>A full bust that fills clothes well and draws its share of attention.</p>`);
-  else if(cupDiff<24) paras.push(`<p>The breasts are large — ${calcBraSize()}. Finding well-fitted bras is a chore. The back notices the weight.</p>`);
-  else paras.push(`<p>The chest is exceptionally large — ${calcBraSize()}. Back pain is a constant companion. Movement is genuinely hindered. Off-the-shelf bras don't fit.</p>`);
+  const braStr=calcBraSize();
+  if     (cupDiff<1.5) paras.push(`<p>The chest is completely flat — no breast tissue to speak of. The silhouette is straight and narrow through the torso.</p>`);
+  else if(cupDiff<4)   paras.push(`<p>A very small, barely-there bust. Easy to miss, easy to forget.</p>`);
+  else if(cupDiff<7)   paras.push(`<p>A modest, understated bust — neat and proportionate. A gentle curve that doesn't demand attention.</p>`);
+  else if(cupDiff<12)  paras.push(`<p>An average-sized bust. Proportionate and unremarkable — in the best possible sense. ${braStr}.</p>`);
+  else if(cupDiff<22)  paras.push(`<p>A full, rounded bust — ${braStr}. It fills clothes well and draws its share of attention without dominating the silhouette.</p>`);
+  else if(cupDiff<45)  paras.push(`<p>The breasts are large — ${braStr}. Finding well-fitted bras is a dedicated expedition. The back notices the weight.</p>`);
+  else if(cupDiff<100) paras.push(`<p>Exceptionally large breasts — ${braStr}. Back pain is a persistent, daily fact. Movement is affected. Getting dressed is a task.</p>`);
+  else                 paras.push(`<p>The chest is extraordinary in mass — ${braStr}. The sheer weight of the breasts reshapes posture and limits movement. Everything around them accommodates the breasts, not the other way around.</p>`);
 
-  // Surgery notes
-  if(f.surgery_breast>0) paras.push(`<p><em>There are faint scars beneath each breast — the work of a surgeon's hand.</em></p>`);
-  if(f.surgery_bbl>0) paras.push(`<p><em>The shape of the buttocks has been surgically enhanced.</em></p>`);
+  if(f.surgery_breast>0) paras.push(`<p><em>Faint surgical scars trace the undersides of each breast — neat, old, barely visible.</em></p>`);
 
-  // ── Hips/butt ──
-  if(hs>110&&hs<140) paras.push(`<p>Wide hips and a generous rear — the kind of figure that turns heads.</p>`);
-  else if(hs>=140) paras.push(`<p>The hips and buttocks are enormous — ${hs.toFixed(0)} cm around. Moving through narrow spaces is difficult.</p>`);
+  // ── Hips & thighs — 7 breakpoints ────────────────────────────────────────────
+  if     (hs<68) paras.push(`<p>Narrow, boyish hips — very little lateral width below the waist.</p>`);
+  else if(hs<82) paras.push(`<p>Slim hips with a natural, subtle curve.</p>`);
+  else if(hs<100) paras.push(`<p>A neat, feminine hip curve — proportionate and easy to dress.</p>`);
+  else if(hs<118) paras.push(`<p>Full hips and a rounded rear. The kind of figure that occupies space confidently.</p>`);
+  else if(hs<145) paras.push(`<p>Wide hips and heavy thighs — ${hs.toFixed(0)} cm around. A pronounced lower body that dominates the silhouette below the waist.</p>`);
+  else if(hs<185) paras.push(`<p>The hips are very wide — ${hs.toFixed(0)} cm. Getting through narrow spaces sideways is a consideration. The thighs press firmly together from hip to knee.</p>`);
+  else            paras.push(`<p>The hips and thighs are immense — ${hs.toFixed(0)} cm in circumference. They spread substantially when sitting, and walking requires a wide, rolling gait to accommodate the mass.</p>`);
 
-  // ── Cosmetic flags ──
-  if(f.stretchMarks) paras.push(`<p><em>Faint silvery-purple stretch marks trace the sides of the abdomen, hips, and thighs — the quiet record of rapid weight change.</em></p>`);
-  if(f.saggy)        paras.push(`<p><em>Loose, excess skin hangs where significant weight was lost. It won't bounce back.</em></p>`);
-  if(f.acne)         paras.push(`<p><em>The skin shows persistent breakouts — along the jawline and forehead. Too much junk food has taken its toll.</em></p>`);
-  if(f.yellowTeeth)  paras.push(`<p><em>The teeth have taken on a yellowed tinge. Years of smoking leave their mark.</em></p>`);
-  if(f.liverSpots)   paras.push(`<p><em>Small liver spots have appeared on the hands and forearms.</em></p>`);
+  const thStage=S.thighs.stage;
+  if(thStage>140) paras.push(`<p><em>The inner thighs rub with every step. The skin there is irritated, red-raw, worn.</em></p>`);
+  else if(thStage>80) paras.push(`<p><em>The thighs are thick and heavy — they press together from the top down.</em></p>`);
 
-  // ── Fitness ──
-  if(G.fitness>70) paras.push(`<p>There's a visible tone beneath the skin — the result of regular exercise.</p>`);
-  else if(G.fitness<25) paras.push(`<p>The muscles are soft and underused. Even minor exertion results in breathlessness.</p>`);
+  if(f.surgery_bbl>0) paras.push(`<p><em>The shape of the buttocks has been surgically enhanced — rounded and lifted beyond what nature provided.</em></p>`);
 
-  // ── Glasses ──
-  if(G.glasses) paras.push(`<p>${name} wears glasses — ${G.eyeColor.toLowerCase()} eyes visible behind the lenses.</p>`);
-  else paras.push(`<p>${G.eyeColor} eyes, ${G.hairColor.toLowerCase()} hair.`);
+  // ── Cosmetic flags ────────────────────────────────────────────────────────────
+  if(f.stretchMarks){
+    const smIntensity = w > 180 ? "deep" : w > 100 ? "pronounced" : "fine";
+    paras.push(`<p><em>${smIntensity.charAt(0).toUpperCase()+smIntensity.slice(1)} stretch marks trace the abdomen, hips, inner thighs, and sides of the breasts — silver-purple on lighter skin, faint on darker. The record of rapid change written into the dermis.</em></p>`);
+  }
 
-  // ── Psychological state ──
-  if(G.depressionScore>60) paras.push(`<p>There's a heaviness in the expression — a flatness to the eyes that suggests someone not quite at peace with themselves.</p>`);
-  if(G.bingeTendency>70) paras.push(`<p>The relationship with food is complicated. Periods of restraint followed by loss of control — a cycle that's hard to break.</p>`);
-  if(G.eatingDisorder==="restrict") paras.push(`<p><em>There are signs of disordered eating — the way food is avoided, rationed, feared.</em></p>`);
+  // Cellulite
+  if(f.cellulite){
+    const celIntensity = w > 120 ? "deep and pronounced — clearly visible in any light, creating a heavily dimpled, irregular surface"
+                       : w > 80  ? "well-established — a texture of dimples across the thighs, hips, and buttocks, especially visible when sitting"
+                       :           "mild — a light dimpling across the outer thighs and buttocks, barely noticeable in direct light";
+    paras.push(`<p><em>Cellulite is ${celIntensity}.</em></p>`);
+  }
+
+  if(f.saggy)       paras.push(`<p><em>Loose skin hangs where substantial weight has been lost — the belly especially, and the inner arms. It will not bounce back. The body's memory of what it once carried.</em></p>`);
+  if(f.acne)        paras.push(`<p><em>Persistent acne clusters across the jawline and forehead. Some older, healed scarring beneath the current breakout.</em></p>`);
+  if(f.yellowTeeth) paras.push(`<p><em>The teeth have yellowed from years of smoking. Noticeable in conversation at close range.</em></p>`);
+  if(f.chainSmoker) paras.push(`<p><em>The faint smell of cigarettes clings — to hair, fingers, clothes. A background note that's become just part of how ${name} smells.</em></p>`);
+  if(f.liverSpots)  paras.push(`<p><em>Small liver spots have appeared on the backs of the hands and forearms — a quiet sign of time and alcohol.</em></p>`);
+  if(f.drinkingProblem) paras.push(`<p><em>A subtle puffiness to the face — particularly around the eyes and nose. The kind that suggests restless nights and reliable evenings.</em></p>`);
+  if(f.bingeEating) paras.push(`<p><em>The relationship with food shows in the body's inconsistency — soft and uneven from cycles of excess and restriction.</em></p>`);
+  if(f.screenAddiction) paras.push(`<p><em>Tired, slightly strained eyes — the kind that come from too many screens and not enough distance.</em></p>`);
+
+  // ── Fitness ───────────────────────────────────────────────────────────────────
+  if     (G.fitness>80) paras.push(`<p>The body is visibly trained — lean muscle under the skin, a posture that comes from actually using the body rather than just having one.</p>`);
+  else if(G.fitness>65) paras.push(`<p>There's a clear underlying fitness — a readiness in how ${name} stands and moves.</p>`);
+  else if(G.fitness>45) paras.push(`<p>Reasonably active. Nothing exceptional, nothing alarming.</p>`);
+  else if(G.fitness<20) paras.push(`<p>The muscles are soft and underused. A short walk produces noticeable breathlessness. The body has been neglected.</p>`);
+  else if(G.fitness<30) paras.push(`<p>Low fitness. Minor exertion is disproportionately tiring.</p>`);
+
+  // ── Face, hair, glasses ───────────────────────────────────────────────────────
+  const hairLen = S.hair ? S.hair.stage : 160;
+  const hairLenLabel = hairLen<80?"very short":hairLen<140?"short":hairLen<240?"shoulder-length":hairLen<360?"mid-back":hairLen<480?"long":"very long";
+  const hairStyle    = S.hair?.variant==="HairTied" ? "tied back" : "loose";
+  const eyeDesc      = (G.eyeColor||"Brown").toLowerCase();
+  const hairDesc     = `${G.hairColor||"brown"} hair (${hairLenLabel}, ${hairStyle})`;
+
+  if(G.glasses){
+    paras.push(`<p>${hairDesc}. Glasses sit on the nose — ${eyeDesc} eyes visible behind the lenses.</p>`);
+  } else {
+    paras.push(`<p>${hairDesc}, ${eyeDesc} eyes.</p>`);
+  }
+
+  // ── Psychological ─────────────────────────────────────────────────────────────
+  if     (G.depressionScore>70) paras.push(`<p>The expression carries a visible weight — a flatness behind the eyes that speaks of sustained struggle.</p>`);
+  else if(G.depressionScore>45) paras.push(`<p>There's a subdued quality to the expression. Something being carried quietly.</p>`);
+  if(G.bingeTendency>70)        paras.push(`<p>The body shows the pattern of binge eating — uneven, inconsistent, driven by something other than hunger.</p>`);
 
   setEl('desc-content',`<div class="desc-block">${paras.join('')}</div>`);
 
-  // Flags badges
-  const flagHTML=Object.entries(f)
+  // Flag badges
+  const posFlags=[
+    G.fitness>65?'toned':'',
+    G.health>80?'healthy':'',
+    G.conf>75?'confident':'',
+    (G.sleepHoursPerNight||7)>=8?'well-rested':'',
+  ].filter(Boolean).map(t=>`<span class="desc-flag flag-pos">${t}</span>`).join('');
+  const negFlags=Object.entries(f)
     .filter(([k,v])=>v===true)
     .map(([k])=>`<span class="desc-flag flag-neg">${k.replace(/_/g,' ')}</span>`)
     .join('');
-  const posFlagHTML=(G.fitness>65?'<span class="desc-flag flag-pos">toned</span>':'')
-    +(G.health>80?'<span class="desc-flag flag-pos">healthy</span>':'')
-    +(G.conf>70?'<span class="desc-flag flag-pos">confident</span>':'');
-  setEl('desc-flags',flagHTML+posFlagHTML);
-  updateHabitsTab();
+  const mobFlag = mob!=="normal" ? `<span class="desc-flag flag-neg">mobility: ${mob.replace('_',' ')}</span>` : '';
+  setEl('desc-flags', posFlags+negFlags+mobFlag);
 }
-
 function updateHabitsTab(){
   const lines=[
     {name:"Smoking",val:G.cigarettesPerDay>0?`${G.cigarettesPerDay} cigs/day`:"-",cls:G.cigarettesPerDay>10?"habit-bad":G.cigarettesPerDay>0?"habit-warn":"habit-ok"},
@@ -2285,12 +2395,25 @@ function passiveWeeklyEffects(){
     if(Math.random()<0.05) r.closeness=clamp(r.closeness-5);
   });
 
-  // ── Housemate passive effects ──
-  updateHousemateEffects();
+  // ── Cellulite accumulation ──
+  if(!G.flags.cellulite){
+    const bmi=calcBMI();
+    const risk = (bmi>24?0.02:0) + (G.drinksPerWeek>7?0.01:0) + (G.gymVisitsPerWeek<1?0.01:0);
+    if(risk>0 && Math.random()<risk && G.week>26){
+      G.flags.cellulite=true;
+      storyEntry(
+        "Cellulite",
+        "You notice it for the first time in a certain light — a dimpling across the outer thighs and buttocks. Perfectly common. Somehow still a small shock.",
+        [{type:"neu",label:"cellulite"}]
+      );
+    }
+  }
   // ── Hair growth ──
   growHair();
   // ── Myopia risk ──
   checkMyopiaRisk();
+  // ── Housemate passive effects ──
+  updateHousemateEffects();
   // ── Mobility / weight effects ──
   checkMobilityEffects();
   // ── Habit escalation ──
@@ -3340,15 +3463,50 @@ function beginSurrogacy(fee){
 }
 
 function getWeeklyJobPool(){
-  if(G.weeklyJobPool && G.weeklyJobPool.length) return G.weeklyJobPool;
-  const available=JOBS.filter(j=>{
-    const reqs=Object.entries(j.req);
-    return reqs.every(([sk,min])=>(G.skills[sk]||0)>=min) && j.title!==G.job;
+  // Generate a fresh pool once per in-game week — locks until next week
+  if(G.weeklyJobPool && G.weeklyJobPool.length && G.weeklyJobPoolWeek === G.week){
+    return G.weeklyJobPool;
+  }
+  // Filter to actually reachable jobs: skills met, not current job, not massively above skill
+  const available = JOBS.filter(j=>{
+    if(j.title === G.job) return false;
+    const reqs = Object.entries(j.req);
+    if(!reqs.every(([sk,min])=>(G.skills[sk]||0) >= min)) return false;
+    // Also show some slightly above-skill jobs (within 10 points) so there's aspiration
+    const maxSkillGap = 10;
+    const tooHard = reqs.some(([sk,min])=> min > (G.skills[sk]||0) + maxSkillGap);
+    return !tooHard;
   });
-  // Shuffle then pick 2-3 listings
-  const shuffled=available.slice().sort(()=>Math.random()-0.5);
-  const count = 2 + Math.floor(Math.random()*2); // 2 or 3
-  G.weeklyJobPool=shuffled.slice(0, count);
+
+  // Weight toward appropriate tier based on current salary
+  const currentTier = G.salary < 1000 ? 0 : G.salary < 1500 ? 1 : G.salary < 2500 ? 2 : G.salary < 4000 ? 3 : 4;
+  const weighted = available.map(j => ({
+    j,
+    w: j.tier === currentTier+1 ? 4    // next tier most likely
+      : j.tier === currentTier   ? 3    // same tier
+      : j.tier === currentTier-1 ? 1    // step down (rare)
+      : j.tier === currentTier+2 ? 1    // stretch goal (rare)
+      : 0.5
+  }));
+
+  // Weighted shuffle
+  const shuffled = [];
+  const pool_src = [...weighted];
+  while(pool_src.length && shuffled.length < 4){
+    const totalW = pool_src.reduce((a,x)=>a+x.w,0);
+    let r = Math.random()*totalW;
+    for(let i=0;i<pool_src.length;i++){
+      r -= pool_src[i].w;
+      if(r <= 0){
+        shuffled.push(pool_src[i].j);
+        pool_src.splice(i,1);
+        break;
+      }
+    }
+  }
+
+  G.weeklyJobPool = shuffled;
+  G.weeklyJobPoolWeek = G.week;
   return G.weeklyJobPool;
 }
 
@@ -3578,6 +3736,42 @@ const HM_PERSONALITIES = [
     longDesc:"They track every utility usage. They've emailed the landlord six times. There's always a window left slightly open they're convinced is a security risk. It comes from somewhere real — you can tell — but living with it is its own kind of atmospheric pressure. You've started double-checking the front door before bed.",
     influence:null
   },
+  {
+    type:"workaholic", emoji:"💼",
+    shortDesc:"Always working. The laptop never closes.",
+    longDesc:"They're always on calls, always in the kitchen with a coffee at 7am, always typing at midnight. They apologise for the noise then start another video call. Brilliant company for about twenty minutes before they have to 'just check something'. The ambition is impressive. The boundaries are non-existent.",
+    influence:null
+  },
+  {
+    type:"gamer", emoji:"🎮",
+    shortDesc:"Gaming at all hours. Headset on, world off.",
+    longDesc:"The controller is always within reach. They're up late on weekends and some weeknights, the sound of gameplay bleeding under the door. Thoughtful and pleasant in person — but the hobby runs deep. You've started sleeping with earplugs.",
+    influence:null
+  },
+  {
+    type:"activist", emoji:"✊",
+    shortDesc:"Has causes. Several. Wants to discuss them.",
+    longDesc:"Every surface has a leaflet. They've replaced most of the communal food with ethically sourced alternatives and would appreciate it if you tried them. Good people, genuinely. But the flat has become an extension of the mission, and you're living in it.",
+    influence:null
+  },
+  {
+    type:"night-shift", emoji:"🌙",
+    shortDesc:"Works nights. The flat runs in reverse.",
+    longDesc:"They come home as you're leaving. They sleep until 4pm. The kitchen's used at 2am. It's not inconsiderate — they genuinely try — but your schedules are mirror images. Conversations are rare. You know their habits better than their personality.",
+    influence:null
+  },
+  {
+    type:"creative", emoji:"🎨",
+    shortDesc:"Always making something. The flat is becoming an art installation.",
+    longDesc:"Half-finished canvases lean against the wall. The bathroom has been used as a darkroom at least once. They play music at volumes that feel intentional. Genuinely interesting to live with. Occasionally chaotic.",
+    influence:null
+  },
+  {
+    type:"spiritual", emoji:"🧘",
+    shortDesc:"Calm, intentional, and slightly intense about it.",
+    longDesc:"They wake at 5:30 for meditation. The flat smells of incense you didn't buy. They've lent you a book on consciousness and genuinely want to know what you think. Impossible to argue with because they never raise their voice. You find this soothing or unsettling depending on the week.",
+    influence:null
+  },
 ];
 
 const HM_NAMES_POOL = [
@@ -3764,19 +3958,74 @@ function kickHousemate(h){
 }
 
 function findNewHousemate(){
-  const hm = generateHousemate();
-  storyEntry("Prospective housemate",`${hm.name} answers your ad.\n\n${hm.physDesc}\n\n${hm.longDesc}`);
+  // Generate 2-3 candidates to choose from
+  const count = 2 + Math.floor(Math.random()*2);
+  const candidates = Array.from({length:count}, ()=>generateHousemate());
+
+  storyEntry(
+    "Housemate interviews",
+    `You post the ad. ${count} people reply. You arrange viewings for all of them.`
+  );
+
   setActions([
-    {label:`Accept ${hm.name}`,cls:"good",fn:()=>{
-      G.housemates=G.housemates||[];
+    ...candidates.map(hm=>({
+      label:`${hm.emoji} Meet ${hm.name}`,
+      fn:()=>interviewHousemate(hm, candidates)
+    })),
+    {label:"Keep looking another week",fn:()=>{ storyEntry("No match this week","You turn them all away. The room stays empty for now.",[]); openHousingMenu(); }},
+  ]);
+}
+
+// Interview-style meeting with a single candidate
+function interviewHousemate(hm, allCandidates){
+  // Generate a first-impression quote from the candidate
+  const quotes = {
+    chill:     ['"Pretty quiet mostly. I work from home a few days a week. I\'ll stay out of your way."','"I\'m clean, I pay on time, I keep myself to myself. That\'s about it."'],
+    party:     ['"I love having people round — hope that\'s okay! I can keep it to weekends mostly."','"Life\'s too short to stay in. I do like the flat to feel alive, you know?"'],
+    smoker:    ['"I smoke, but I always open a window. It\'s not a big deal, honestly."','"Just so you know, I smoke — but I\'m happy to use the balcony if there is one."'],
+    messy:     ['"I\'m not a clean freak, I\'ll be honest. But I\'m not disgusting either."','"I\'m more of a \'creative disorder\' kind of person. Nothing serious."'],
+    noisy:     ['"I do like my music. I\'m pretty considerate though — usually."','"I\'m a night owl, sometimes. Is the insulation okay in here?"'],
+    clingy:    ['"I love a house that feels like a home. I\'m quite social! What do you do?"','"I think it\'s so important to have good communication with your housemates, don\'t you?"'],
+    promiscuous:['"I\'m pretty independent. I have people over sometimes. Hope that\'s fine."','"I keep my room tidy. Whoever\'s in it."'],
+    tidy:      ['"I\'m probably a bit particular about cleanliness. Fair warning."','"I just like things in their place. I\'m not annoying about it. Mostly."'],
+    fitness:   ['"Early starts, protein in the fridge. I\'ll label it all, don\'t worry."','"I\'m in the gym every morning. I\'m quiet about it, I promise."'],
+    drinker:   ['"I like a drink in the evening. Nothing mad. Do you drink?"','"There\'s usually wine open. You\'re welcome to it."'],
+    foodie:    ['"I cook almost every night. I always make too much if you ever want some."','"The kitchen might smell amazing. Hope that\'s okay."'],
+    anxious:   ['"Just to check — the boiler\'s working? And the locks? Just want to be sure."','"I like to keep on top of things. Bills, schedules. Is that annoying?"'],
+    workaholic:['"I\'m in calls a lot. I do use headphones. What are your quiet hours?"','"I work long days. You\'ll barely know I\'m here, honestly."'],
+    gamer:     ['"I game in the evenings. I use a headset. It\'s pretty low-key."','"Weekends I\'m probably in my room, but I\'m friendly, promise."'],
+    activist:  ['"Do you recycle properly here? I can show you the system I use."','"I\'m very community-minded. I hope you are too."'],
+    "night-shift":['"I work nights so I\'m around in the day. I\'m very quiet when you\'re sleeping."','"Opposite hours to most people. Means you\'d basically have the flat to yourself evenings."'],
+    creative:  ['"I paint sometimes. Nothing too messy. The smell\'s barely noticeable."','"I might have a few projects on the go. I keep it contained. Mostly."'],
+    spiritual: ['"I meditate in the mornings. Very quietly. You wouldn\'t even know."','"I like a calm home. Is this a calm home?"'],
+  };
+  const typeQuotes = quotes[hm.personality] || ['"Just looking for a good place to live."'];
+  const quote = typeQuotes[Math.floor(Math.random()*typeQuotes.length)];
+  const rentDrop = Math.round(100+Math.random()*120);
+
+  storyEntry(
+    `${hm.emoji} ${hm.name}, ${hm.age}`,
+    `${hm.physDesc}\n\n${hm.longDesc}\n\n${quote}\n\nThey would share the rent — your portion drops by €${rentDrop}/mo.`
+  );
+
+  setActions([
+    {label:`✅ Offer ${hm.name} the room`, cls:"good", fn:()=>{
+      G.housemates = G.housemates||[];
       G.housemates.push(hm);
-      const drop=Math.round(100+Math.random()*100);
-      G.rent=Math.max(150,G.rent-drop);
-      G.happy=clamp(G.happy+(["chill","friendly","foodie","tidy"].includes(hm.personality)?8:-2));
-      storyEntry(`${hm.name} moves in`,`They take the spare room. Rent drops by €${drop}/mo. You'll see how this goes.`,[{type:"stat",label:`rent: €${G.rent}/mo`}]);
+      G.rent = Math.max(150, G.rent-rentDrop);
+      G.happy = clamp(G.happy + (["chill","friendly","foodie","tidy","creative","spiritual"].includes(hm.personality)?8:-2));
+      storyEntry(
+        `${hm.name} moves in`,
+        `They take the spare room. Your rent drops to €${G.rent}/mo. You hand over a key. You'll see how this goes.`,
+        [{type:"stat",label:`rent: €${G.rent}/mo`}]
+      );
       updateStats(); openHousingMenu();
     }},
-    {label:"Keep looking",fn:()=>{ storyEntry("Not this one","You decide to keep looking.",[]); openHousingMenu(); }},
+    ...allCandidates.filter(c=>c.name!==hm.name).map(other=>({
+      label:`👁 See ${other.emoji} ${other.name} instead`,
+      fn:()=>interviewHousemate(other, allCandidates)
+    })),
+    {label:"None of them — keep looking",fn:()=>{ storyEntry("No match","You turn them all away. The room stays empty for now.",[]); openHousingMenu(); }},
   ]);
 }
 
@@ -4651,41 +4900,42 @@ function mainMenuActions(){
   // Category definitions with time/energy metadata
   const CATS = [
     {emoji:"🍽", label:"Food", acts:[
-      {label:"🛒 Groceries · 2h",           fn:()=>openGroceryMenu()},
-      {label:"🍽 Eat out",                  fn:()=>openEatOut()},
-      {label:"🍳 Cook at home · 5h ⚡5",   fn:()=>queueActivity("🍳","cook at home", doHomeCook, 5)},
+      {label:"🛒 Groceries · 2h",            fn:()=>openGroceryMenu()},
+      {label:"🍽 Eat out",                   fn:()=>openEatOut()},
+      {label:"🍳 Cook at home · 5h",         fn:()=>queueActivity("🍳","cook at home", doHomeCook, 5)},
     ]},
     {emoji:"💪", label:"Exercise", acts:[
-      !pregnant?{label:"🏋 Gym · 5h ⚡20",  fn:()=>queueActivity("🏋","gym", doGymQ, 20)}:null,
-      !pregnant?{label:"🏃 Run · 3h ⚡15",  fn:()=>queueActivity("🏃","run", doRunQ, 15)}:null,
-      {label:"🧘 Yoga · 2h ⚡5",            fn:()=>queueActivity("🧘","rest & yoga", doYoga, 5)},
-      {label:"🏋 Gym membership",           fn:()=>openGymMembershipMenu()},
+      !pregnant?{label:"🏋 Gym · 5h",        fn:()=>queueActivity("🏋","gym", doGymQ, 20)}:null,
+      !pregnant?{label:"🏃 Run · 3h",        fn:()=>queueActivity("🏃","run", doRunQ, 15)}:null,
+      {label:"🧘 Yoga · 2h",                 fn:()=>queueActivity("🧘","yoga", doYoga, 5)},
+      {label:"🏋 Gym membership",            fn:()=>openGymMembershipMenu()},
     ].filter(Boolean)},
     {emoji:"👥", label:"Social", acts:[
-      {label:"🍺 Night out (event)",         fn:()=>doOneTimeEvent('bar',()=>openBarNight())},
-      {label:"☕ Meet friend (event)",        fn:()=>doOneTimeEvent('friends',()=>openFriendsMenu())},
-      {label:"💌 Relationships (event)",     fn:()=>doOneTimeEvent('date',()=>openRelationshipsMenu())},
+      {label:"🍺 Night out (event)",          fn:()=>doOneTimeEvent('bar',()=>openBarNight())},
+      {label:"☕ Meet friend (event)",         fn:()=>doOneTimeEvent('friends',()=>openFriendsMenu())},
+      {label:"💌 Relationships (event)",      fn:()=>doOneTimeEvent('date',()=>openRelationshipsMenu())},
     ]},
     {emoji:"🌿", label:"Lifestyle", acts:[
-      {label:"🚬 Smoking",                   fn:()=>openSmokeMenu()},
-      {label:"📱 Social media",              fn:()=>openSocialMediaMenu()},
-      {label:"🎲 Gambling",                  fn:()=>openGamblingMenu()},
-      {label:"✈ Travel · 8h ⚡30",           fn:()=>queueActivity("✈","travel", ()=>openTravelMenu(), 30)},
-      {label:"🎨 Hobby · 6h ⚡10",           fn:()=>queueActivity("🎨","hobby time", ()=>openHobbyMenu(), 10)},
-      {label:"😴 Sleep habits",              fn:()=>openSleepMenu()},
-      {label:"🏠 Self-care (event) · 4h",   fn:()=>doOneTimeEvent('selfcare',doSelfCare)},
-      {label:"💇 Hair",                      fn:()=>openHairMenu()},
-      {label:"👁 Eye care",                  fn:()=>openEyeCareMenu()},
+      {label:"🎨 Hobby · 6h",                fn:()=>queueActivity("🎨","hobby time", ()=>openHobbyMenu(), 10)},
+      {label:"😴 Sleep habits",               fn:()=>openSleepMenu()},
+      {label:"🏠 Self-care (event) · 4h",    fn:()=>doOneTimeEvent('selfcare',doSelfCare)},
+      {label:"💇 Hair",                       fn:()=>openHairMenu()},
+      {label:"👁 Eye care",                   fn:()=>openEyeCareMenu()},
+      {label:"🚬 Smoking",                    fn:()=>openSmokeMenu()},
+      {label:"📱 Social media",               fn:()=>openSocialMediaMenu()},
+      {label:"🎲 Gambling",                   fn:()=>openGamblingMenu()},
+      {label:"✈ Travel · 8h",                fn:()=>queueActivity("✈","travel", ()=>openTravelMenu(), 30)},
     ]},
     {emoji:"💼", label:"Career", acts:[
-      {label: hasJob?"💼 Career & jobs":"💼 Find work", fn:()=>openJobMenu()},
-      {label:"📚 Study · 8h ⚡20",           fn:()=>queueActivity("📚","study", ()=>openStudyMenu(), 20)},
-      {label:"💰 Budget",                    fn:()=>openBudgetMenu()},
+      {label: hasJob?"💼 My job":"💼 Find work",  fn:()=>openJobMenu()},
+      {label:"📚 Study · 8h",                fn:()=>queueActivity("📚","study", ()=>openStudyMenu(), 20)},
     ]},
-    {emoji:"🏠", label:"Assets", acts:[
-      {label:"🏠 Housing",                   fn:()=>openHousingMenu()},
-      {label:"💉 Surgery",                   fn:()=>openSurgeryMenu()},
-      {label:"💾 Save / Load",              fn:()=>openSaveLoadMenu()},
+    {emoji:"💰", label:"Money", acts:[
+      {label:"💰 Budget & bills",             fn:()=>openBudgetMenu()},
+      {label:"🏠 Housing",                    fn:()=>openHousingMenu()},
+      {label:"🚌 Transport",                  fn:()=>openTransportMenu()},
+      {label:"💉 Surgery",                    fn:()=>openSurgeryMenu()},
+      {label:"💾 Save / Load",               fn:()=>openSaveLoadMenu()},
     ]},
   ];
 
@@ -4853,10 +5103,42 @@ function buildDebug(){
   const inner=document.getElementById('dbg-inner');
   inner.innerHTML='';
 
+  // ── CHEAT BUTTONS ──────────────────────────────────
+  const cheatDiv=document.createElement('div');cheatDiv.className='dbg-group';
+  cheatDiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Cheats</strong>`;
+
+  const makeCheatBtn=(label,fn,color)=>{
+    const btn=document.createElement('button');
+    btn.textContent=label;
+    btn.style.cssText=`width:100%;margin-top:6px;padding:8px;border:1px solid ${color||'var(--line)'};background:var(--bg2);color:${color||'var(--ink2)'};cursor:pointer;font-size:.78rem;font-family:"IBM Plex Sans",sans-serif;`;
+    btn.onclick=fn;
+    return btn;
+  };
+
+  cheatDiv.appendChild(makeCheatBtn('💰 +€5,000 savings', ()=>{
+    if(typeof G!=='undefined'){ G.savings=(G.savings||0)+5000; updateStats(); toast('+€5,000 added'); }
+  }, 'var(--green)'));
+
+  cheatDiv.appendChild(makeCheatBtn('🛋 Make me immobile (max weight)', ()=>{
+    if(typeof S==='undefined'||typeof G==='undefined'){ toast('Start the game first'); return; }
+    // Set all weight parts to their maximum stage values
+    for(const p of WEIGHT_PARTS){
+      S[p].stage = STAGE_MAX[p];
+    }
+    S.belly.variant = G.baseBellyVariant = "Belly3";
+    G.flags.stretchMarks = true;
+    G.flags.saggy = false;
+    G.needsCarer = true;
+    renderCharacter();
+    updateStats();
+    toast('Maximum weight applied — character is now immobile');
+  }, 'var(--red)'));
+
+  inner.appendChild(cheatDiv);
+
   // ── VIEWPORT CONTROLS ──────────────────────────────
   const vpdiv=document.createElement('div');vpdiv.className='dbg-group';
-  vpdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Viewport Position &amp; Scale</strong>
-  <div style="font-size:.65rem;color:var(--ink3);margin:4px 0 6px">Adjust to frame the character. Record values to lock permanently.</div>`;
+  vpdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Viewport</strong>`;
 
   function makeVpSlider(label,min,max,step,getVal,setVal){
     const row=document.createElement('div');row.style.cssText='margin-bottom:6px;';
@@ -4865,8 +5147,7 @@ function buildDebug(){
     valSpan.textContent=getVal();
     const lb=document.createElement('label');
     lb.style.cssText='font-size:.68rem;color:var(--ink3);display:block;margin-bottom:2px;';
-    lb.textContent=label;
-    lb.appendChild(valSpan);
+    lb.textContent=label;lb.appendChild(valSpan);
     const sl=document.createElement('input');
     sl.type='range';sl.min=min;sl.max=max;sl.step=step;sl.value=getVal();
     sl.style.cssText='width:100%;accent-color:var(--acc);';
@@ -4876,11 +5157,11 @@ function buildDebug(){
   }
 
   vpdiv.appendChild(makeVpSlider('Scale',0.5,3.0,0.01,()=>_vpScale.toFixed(2),v=>_vpScale=v));
-  vpdiv.appendChild(makeVpSlider('Translate X (px)',-200,100,1,()=>_vpTx,v=>_vpTx=v));
-  vpdiv.appendChild(makeVpSlider('Translate Y (px)',-200,100,1,()=>_vpTy,v=>_vpTy=v));
+  vpdiv.appendChild(makeVpSlider('Translate X',-200,100,1,()=>_vpTx,v=>_vpTx=v));
+  vpdiv.appendChild(makeVpSlider('Translate Y',-200,100,1,()=>_vpTy,v=>_vpTy=v));
 
   const copyBtn=document.createElement('button');
-  copyBtn.textContent='📋 Copy current values';
+  copyBtn.textContent='📋 Copy current transform values';
   copyBtn.style.cssText='font-size:.7rem;padding:4px 10px;border:1px solid var(--line);background:var(--bg3);color:var(--ink2);cursor:pointer;width:100%;margin-top:4px;';
   copyBtn.onclick=()=>{
     const txt=`scale:${_vpScale.toFixed(2)}, tx:${_vpTx}px, ty:${_vpTy}px`;
@@ -4888,106 +5169,6 @@ function buildDebug(){
   };
   vpdiv.appendChild(copyBtn);
   inner.appendChild(vpdiv);
-
-  // ── CALIBRATION PRESETS ────────────────────────────
-  const cpdiv=document.createElement('div');cpdiv.className='dbg-group';
-  cpdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Calibration Presets</strong>
-  <div style="font-size:.65rem;color:var(--ink3);margin:4px 0 6px">Click each preset and report: estimated visual weight, and what the measurements should be. Used to calibrate the formula.</div>`;
-
-  const calGrid=document.createElement('div');
-  calGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:5px;';
-
-  DBG_CAL_PRESETS.forEach((p,i)=>{
-    const btn=document.createElement('button');
-    btn.style.cssText='font-size:.65rem;padding:6px 4px;border:1px solid var(--line);background:var(--bg2);color:var(--ink2);cursor:pointer;text-align:center;line-height:1.3;';
-    btn.innerHTML=`<strong>${p.name.split('—')[0]}</strong><br><span style="color:var(--ink3)">${p.desc}</span>`;
-    btn.onclick=()=>{
-      applyCalPreset(p);
-      // Show readout
-      const w=calcWeight(),bmi=calcBMI();
-      const info=`belly:${p.s.belly} arm:${p.s.arm} butt:${p.s.butt} thighs:${p.s.thighs} breast:${p.s.breast}
-→ ${w.toFixed(1)}kg BMI:${bmi.toFixed(1)} bust:${calcBust().toFixed(0)}cm waist:${calcWaist().toFixed(0)}cm hips:${calcHips().toFixed(0)}cm bra:${calcBraSize()}`;
-      toast(p.name);
-      // Also update the readout area
-      const ro=inner.querySelector('#cal-readout');
-      if(ro){
-        ro.textContent=`${p.name}: ${p.desc}\nStages: belly=${p.s.belly} arm=${p.s.arm} butt=${p.s.butt} thighs=${p.s.thighs} breast=${p.s.breast}\nCalculated: ${w.toFixed(1)}kg | BMI ${bmi.toFixed(1)} | bust ${calcBust().toFixed(0)}cm | waist ${calcWaist().toFixed(0)}cm | hips ${calcHips().toFixed(0)}cm | bra ${calcBraSize()}`;
-      }
-    };
-    calGrid.appendChild(btn);
-  });
-  cpdiv.appendChild(calGrid);
-
-  const readout=document.createElement('pre');
-  readout.id='cal-readout';
-  readout.style.cssText='font-size:.63rem;color:var(--ink3);margin-top:8px;line-height:1.5;white-space:pre-wrap;font-family:"IBM Plex Mono",monospace;background:var(--bg3);padding:8px;';
-  readout.textContent='← Click a preset to see its calculated measurements here.';
-  cpdiv.appendChild(readout);
-  inner.appendChild(cpdiv);
-
-  // ── WEIGHT SLIDER ──────────────────────────────────
-  const wdiv=document.createElement('div');wdiv.className='dbg-group';
-  const currentKg=Math.round(calcWeight());
-  const minKg=30, maxKg=620;
-  wdiv.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">Weight (distribute evenly)</strong>`;
-  const wValSpan=document.createElement('span');
-  wValSpan.style.cssText='font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink2);margin-left:8px;';
-  wValSpan.textContent=currentKg+'kg';
-  wdiv.querySelector('strong').appendChild(wValSpan);
-  const wLb=document.createElement('label');wLb.textContent=`kg (${minKg}–${maxKg})`;
-  const wSl=document.createElement('input');
-  wSl.type='range';wSl.min=minKg;wSl.max=maxKg;wSl.step=1;wSl.value=currentKg;
-  wSl.style.cssText='width:100%;accent-color:var(--acc);';
-  wSl.oninput=()=>{
-    const targetKg=parseInt(wSl.value);
-    wValSpan.textContent=targetKg+'kg';
-    // Inverse of KG = KG_A + KG_B * sum^KG_C => sum = ((KG-KG_A)/KG_B)^(1/KG_C)
-    const targetSum = Math.max(1, Math.round(Math.pow(Math.max(0.001,(targetKg-KG_A)/KG_B), 1/KG_C)));
-    const PART_MAXES={belly:STAGE_MAX.belly,arm:STAGE_MAX.arm,butt:STAGE_MAX.butt,thighs:STAGE_MAX.thighs,breast:STAGE_MAX.breast};
-    const totalMax=Object.values(PART_MAXES).reduce((a,b)=>a+b,0);
-    for(const p of WEIGHT_PARTS){
-      const frac=PART_MAXES[p]/totalMax;
-      S[p].stage=Math.max(1,Math.min(STAGE_MAX[p],Math.round(targetSum*frac)));
-    }
-    renderCharacter();
-    inner.querySelectorAll('[data-dbg-part]').forEach(el=>{
-      const pt=el.dataset.dbgPart;
-      if(pt) el.value=S[pt].stage;
-    });
-  };
-  wLb.appendChild(wSl);wdiv.appendChild(wLb);
-  inner.appendChild(wdiv);
-
-  // ── PER-PART SLIDERS ───────────────────────────────
-  for(const part of PARTS){
-    const d=document.createElement('div');d.className='dbg-group';
-    d.innerHTML=`<strong style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em">${part}</strong>`;
-    if(part==="belly"||part==="hair"){
-      const opts=part==="belly"?BELLY_V:HAIR_V;
-      const sel=document.createElement('select');
-      opts.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;sel.appendChild(o);});
-      sel.value=S[part].variant;
-      sel.onchange=()=>{S[part].variant=sel.value;if(part==="belly")G.baseBellyVariant=sel.value;renderCharacter();};
-      const lb=document.createElement('label');lb.textContent="Variant";lb.appendChild(sel);d.appendChild(lb);
-    }
-    const max=STAGE_MAX[part];
-    const sl=document.createElement('input');
-    sl.type="range";sl.min=1;sl.max=max;sl.step=1; // step=1 for all parts, including thighs now fixed
-    sl.value=S[part].stage;
-    sl.dataset.dbgPart=part;
-    sl.oninput=()=>{S[part].stage=parseInt(sl.value);renderCharacter();};
-    const valSpan=document.createElement('span');
-    valSpan.style.cssText='font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--acc);margin-left:6px;';
-    valSpan.textContent=S[part].stage;
-    sl.addEventListener('input',()=>valSpan.textContent=sl.value);
-    const lb=document.createElement('label');
-    lb.style.cssText='font-size:.68rem;color:var(--ink3);display:block;margin-bottom:2px;';
-    lb.innerHTML=`Stage (1–${max})`;
-    lb.appendChild(valSpan);
-    lb.appendChild(sl);
-    d.appendChild(lb);
-    inner.appendChild(d);
-  }
 }
 
 function toggleDebug(){
@@ -5090,30 +5271,35 @@ function toast(msg){
 }
 
 // Tab switching
+// Consolidated ltab click handler with auto-scroll
 document.querySelectorAll('.ltab').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.ltab').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('.ltab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    // Scroll the clicked tab into view within the scrollable strip
+    btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+    // Update journal if switching to it
+    if(btn.dataset.tab==='journal') updateJournal();
   });
 });
 
 // ═══════════════════════════════════════════════════════
 //  CHARACTER CREATION LOGIC
 // ═══════════════════════════════════════════════════════
-let ccPreset="average", ccHairColor="Blonde", ccEyeColor="Brown", ccTraits=[], ccCity="berlin";
+let ccPreset="hourglass", ccHairColor="Blonde", ccEyeColor="Brown", ccTraits=[], ccCity="milan";
 
 // City picker descriptions
 const CITY_DESCS_CC = {
   prague: "Prague — low rents, modest salaries. A slower pace with real charm. Building savings takes time, but you can breathe here.",
-  berlin: "Berlin — moderate rents, reasonable salaries, solid social safety net. A fair starting point for a new life.",
+  milan: "Milan — fashion, finance, and ambition. Rents are real, salaries reasonable. The city expects something of you.",
   madrid: "Madrid — vibrant and warm but demanding. Higher costs and fierce competition. The city rewards ambition but punishes complacency.",
 };
 const BODY_DESCS_CC = {
-  lean:    "Lean build — slim frame, small bust and narrow hips. Light and energetic.",
-  average: "Average build — proportionate figure, moderate bust. The most common starting point.",
-  curvy:   "Curvy build — fuller figure with a generous bust, wider hips and soft belly.",
+  lean:      "Lean — very slim frame, small bust and narrow hips. About 38kg visually. Light, energetic, underweight territory.",
+  hourglass: "Hourglass — slim waist, fuller bust and rounded hips. About 50-52kg. Balanced, proportionate.",
+  pear:      "Pear — heavier through the hips and thighs, slimmer on top. About 110-115kg. Bottom-heavy, characteristic silhouette.",
 };
 
 document.querySelectorAll('#cc-cities .cc-pill').forEach(btn=>{
@@ -5139,7 +5325,7 @@ document.querySelectorAll('#cc-eye-colors .cc-color').forEach(el=>{
   });
 });
 
-const PRESET_DEFAULT_NAMES = { lean:"Sarah", average:"Amy", curvy:"Azura" };
+const PRESET_DEFAULT_NAMES = { lean:"Sarah", hourglass:"Amy", pear:"Azura" };
 const PRESET_DEFAULT_NAMES_SET = new Set(Object.values(PRESET_DEFAULT_NAMES));
 
 document.querySelectorAll('#cc-presets .cc-pill').forEach(btn=>{
@@ -5188,8 +5374,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
   if(nameEl && !nameEl.value.trim()){
     nameEl.value = PRESET_DEFAULT_NAMES[ccPreset] || "Amy";
     checkStart();
-  }
-});
+  }});
 
 // ═══════════════════════════════════════════════════════
 //  GAME START
@@ -5471,64 +5656,328 @@ function stopGambling(){
 // ═══════════════════════════════════════════════════════
 //  TRAVEL
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  TRAVEL & HOLIDAY DESTINATIONS
+// ═══════════════════════════════════════════════════════
+const TRAVEL_DESTINATIONS = [
+  // City breaks — European
+  { name:"Prague", emoji:"🏙", cost:280, days:3, type:"city",
+    desc:"Cobblestones, beer, beautiful old architecture. You walk everywhere. You drink too much. You feel strangely at peace.",
+    fatGain:2, moodBoost:14, deprBust:8, happyBoost:12, skills:{},
+    events:[
+      "You find a bar down an alleyway that isn't in any guidebook. You stay for three hours.",
+      "A street musician is playing something you don't recognise. You stop. You listen. You don't want to leave.",
+    ]
+  },
+  { name:"Amsterdam", emoji:"🚲", cost:380, days:4, type:"city",
+    desc:"Canals, bicycles, museums, and a city that doesn't seem to take itself entirely seriously. You rent a bike and get a bit lost. That's fine.",
+    fatGain:1, moodBoost:16, deprBust:10, happyBoost:14, skills:{},
+    events:[
+      "You cycle into a market by accident and end up with three things you didn't need.",
+      "It rains horizontally. You find a café and don't leave until it stops. Two hours.",
+    ]
+  },
+  { name:"Barcelona", emoji:"🏛", cost:450, days:5, type:"city",
+    desc:"Late nights, brilliant food, architecture that makes you feel small in a good way. You stay up past 2am and don't regret it.",
+    fatGain:3, moodBoost:18, deprBust:12, happyBoost:16, skills:{social:2},
+    events:[
+      "You eat dinner at 10pm and somehow this feels completely normal.",
+      "A stranger on the Ramblas tries to overcharge you. You decline politely. You feel briefly European.",
+    ]
+  },
+  { name:"Vienna", emoji:"🎼", cost:420, days:4, type:"city",
+    desc:"Palaces, coffee houses, classical music, and an aristocratic formality that becomes oddly comforting by day three.",
+    fatGain:2, moodBoost:15, deprBust:9, happyBoost:13, skills:{education:1},
+    events:[
+      "You sit in a Viennese café for three hours with nothing but a coffee and a notebook. The waiter does not rush you.",
+      "You see an opera — not because you're cultured, but because it was cheap and you were curious. You're glad you went.",
+    ]
+  },
+  { name:"Lisbon", emoji:"🌊", cost:350, days:5, type:"city",
+    desc:"Trams, hills, the Atlantic light. There's a melancholy to the place that suits you. You eat very well for very little.",
+    fatGain:2, moodBoost:17, deprBust:14, happyBoost:15, skills:{},
+    events:[
+      "You listen to fado in a small restaurant. It's genuinely moving and you don't speak Portuguese.",
+      "You take a tram that climbs so steeply you have to hold on. Everyone acts like this is completely normal.",
+    ]
+  },
+  // Beach
+  { name:"Sardinia", emoji:"🏖", cost:650, days:7, type:"beach",
+    desc:"Crystal water, white sand, too much sun. You read three books and feel guilty about almost nothing.",
+    fatGain:4, moodBoost:22, deprBust:15, happyBoost:20, skills:{},
+    events:[
+      "The water is absurdly clear. You can see your feet from two metres down.",
+      "You eat grilled fish on a terrace as the sun sets. You feel, briefly, like everything is fine.",
+    ]
+  },
+  { name:"Crete", emoji:"🌅", cost:700, days:7, type:"beach",
+    desc:"Ancient ruins, excellent local wine, and a coastline that looks like it was designed for postcards.",
+    fatGain:4, moodBoost:20, deprBust:13, happyBoost:18, skills:{education:1},
+    events:[
+      "You visit a palace built four thousand years ago. The scale of time is briefly overwhelming.",
+      "A cat follows you through a village for an hour. You buy it something from a bakery. You're not sorry.",
+    ]
+  },
+  { name:"Canary Islands", emoji:"☀️", cost:550, days:7, type:"beach",
+    desc:"Reliable sun, volcanic landscape, the Atlantic. Exactly what it promises. Exactly what you needed.",
+    fatGain:3, moodBoost:18, deprBust:12, happyBoost:16, skills:{},
+    events:[
+      "You watch the sun set over the Atlantic from a clifftop. It's the kind of thing you take a photo of and then put the phone away.",
+      "You swim every morning. By day five you've forgotten what stress feels like.",
+    ]
+  },
+  // Long-haul
+  { name:"Thailand", emoji:"🌴", cost:1400, days:14, type:"longhaul",
+    desc:"Heat, noise, colour, temples, night markets, and the kind of overwhelming beauty that makes you feel very small and very alive.",
+    fatGain:3, moodBoost:30, deprBust:22, happyBoost:28, skills:{social:3},
+    events:[
+      "You eat street food at midnight under fluorescent lights. It's the best meal you've had in a year.",
+      "A monk in saffron robes walks past a 7-Eleven. You stand there for a moment taking in the contrast.",
+    ]
+  },
+  { name:"Japan", emoji:"⛩", cost:1800, days:14, type:"longhaul",
+    desc:"Order, quiet, extraordinary food, ancient temples next to electronics shops. You come back changed in a way you can't fully explain.",
+    fatGain:1, moodBoost:28, deprBust:18, happyBoost:26, skills:{education:2},
+    events:[
+      "You take a train that is exactly on time. This feels significant.",
+      "A vending machine at 3am sells hot coffee in a small metal can. This is fine. This is good. This is Japan.",
+    ]
+  },
+  { name:"New York", emoji:"🗽", cost:1600, days:10, type:"longhaul",
+    desc:"Overwhelming and electric. The city eats your energy and gives it back doubled. You walk fifteen miles without meaning to.",
+    fatGain:3, moodBoost:25, deprBust:14, happyBoost:22, skills:{social:2,office:1},
+    events:[
+      "The scale of the place takes a full day to process. Everything is bigger. Louder. More.",
+      "You see a stranger crying in Central Park. Another stranger offers them a sandwich. This is New York.",
+    ]
+  },
+  // Budget
+  { name:"a long weekend away", emoji:"🚌", cost:200, days:3, type:"budget",
+    desc:"A nearby city, a cheap hostel, some walking and local food. Exactly enough of a break.",
+    fatGain:1, moodBoost:10, deprBust:6, happyBoost:9, skills:{},
+    events:[
+      "You find a quiet square and sit there for an hour. Nothing in particular happens. You feel better.",
+    ]
+  },
+];
+
 function openTravelMenu(){
-  storyEntry("Travel","Getting away. Your options depend on your savings.");
+  storyEntry("✈ Travel","Where do you want to go? Your savings shape your options.");
+  const affordable = TRAVEL_DESTINATIONS.filter(d=>G.savings>=d.cost);
+  const notAffordable = TRAVEL_DESTINATIONS.filter(d=>G.savings<d.cost).slice(0,3);
   setActions([
-    G.savings>=300?{label:"🚌 Weekend trip (€300)",fn:()=>travel("a weekend away in a nearby city",300,5,2,false)}:null,
-    G.savings>=800?{label:"🏖 Beach holiday (€800)",fn:()=>travel("a week on the beach",800,20,7,true)}:null,
-    G.savings>=1500?{label:"✈ City break abroad (€1,500)",fn:()=>travel("a week exploring a new city",1500,15,7,true)}:null,
-    G.savings>=3000?{label:"🌏 Long-haul trip (€3,000)",fn:()=>travel("two weeks on the other side of the world",3000,30,14,true)}:null,
-    {label:"Back",fn:()=>mainMenuActions()},
-  ].filter(Boolean));
+    ...affordable.map(d=>({
+      label:`${d.emoji} ${d.name} — €${d.cost} · ${d.days} days`,
+      cls: d.type==="longhaul"?"good":d.type==="beach"?"":"",
+      fn:()=>bookTravel(d)
+    })),
+    ...notAffordable.map(d=>({
+      label:`${d.emoji} ${d.name} — €${d.cost} [need €${d.cost-Math.round(G.savings)} more]`,
+      disabled:true,
+      fn:()=>{}
+    })),
+    {label:"← Back",fn:()=>mainMenuActions()},
+  ]);
 }
-function travel(desc, cost, fatGain, weeks, bigTrip){
-  G.savings-=cost;
-  gainFat(fatGain,"balanced");
-  G.happy=clamp(G.happy+20);
-  G.mood=clamp(G.mood+15);
-  G.depressionScore=clamp(G.depressionScore-12);
-  const detail = bigTrip
-    ? `You go on ${desc}. Two weeks outside your normal life. You eat more than usual, sleep at strange hours, and come back with a tan and a quiet sort of perspective.`
-    : `${desc.charAt(0).toUpperCase()+desc.slice(1)}. Short but needed.`;
-  storyEntry("Holiday",detail,[{type:"stat",label:"+happiness"},{type:"lose",label:"−€"+cost}]);
-  if(bigTrip) G.milestones.push(`Travelled: ${desc}`);
-  advanceWeeks(weeks); renderCharacter(); mainMenuActions();
+
+function bookTravel(dest){
+  storyEntry(`✈ ${dest.emoji} ${dest.name}`,dest.desc);
+  setActions([
+    {label:`Book it — €${dest.cost} · ${dest.days} days`,cls:"good",fn:()=>goOnHoliday(dest)},
+    {label:"Maybe another time",fn:()=>openTravelMenu()},
+  ]);
+}
+
+function goOnHoliday(dest){
+  G.savings -= dest.cost;
+  gainFat(dest.fatGain, "balanced");
+  G.happy   = clamp(G.happy   + dest.happyBoost);
+  G.mood    = clamp(G.mood    + dest.moodBoost);
+  G.depressionScore = clamp(G.depressionScore - dest.deprBust);
+  G.energy  = clamp(G.energy  + 12);
+  G.conf    = clamp(G.conf    + 4);
+  if(dest.skills) for(const[sk,v] of Object.entries(dest.skills)) G.skills[sk]=(G.skills[sk]||0)+v;
+
+  // Pick a random destination event
+  const evt = dest.events?.[Math.floor(Math.random()*dest.events.length)];
+  if(evt) storyEntry(`📍 ${dest.name}`, evt,[{type:"stat",label:"+mood"},{type:"bad",label:`−€${dest.cost}`}]);
+
+  // Add to journal
+  if(G.journal) G.journal.push({
+    week:G.week, year:G.year, date:weekToDate(G.weekOfYear,G.year),
+    title:`Went to ${dest.name}`,
+    body:`${dest.days} days away. ${dest.desc.split('.')[0]}.`,
+    tags:["travel"]
+  });
+  updateJournal();
+  G.milestones.push(`Travelled to ${dest.name}`);
+
+  advanceWeeks(Math.ceil(dest.days/7));
+  renderCharacter();
+  mainMenuActions();
 }
 
 // ═══════════════════════════════════════════════════════
 //  HOBBIES
 // ═══════════════════════════════════════════════════════
-const HOBBIES=[
-  {name:"painting",emoji:"🎨",effect:()=>{G.mood=clamp(G.mood+10);G.depressionScore=clamp(G.depressionScore-5);}},
-  {name:"reading",emoji:"📚",effect:()=>{G.mood=clamp(G.mood+6);G.skills.education=(G.skills.education||0)+1;}},
-  {name:"gardening",emoji:"🌱",effect:()=>{G.mood=clamp(G.mood+8);G.health=clamp(G.health+2);}},
-  {name:"cooking",emoji:"👨‍🍳",effect:()=>{G.weeklyHealthy+=20;G.happy=clamp(G.happy+6);}},
-  {name:"gaming",emoji:"🎮",effect:()=>{G.mood=clamp(G.mood+5);G.screenHoursPerDay=clamp(G.screenHoursPerDay+1);}},
-  {name:"music",emoji:"🎵",effect:()=>{G.mood=clamp(G.mood+9);G.depressionScore=clamp(G.depressionScore-4);}},
-  {name:"photography",emoji:"📷",effect:()=>{G.mood=clamp(G.mood+7);G.social=clamp(G.social+3);}},
-  {name:"hiking",emoji:"🥾",effect:()=>{loseFat(2);G.fitness=clamp(G.fitness+4);G.mood=clamp(G.mood+10);}},
+// ── HOBBY SYSTEM ─────────────────────────────────────────────────────────────
+// Each hobby has: name, emoji, category, weeklyHours, weeklyCost,
+// effect (weekly), description, monetisable (bool), incomeChance, maxIncome
+const HOBBIES = [
+  // Creative
+  { name:"painting", emoji:"🎨", cat:"Creative", hours:4, cost:15,
+    desc:"Canvases, brushes, and the quiet that comes with it. You lose track of time.",
+    effect:()=>{ G.mood=clamp(G.mood+10); G.depressionScore=clamp(G.depressionScore-5); G.skills.creative=(G.skills.creative||0)+1; },
+    monetisable:true, incomeChance:0.05, maxIncome:200,
+    monDesc:"Local markets, print-on-demand, commissions." },
+  { name:"writing", emoji:"✍️", cat:"Creative", hours:5, cost:0,
+    desc:"A notebook, a screen, an ongoing argument with yourself. The words come eventually.",
+    effect:()=>{ G.mood=clamp(G.mood+8); G.skills.education=(G.skills.education||0)+1; G.depressionScore=clamp(G.depressionScore-3); },
+    monetisable:true, incomeChance:0.04, maxIncome:500,
+    monDesc:"Short stories, freelance articles, a blog that might go somewhere." },
+  { name:"music", emoji:"🎵", cat:"Creative", hours:5, cost:10,
+    desc:"An instrument, a playlist to record over, a slightly strained relationship with your neighbours.",
+    effect:()=>{ G.mood=clamp(G.mood+9); G.depressionScore=clamp(G.depressionScore-4); },
+    monetisable:true, incomeChance:0.06, maxIncome:400,
+    monDesc:"Busking, gigs at local venues, streaming royalties." },
+  { name:"photography", emoji:"📷", cat:"Creative", hours:4, cost:0,
+    desc:"You start noticing light differently. Interesting angles in boring places.",
+    effect:()=>{ G.mood=clamp(G.mood+7); G.social=clamp((G.social||50)+3); G.skills.creative=(G.skills.creative||0)+1; },
+    monetisable:true, incomeChance:0.07, maxIncome:350,
+    monDesc:"Stock photos, events, portraits for hire." },
+  { name:"video editing", emoji:"🎬", cat:"Creative", hours:6, cost:0,
+    desc:"Hours disappear into timelines and colour grades. You develop strong opinions about fonts.",
+    effect:()=>{ G.mood=clamp(G.mood+6); G.screenHoursPerDay=clamp(G.screenHoursPerDay+1); G.skills.creative=(G.skills.creative||0)+2; },
+    monetisable:true, incomeChance:0.08, maxIncome:600,
+    monDesc:"YouTube, client videos, short-form content." },
+  // Physical
+  { name:"hiking", emoji:"🥾", cat:"Active", hours:5, cost:5,
+    desc:"Steep paths, bad knees, spectacular views. You come back filthy and genuinely restored.",
+    effect:()=>{ loseFat(2); G.fitness=clamp(G.fitness+4); G.mood=clamp(G.mood+10); G.health=clamp(G.health+2); },
+    monetisable:false },
+  { name:"cycling", emoji:"🚴", cat:"Active", hours:4, cost:3,
+    desc:"You clip in and go nowhere and everywhere. The city looks different from the saddle.",
+    effect:()=>{ loseFat(2); G.fitness=clamp(G.fitness+3); G.mood=clamp(G.mood+7); G.health=clamp(G.health+2); },
+    monetisable:false },
+  { name:"rock climbing", emoji:"🧗", cat:"Active", hours:4, cost:20,
+    desc:"A wall covered in coloured holds. Every route is a puzzle. Your forearms are constantly sore.",
+    effect:()=>{ loseFat(1); G.fitness=clamp(G.fitness+5); G.mood=clamp(G.mood+9); G.conf=clamp(G.conf+3); },
+    monetisable:false },
+  { name:"dancing", emoji:"💃", cat:"Active", hours:3, cost:15,
+    desc:"Classes twice a week. You're terrible at first. You get less terrible. It becomes the best part of your week.",
+    effect:()=>{ loseFat(1); G.fitness=clamp(G.fitness+3); G.mood=clamp(G.mood+12); G.social=clamp((G.social||50)+5); G.conf=clamp(G.conf+4); },
+    monetisable:false },
+  { name:"swimming", emoji:"🏊", cat:"Active", hours:3, cost:10,
+    desc:"Early morning lanes or evening length-counting. Your shoulders get broad. Sleep improves.",
+    effect:()=>{ loseFat(2); G.fitness=clamp(G.fitness+4); G.health=clamp(G.health+3); G.sleepQuality=clamp((G.sleepQuality||70)+5); },
+    monetisable:false },
+  // Relaxing
+  { name:"reading", emoji:"📚", cat:"Relaxing", hours:4, cost:8,
+    desc:"Books pile up on the bedside table. You stop reaching for your phone before bed.",
+    effect:()=>{ G.mood=clamp(G.mood+6); G.skills.education=(G.skills.education||0)+1; G.screenHoursPerDay=clamp(G.screenHoursPerDay-0.5); },
+    monetisable:false },
+  { name:"gardening", emoji:"🌱", cat:"Relaxing", hours:4, cost:10,
+    desc:"A windowsill herb garden, then a plot. Mud under the fingernails. Things growing because of you.",
+    effect:()=>{ G.mood=clamp(G.mood+8); G.health=clamp(G.health+2); G.weeklyHealthy+=5; G.depressionScore=clamp(G.depressionScore-4); },
+    monetisable:false },
+  { name:"cooking", emoji:"🍳", cat:"Relaxing", hours:4, cost:20,
+    desc:"You branch out from the same five meals. There's a satisfaction in feeding people that nothing else quite provides.",
+    effect:()=>{ G.weeklyHealthy+=25; G.happy=clamp(G.happy+6); G.skills.hospitality=(G.skills.hospitality||0)+1; },
+    monetisable:false },
+  { name:"knitting & craft", emoji:"🧶", cat:"Relaxing", hours:3, cost:12,
+    desc:"Rhythm in the needles. Your hands are always doing something. You accumulate more yarn than you'll ever use.",
+    effect:()=>{ G.mood=clamp(G.mood+7); G.depressionScore=clamp(G.depressionScore-4); G.anxiety=(G.anxiety||30)-3; },
+    monetisable:true, incomeChance:0.04, maxIncome:150,
+    monDesc:"Etsy, local markets, custom orders." },
+  // Tech / Learning
+  { name:"coding", emoji:"💻", cat:"Tech", hours:6, cost:0,
+    desc:"You follow a tutorial, then ignore it and do things your own way. It mostly works.",
+    effect:()=>{ G.skills.office=(G.skills.office||0)+3; G.mood=clamp(G.mood+5); G.screenHoursPerDay=clamp(G.screenHoursPerDay+1); },
+    monetisable:true, incomeChance:0.10, maxIncome:1000,
+    monDesc:"Freelance work, apps, open source contributions." },
+  { name:"language learning", emoji:"🗣️", cat:"Tech", hours:4, cost:0,
+    desc:"Thirty minutes a day on an app, then actual conversations that go nowhere, then ones that go somewhere.",
+    effect:()=>{ G.skills.education=(G.skills.education||0)+2; G.mood=clamp(G.mood+5); G.conf=clamp(G.conf+2); },
+    monetisable:true, incomeChance:0.03, maxIncome:300,
+    monDesc:"Translation, tutoring, interpreter side work." },
+  { name:"podcasting", emoji:"🎙️", cat:"Tech", hours:5, cost:5,
+    desc:"You talk. You edit yourself talking. Someone listens. Then a few more people do.",
+    effect:()=>{ G.social=clamp((G.social||50)+4); G.skills.creative=(G.skills.creative||0)+2; G.conf=clamp(G.conf+3); },
+    monetisable:true, incomeChance:0.06, maxIncome:500,
+    monDesc:"Sponsorships, Patreon, listener support." },
 ];
+
 let activeHobby = null;
+let hobbyXP = 0; // cumulative weeks on same hobby → skill growth
+
 function openHobbyMenu(){
   if(activeHobby){
-    const h=HOBBIES.find(h=>h.name===activeHobby);
-    storyEntry("Hobby",`You spend time on ${h.emoji} ${h.name} this week.`);
+    const h = HOBBIES.find(x=>x.name===activeHobby);
+    if(!h){ activeHobby=null; openHobbyMenu(); return; }
+
+    // Weekly hobby effect
     h.effect();
+    hobbyXP++;
+
+    // Weekly cost
+    if(h.cost > 0 && G.savings >= h.cost) G.savings -= h.cost;
+
+    // Monetisation attempt
+    let earnedThisWeek = 0;
+    if(h.monetisable && hobbyXP >= 8 && Math.random() < h.incomeChance){
+      earnedThisWeek = Math.round(10 + Math.random()*(h.maxIncome-10));
+      G.savings += earnedThisWeek;
+    }
+
+    const xpLabel = hobbyXP<4?"just starting":hobbyXP<12?"getting comfortable":hobbyXP<26?"quite good at it":"genuinely skilled";
+    const costNote = h.cost>0 ? ` Costs about €${h.cost}/week.` : "";
+    const earnNote = earnedThisWeek>0 ? ` You earned €${earnedThisWeek} from it this week.` : "";
+
+    storyEntry(
+      `${h.emoji} ${h.name}`,
+      `Week ${hobbyXP} with ${h.name}. You're ${xpLabel}.${costNote}${earnNote}`
+    );
+
     setActions([
-      {label:"Continue "+h.emoji+" "+h.name,fn:()=>{h.effect();storyEntry("Keeping it up","You make time for it.",[{type:"stat",label:"+wellbeing"}]);mainMenuActions();}},
-      {label:"Try something different",fn:()=>pickHobby()},
-      {label:"Back",fn:()=>mainMenuActions()},
+      {label:`Continue — ${h.emoji} ${h.name}`,cls:"good",fn:()=>{ mainMenuActions(); }},
+      {label:"Try a different hobby",fn:()=>{ hobbyXP=0; activeHobby=null; pickHobbyCategory(); }},
+      {label:"Take a break from hobbies",fn:()=>{ hobbyXP=0; activeHobby=null; storyEntry("Putting it down",`You step away from ${h.name} for a while. The supplies sit waiting.`,[]); mainMenuActions(); }},
     ]);
   } else {
-    pickHobby();
+    pickHobbyCategory();
   }
 }
-function pickHobby(){
-  storyEntry("Pick up a hobby","Something to fill the time with intention.");
-  setActions(HOBBIES.map(h=>({
-    label:`${h.emoji} ${h.name}`,
-    fn:()=>{activeHobby=h.name;h.effect();storyEntry("New hobby",`You start ${h.name}. It takes a few sessions to find the rhythm.`,[{type:"stat",label:"+mood"}]);mainMenuActions();}
-  })).concat([{label:"Back",fn:()=>mainMenuActions()}]));
+
+function pickHobbyCategory(){
+  const cats = [...new Set(HOBBIES.map(h=>h.cat))];
+  storyEntry("Pick a hobby","Something to fill the time with intention. What kind of thing are you drawn to?");
+  setActions([
+    ...cats.map(cat=>({
+      label: `${catEmoji(cat)} ${cat}`,
+      fn:()=>pickHobbyFromCat(cat)
+    })),
+    {label:"← Back",fn:()=>mainMenuActions()},
+  ]);
+}
+
+function catEmoji(cat){
+  return {Creative:"🎨",Active:"💪",Relaxing:"🌿",Tech:"💻"}[cat]||"🎯";
+}
+
+function pickHobbyFromCat(cat){
+  const list = HOBBIES.filter(h=>h.cat===cat);
+  storyEntry(`${catEmoji(cat)} ${cat} hobbies`,"Pick one to start.");
+  setActions([
+    ...list.map(h=>({
+      label: `${h.emoji} ${h.name}${h.cost?` · €${h.cost}/wk`:""}${h.monetisable?" · 💸":""}`,
+      fn:()=>{
+        activeHobby=h.name; hobbyXP=0;
+        storyEntry(`Starting ${h.emoji} ${h.name}`,h.desc+`${h.monetisable?`\n\n💸 Can earn money: ${h.monDesc}`:""}`,[{type:"stat",label:"new hobby"}]);
+        mainMenuActions();
+      }
+    })),
+    {label:"← Other categories",fn:()=>pickHobbyCategory()},
+  ]);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -6921,12 +7370,7 @@ function resolveCompatTopic(partner, topic, yourView, partnerView){
   };
 })();
 
-// Update journal display when tab is switched
-document.querySelectorAll('.ltab').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    if(btn.dataset.tab==='journal') updateJournal();
-  });
-});
+// Journal tab update is handled in the consolidated ltab click handler above
 
 // ═══════════════════════════════════════════════════════
 //  HABIT ESCALATION SYSTEM
@@ -7023,22 +7467,118 @@ function tryQuitSmoking(){
 // ═══════════════════════════════════════════════════════
 //  SETTINGS MENU
 // ═══════════════════════════════════════════════════════
+const COLOUR_PRESETS = [
+  { key:"crimson", label:"Crimson",  swatch:"#c05050", desc:"Default — warm red" },
+  { key:"slate",   label:"Slate",    swatch:"#4a90d0", desc:"Cool blue-grey" },
+  { key:"emerald", label:"Emerald",  swatch:"#3aaf6a", desc:"Forest green" },
+  { key:"amber",   label:"Amber",    swatch:"#d4950a", desc:"Warm gold" },
+  { key:"rose",    label:"Rose",     swatch:"#c05080", desc:"Dusty pink" },
+  { key:"ocean",   label:"Ocean",    swatch:"#2aafbf", desc:"Deep teal" },
+  { key:"plum",    label:"Plum",     swatch:"#9a50cf", desc:"Rich purple" },
+  { key:"rust",    label:"Rust",     swatch:"#d06030", desc:"Earthy terracotta" },
+  { key:"mono",    label:"Mono",     swatch:"#8a8880", desc:"Desaturated ink" },
+];
+
+function applyColourPreset(key){
+  if(key==="crimson"){
+    document.documentElement.removeAttribute('data-colour');
+  } else {
+    document.documentElement.setAttribute('data-colour', key);
+  }
+  localStorage.setItem('life_colour_pref', key);
+}
+
+// Load saved colour on startup
+(function(){
+  const saved = localStorage.getItem('life_colour_pref');
+  if(saved && saved!=="crimson") applyColourPreset(saved);
+})();
+
 function openSettingsMenu(){
-  storyEntry("⚙ Settings","Adjust the game to your preferences.");
+  const curColour = document.documentElement.getAttribute('data-colour')||'crimson';
+  const curTheme  = document.documentElement.dataset.theme;
+  const curFont   = parseInt(document.documentElement.style.fontSize)||14;
+
+  // Only write storyEntry if we haven't shown settings this session
+  if(!openSettingsMenu._shown){
+    openSettingsMenu._shown = true;
+    storyEntry("⚙ Settings","Appearance and preferences.");
+  }
+
+  // Clear any existing colour picker and re-render it in place
+  const area = document.getElementById('story-scroll');
+  const existing = area.querySelector('.settings-colour-picker');
+  if(existing) existing.remove();
+
+  const pickerWrap = document.createElement('div');
+  pickerWrap.className = 'settings-colour-picker';
+  pickerWrap.style.cssText='padding:10px 0 4px;';
+
+  const pickerLabel = document.createElement('div');
+  pickerLabel.style.cssText='font-size:.65rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;font-family:"IBM Plex Sans",sans-serif;';
+  pickerLabel.textContent='Accent colour';
+  pickerWrap.appendChild(pickerLabel);
+
+  const pickerRow = document.createElement('div');
+  pickerRow.style.cssText='display:flex;flex-wrap:wrap;gap:6px;';
+
+  COLOUR_PRESETS.forEach(p=>{
+    const isActive = p.key===curColour;
+    const btn=document.createElement('button');
+    btn.style.cssText=`
+      display:flex;align-items:center;gap:5px;padding:5px 11px;
+      border:2px solid ${isActive?p.swatch:'var(--line)'};
+      background:${isActive?'var(--bg3)':'var(--bg2)'};
+      color:${isActive?'var(--ink)':'var(--ink2)'};
+      cursor:pointer;font-size:.74rem;transition:all .12s;
+      font-family:"IBM Plex Sans",sans-serif;
+    `;
+    btn.innerHTML=`<span style="width:10px;height:10px;border-radius:50%;background:${p.swatch};display:inline-block;flex-shrink:0;border:1px solid rgba(0,0,0,.15);"></span>${p.label}`;
+    btn.title=p.desc;
+    btn.onclick=()=>{
+      applyColourPreset(p.key);
+      // Re-render just the picker, don't call full openSettingsMenu (avoids storyEntry spam)
+      pickerRow.querySelectorAll('button').forEach((b,i)=>{
+        const isNowActive = COLOUR_PRESETS[i].key===p.key;
+        b.style.borderColor = isNowActive ? COLOUR_PRESETS[i].swatch : 'var(--line)';
+        b.style.background  = isNowActive ? 'var(--bg3)' : 'var(--bg2)';
+        b.style.color       = isNowActive ? 'var(--ink)' : 'var(--ink2)';
+      });
+    };
+    pickerRow.appendChild(btn);
+  });
+
+  pickerWrap.appendChild(pickerRow);
+  area.appendChild(pickerWrap);
+  pickerWrap.scrollIntoView({behavior:'smooth', block:'nearest'});
+
   setActions([
-    {label:`${document.body.classList.contains('light')?'🌙 Switch to dark':'☀ Switch to light'} mode`, fn:()=>{ toggleTheme(); openSettingsMenu(); }},
-    {label:"🔤 Font size: Normal → Large", fn:()=>{ const cur=parseInt(document.documentElement.style.fontSize)||14; document.documentElement.style.fontSize=(cur>=18?14:cur+2)+'px'; toast("Font: "+(parseInt(document.documentElement.style.fontSize))+"px"); openSettingsMenu(); }},
-    {label:"🔤 Font: Serif ↔ Sans", fn:()=>{
-      const body=document.body;
-      body.dataset.fontMode = body.dataset.fontMode==="serif"?"sans":"serif";
-      document.getElementById('story-scroll').style.fontFamily = body.dataset.fontMode==="serif"?"'Lora',serif":"'IBM Plex Sans',sans-serif";
-      toast("Font: "+body.dataset.fontMode); openSettingsMenu();
-    }},
+    {label: curTheme==="dark" ? "☀ Light mode" : "🌙 Dark mode",
+     fn:()=>{ toggleTheme(); updateSettingsActionLabel(); }},
+    {label:`🔤 Font: ${curFont}px  →  ${curFont>=18?14:curFont+2}px`,
+     fn:()=>{ document.documentElement.style.fontSize=(curFont>=18?14:curFont+2)+'px';
+              openSettingsMenu._shown=false; openSettingsMenu(); }},
+    {label:"🔤 Story font: Serif ↔ Sans",
+     fn:()=>{
+       const body=document.body;
+       body.dataset.fontMode = body.dataset.fontMode==="serif"?"sans":"serif";
+       document.getElementById('story-scroll').style.fontFamily = body.dataset.fontMode==="serif"?"'Lora',serif":"'IBM Plex Sans',sans-serif";
+     }},
     {label:"⚙ Debug panel", fn:()=>{ toggleDebug(); }},
-    {label:"💾 Save / Load", fn:()=>openSaveLoadMenu()},
-    {label:"📊 Reset fat accumulators (debug)", fn:()=>{ for(const k of Object.keys(_fatAcc)) _fatAcc[k]=0; for(const k of Object.keys(_lossAcc)) _lossAcc[k]=0; toast("Accumulators reset."); mainMenuActions(); }},
-    {label:"Back", fn:()=>mainMenuActions()},
+    {label:"💾 Save / Load",  fn:()=>{ openSettingsMenu._shown=false; openSaveLoadMenu(); }},
+    {label:"← Back",         fn:()=>{ openSettingsMenu._shown=false; mainMenuActions(); }},
   ]);
+}
+
+function updateSettingsActionLabel(){
+  // Silently update the theme button label without re-rendering the whole menu
+  const grid = document.getElementById('abar-grid');
+  if(!grid) return;
+  const btn = grid.querySelector('button');
+  if(btn){
+    const isDark = document.documentElement.dataset.theme==="dark";
+    btn.textContent = isDark ? "☀ Light mode" : "🌙 Dark mode";
+  }
 }
 
 // Replace the toggleDebug topbar button with settings
@@ -7076,7 +7616,20 @@ JOBS.push(
   // Tier 4 additions
   {tier:4,title:"Surgeon",sal:8000,type:"manual",req:{manual:50,education:80},active:true,commute:4,desc:"Years in the making. On your feet for hours. Immense responsibility."},
   {tier:4,title:"Investment banker",sal:9000,type:"office",req:{office:80,education:70},active:false,commute:4,desc:"Crushing hours, enormous pay. Your body will suffer."},
-  {tier:4,title:"Content creator (famous)",sal:6000,type:"creative",req:{creative:70,education:0},active:false,commute:0,desc:"Millions follow you. The pressure is constant. The income is real."}
+  // Tier 1 WFH
+  {tier:1,title:"Data entry (remote)",sal:1050,type:"office",req:{office:5},active:false,commute:0,desc:"You work from the kitchen table. The pyjamas are a perk. The isolation is not.",remote:true},
+  {tier:1,title:"Customer support (remote)",sal:1100,type:"office",req:{office:5},active:false,commute:0,desc:"Headset on, home sofa as your office. Solving problems you didn't cause.",remote:true},
+  // Tier 2 WFH
+  {tier:2,title:"Freelance copywriter (remote)",sal:1700,type:"office",req:{office:15,creative:15},active:false,commute:0,desc:"Words on demand, clients at odd hours, no commute. The blurring of work and life is real.",remote:true},
+  {tier:2,title:"Social media manager (remote)",sal:1900,type:"office",req:{office:20,creative:20},active:false,commute:0,desc:"You run brands from your bedroom. The analytics never sleep.",remote:true},
+  {tier:2,title:"Online tutor",sal:1600,type:"office",req:{office:10,education:25},active:false,commute:0,desc:"Teaching via screen. You set your own hours. Your students are everywhere.",remote:true},
+  // Tier 3 WFH
+  {tier:3,title:"Software developer (remote)",sal:3800,type:"office",req:{office:50,education:40},active:false,commute:0,desc:"Remote-first. Very sedentary. The salary is real and so is the loneliness.",remote:true},
+  {tier:3,title:"UX designer (remote)",sal:3200,type:"office",req:{office:40,creative:30,education:30},active:false,commute:0,desc:"Figma files, Slack, video calls. Your home is your studio.",remote:true},
+  {tier:3,title:"Accountant (remote)",sal:3000,type:"office",req:{office:45,education:40},active:false,commute:0,desc:"Numbers from home. Tax season is brutal. The commute savings are significant.",remote:true},
+  {tier:3,title:"Freelance translator (remote)",sal:2500,type:"office",req:{office:15,education:30},active:false,commute:0,desc:"Languages, deadlines, coffee. You work for clients in timezones that don't match yours.",remote:true},
+  // Tier 4 WFH
+  {tier:4,title:"Tech startup founder (remote)",sal:4500,type:"office",req:{office:70,education:50},active:false,commute:0,desc:"Volatile income, all-in hours. Could be worth millions. Could be nothing.",remote:true},
 );
 
 // ── Job commute times (hours/week) based on job type ──
@@ -7259,6 +7812,237 @@ function getJobCommuteHours(jobTitle){
 // ── Open settings from topbar ──
 // (expose openSettingsMenu globally — topbar button calls it)
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  CLOTHING & WEIGHT EVENTS SYSTEM
+//  Tracks clothing size and triggers events when the body changes significantly
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Clothing size tiers based on waist measurement
+function getClothingSize(){
+  const w = calcWaist();
+  if(w < 62)  return "XS";
+  if(w < 72)  return "S";
+  if(w < 82)  return "M";
+  if(w < 92)  return "L";
+  if(w < 104) return "XL";
+  if(w < 118) return "2XL";
+  if(w < 134) return "3XL";
+  if(w < 154) return "4XL";
+  if(w < 180) return "5XL";
+  if(w < 210) return "6XL";
+  return "custom/specialist";
+}
+
+function checkClothingEvents(){
+  const currentSize = getClothingSize();
+  const lastSize = G.clothingSize || currentSize;
+  G.clothingSize = currentSize;
+
+  if(currentSize === lastSize) return;
+
+  const sizeOrder = ["XS","S","M","L","XL","2XL","3XL","4XL","5XL","6XL","custom/specialist"];
+  const oldIdx = sizeOrder.indexOf(lastSize);
+  const newIdx = sizeOrder.indexOf(currentSize);
+  const gained = newIdx > oldIdx;
+  const lost   = newIdx < oldIdx;
+  const bigJump = Math.abs(newIdx - oldIdx) >= 2;
+
+  if(gained){
+    const events = [
+      { title:"Clothes feel tight",
+        body:`You reach for a favourite pair of jeans and they won't button. A shirt you've worn a hundred times pulls across the back. You're a ${currentSize} now. The wardrobe needs updating.`,
+        acts:[
+          {label:`🛍 Buy new clothes (~€60)`, disabled:G.savings<60, fn:()=>{
+            G.savings-=60; G.conf=clamp(G.conf+4); G.mood=clamp(G.mood+5);
+            storyEntry("New wardrobe","You get a few things that actually fit. It makes a difference.",[{type:"bad",label:"−€60"},{type:"stat",label:"+confidence"}]); mainMenuActions();
+          }},
+          {label:"Squeeze into the old ones",fn:()=>{
+            G.conf=clamp(G.conf-5); G.mood=clamp(G.mood-4);
+            storyEntry("Uncomfortable","You force it. You're aware of the waistband all day.",[{type:"bad",label:"−confidence"}]); mainMenuActions();
+          }},
+        ]
+      },
+      { title:`Up to ${currentSize}`,
+        body:`Nothing fits the way it did. The size on the label isn't something you can ignore anymore. ${bigJump?"Two sizes in a short time. The change has been quick.":" You're adjusting."}`,
+        acts:[
+          {label:"Buy a few essentials (~€45)", disabled:G.savings<45, fn:()=>{
+            G.savings-=45; G.conf=clamp(G.conf+3);
+            storyEntry("New basics","Nothing special. Just things that fit.",[{type:"bad",label:"−€45"}]); mainMenuActions();
+          }},
+          {label:"Order online — cheaper (~€35)", disabled:G.savings<35, fn:()=>{
+            G.savings-=35; G.conf=clamp(G.conf+2);
+            storyEntry("Online order","Three items. They take a week. They mostly fit.",[{type:"bad",label:"−€35"}]); mainMenuActions();
+          }},
+          {label:"Make do for now",fn:()=>{
+            G.mood=clamp(G.mood-3);
+            storyEntry("Making do","The clothes gap remains a low-level irritation.",[]); mainMenuActions();
+          }},
+        ]
+      },
+    ];
+    triggerClothingEvent(events[Math.floor(Math.random()*events.length)]);
+
+    // Specialist sizing threshold
+    if(currentSize==="custom/specialist" && lastSize!=="custom/specialist"){
+      storyEntry(
+        "Specialist clothing",
+        "Standard high-street sizing no longer covers you. You need to look at specialist retailers or have things made. It's more expensive and the options are fewer.",
+        [{type:"bad",label:"specialist sizing only"}]
+      );
+    }
+  } else if(lost && bigJump){
+    triggerClothingEvent({
+      title:"Clothes starting to fit again",
+      body:`You pull on something you couldn't get into a few months ago. It fits. Not perfectly, but it fits. You're a ${currentSize} now.`,
+      acts:[
+        {label:"Acknowledge it quietly",fn:()=>{ G.conf=clamp(G.conf+6); G.mood=clamp(G.mood+8); storyEntry("Progress","You stand there for a moment. You let yourself feel good about it.",[{type:"stat",label:"+confidence"}]); mainMenuActions(); }},
+        {label:"Treat yourself to something new (~€50)", disabled:G.savings<50, fn:()=>{ G.savings-=50; G.conf=clamp(G.conf+8); G.happy=clamp(G.happy+8); storyEntry("Reward","Something that fits properly. Something that makes you look the way you feel right now.",[{type:"stat",label:"+mood"},{type:"bad",label:"−€50"}]); mainMenuActions(); }},
+      ]
+    });
+  }
+
+  // Uniform events — check if job requires one
+  checkUniformEvent(currentSize, lastSize, gained);
+}
+
+function triggerClothingEvent(evt){
+  storyEntry(evt.title, evt.body);
+  setActions(evt.acts);
+}
+
+function checkUniformEvent(currentSize, lastSize, gained){
+  if(!G.job || G.salary===0) return;
+  // Jobs that typically have uniforms
+  const uniformJobs = ["Café barista","Supermarket cashier","Fast food worker","Nurse","Retail assistant","Police officer","Paramedic","Kitchen porter","Cleaner","Warehouse picker","Factory worker","Barista manager","Head chef","Care assistant","Carer"];
+  if(!uniformJobs.some(j=>G.job.includes(j.split(' ')[0]))) return;
+
+  if(gained && !G.flags.uniformTight){
+    G.flags.uniformTight = true;
+    const sizeOrder=["XS","S","M","L","XL","2XL","3XL","4XL","5XL","6XL","custom/specialist"];
+    const newIdx=sizeOrder.indexOf(currentSize);
+    const oldIdx=sizeOrder.indexOf(lastSize);
+    if(newIdx>oldIdx){
+      storyEntry(
+        "Work uniform doesn't fit",
+        `Your ${G.job} uniform is cutting in at the waist. The shirt won't close properly over the chest. You've been hoping nobody notices. Your manager says something today.`,
+        [{type:"bad",label:"uniform issue"},{type:"bad",label:"−confidence"}]
+      );
+      setActions([
+        {label:"Request a larger uniform", fn:()=>{
+          G.conf=clamp(G.conf-4); G.depressionScore=clamp(G.depressionScore+5);
+          storyEntry("New uniform ordered","The request is processed without fuss. The uniform arrives. It fits, barely, and you feel the eyes of colleagues anyway.",[{type:"bad",label:"−confidence"}]);
+          G.flags.uniformTight=false;
+          mainMenuActions();
+        }},
+        {label:"Buy your own replacement (~€40)", disabled:G.savings<40, fn:()=>{
+          G.savings-=40;
+          storyEntry("Self-funded replacement","You sort it yourself. Nobody needs to know about the size change.",[{type:"bad",label:"−€40"}]);
+          G.flags.uniformTight=false;
+          mainMenuActions();
+        }},
+        {label:"Keep wearing it — avoid the conversation", fn:()=>{
+          G.conf=clamp(G.conf-6); G.mood=clamp(G.mood-4);
+          storyEntry("Carrying on","Uncomfortable. Visible. You push through it.",[{type:"bad",label:"discomfort"}]);
+          mainMenuActions();
+        }},
+      ]);
+    }
+  }
+}
+
+// ── Additional weight-related events for the FLAG_EVENTS pool ──────────────────
+const WEIGHT_EVENTS = [
+  // Seat fit
+  { cond:()=> calcWeight()>120 && !G.flags.seatEvent,
+    fn:()=>{
+      G.flags.seatEvent=true;
+      storyEntry("Tight spaces","You notice it on the bus first — pressing against the edges of the seat. Then a booth at a restaurant. Then an office chair. The world is not designed for this body. You start navigating spaces differently.");
+      setActions([
+        {label:"Accept the discomfort",fn:()=>{ G.depressionScore=clamp(G.depressionScore+5); storyEntry("Adaptation","You adjust. You learn which seats work and which don't.",[{type:"bad",label:"−mood"}]); mainMenuActions(); }},
+        {label:"Use it as motivation",fn:()=>{ G.bingeTendency=clamp(G.bingeTendency-8); G.fitness=clamp(G.fitness+2); storyEntry("Channelled","The discomfort becomes a reason.",[{type:"stat",label:"+motivation"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+  // Unsolicited comment
+  { cond:()=> calcBMI()>28 && Math.random()<0.04,
+    fn:()=>{
+      const comments=[
+        "A relative at a gathering mentions that you 'look well'. There's weight in the pause after the words.",
+        "Someone at work makes a remark about the canteen queue. It's aimed at you. They think it's funny.",
+        "A stranger on the street says something. It's one sentence and it stays with you for a week.",
+        "Someone on social media comments on a photo you were tagged in. You delete it. The comment stays in your head.",
+      ];
+      storyEntry("Comment",comments[Math.floor(Math.random()*comments.length)]);
+      setActions([
+        {label:"Let it go",fn:()=>{ G.depressionScore=clamp(G.depressionScore+4); storyEntry("Let it pass","You walk away. Some things you carry anyway.",[{type:"bad",label:"−mood"}]); mainMenuActions(); }},
+        {label:"Respond directly",fn:()=>{ G.conf=clamp(G.conf+4); storyEntry("You respond","It doesn't fix anything but it felt right to say something.",[{type:"stat",label:"+confidence"}]); mainMenuActions(); }},
+        {label:"Talk to someone about it",fn:()=>{ G.depressionScore=clamp(G.depressionScore-6); G.mood=clamp(G.mood+5); storyEntry("Talked it through","Saying it out loud makes it smaller.",[{type:"stat",label:"−depression"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+  // Shopping difficulty
+  { cond:()=> getClothingSize()==="5XL"||getClothingSize()==="6XL"||getClothingSize()==="custom/specialist",
+    fn:()=>{
+      storyEntry(
+        "Shopping is difficult now",
+        "The high street doesn't stock your size. Most websites cut off before you get there. You find one specialist retailer. The prices are higher. The options are fewer. The experience is quietly dispiriting."
+      );
+      setActions([
+        {label:"Order specialist clothing (~€90)", disabled:G.savings<90, fn:()=>{ G.savings-=90; G.conf=clamp(G.conf+4); G.mood=clamp(G.mood+5); storyEntry("Specialist order","The items arrive. They fit. They're not perfect but they're not tight either.",[{type:"bad",label:"−€90"},{type:"stat",label:"+confidence"}]); mainMenuActions(); }},
+        {label:"Make do with what you have",fn:()=>{ G.conf=clamp(G.conf-3); G.mood=clamp(G.mood-5); storyEntry("Making do","The same rotation, stretched beyond what it was designed for.",[{type:"bad",label:"−mood"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+  // Positive: compliment when losing weight
+  { cond:()=> G.weightHistory.length>=3 && (G.weightHistory[0]-(G.weightHistory[G.weightHistory.length-1]))>8,
+    fn:()=>{
+      storyEntry("People notice","Someone says you're looking well. Actually well — the word carries something genuine. They ask what you've been doing. You tell them. It feels good to have an answer.");
+      G.conf=clamp(G.conf+8); G.happy=clamp(G.happy+10); G.depressionScore=clamp(G.depressionScore-5);
+      setActions([{label:"Continue",fn:()=>mainMenuActions()}]);
+    }
+  },
+  // First time shopping in the plus section
+  { cond:()=> ["XL","2XL","3XL"].includes(getClothingSize()) && !G.flags.firstPlusShop,
+    fn:()=>{
+      G.flags.firstPlusShop = true;
+      storyEntry(
+        "Plus size section",
+        "You cross a threshold in the shop today — from one rail to another. The clothes are there. They fit. But standing here still feels like a statement you didn't choose to make."
+      );
+      setActions([
+        {label:"Buy something",fn:()=>{
+          if(G.savings>=35){ G.savings-=35; G.conf=clamp(G.conf+3); storyEntry("Bought something","It fits. You try not to overthink it.",[{type:"bad",label:"−€35"}]); }
+          mainMenuActions();
+        }},
+        {label:"Leave without buying",fn:()=>{ G.depressionScore=clamp(G.depressionScore+4); G.mood=clamp(G.mood-5); storyEntry("Left empty-handed","You walk out. The low feeling follows you home.",[{type:"bad",label:"−mood"}]); mainMenuActions(); }},
+        {label:"Embrace it — this is just shopping",fn:()=>{ G.conf=clamp(G.conf+6); G.depressionScore=clamp(G.depressionScore-5); storyEntry("Practical","Clothes are clothes. You find three things that work. You leave without drama.",[{type:"stat",label:"+self-acceptance"}]); mainMenuActions(); }},
+      ]);
+    }
+  },
+];
+
+// Merge weight events into FLAG_EVENTS at runtime
+if(typeof FLAG_EVENTS !== 'undefined') FLAG_EVENTS.push(...WEIGHT_EVENTS);
+
+// Hook clothing events into passiveWeeklyEffects via advanceWeeks override
+(function(){
+  const _orig = advanceWeeks;
+  advanceWeeks = function(n=1){
+    _orig(n);
+    checkClothingEvents();
+  };
+})();
+
+// Init clothing size on game start
+(function(){
+  const origStart = document.getElementById('cc-start');
+  if(origStart){
+    const _origClick = origStart.onclick;
+    origStart.addEventListener('click', ()=>{
+      setTimeout(()=>{ if(typeof G!=='undefined') G.clothingSize = getClothingSize(); }, 500);
+    });
+  }
+})();
 
 </script>
 </body>
