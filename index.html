@@ -1408,8 +1408,12 @@ function initState(preset,hairStyle,breastTend){
     weeklyFreeHours:0,
     // city
     city:"milan",
-    // reputation (hidden)
-    reputation:{ office:0, hospitality:0, manual:0, fitness:0, creative:0, social:0 },
+    // tattoos & piercings
+    tattoos:[],
+    piercings:[],
+    // weekly free will desire
+    freeWillDesire:null,
+    freeWillDesireWeek:-1,
     repHistory:[], quitCount:0, firedCount:0,
     // milestones & journal
     milestones:[],
@@ -2578,37 +2582,40 @@ function effectiveFoodCost(p){
 }
 
 // ── STEP 1: choose food type ──────────────────────────────────────────────────
-function openGroceryMenu(){
+function openGroceryMenu(onDoneCallback){
   const pNote = pantryStatus()==="empty" ? " Your fridge is empty." :
                 pantryStatus()==="low"   ? ` Only ${G.pantry.servings} meals left.` : "";
   storyEntry("Supermarket",`You head to the shop.${pNote} What are you buying?`);
+  const done = onDoneCallback || (()=>mainMenuActions());
   setActions([
     ...Object.values(FOOD_PROFILES).map(p=>({
       label:`${p.label} — €${effectiveFoodCost(p)}`,
-      fn:()=>groceryPickAlcohol(p.key),
+      fn:()=>groceryPickAlcohol(p.key, done),
     })),
-    {label:"Set a default weekly shop →", cls:"pri", fn:()=>openGrocerySetDefault()},
-    {label:"🚪 Leave without buying",               fn:()=>mainMenuActions()},
+    {label:"Set a default weekly shop →", cls:"pri", fn:()=>openGrocerySetDefault(done)},
+    {label:"🚪 Leave without buying",               fn:()=>done()},
   ]);
 }
 
 // ── STEP 2: alcohol add-on ────────────────────────────────────────────────────
-function groceryPickAlcohol(foodKey){
+function groceryPickAlcohol(foodKey, onDoneCallback){
   const p=FOOD_PROFILES[foodKey];
   const fCost=effectiveFoodCost(p);
+  const done = onDoneCallback || (()=>mainMenuActions());
   storyEntry("Drinks aisle",`Food sorted (${p.label}, €${fCost}). Anything from the drinks aisle?`);
   setActions(
     ALCOHOL_ADDONS.map(a=>({
       label:`${a.label}${a.cost?` (total €${fCost+a.cost})`:`(total €${fCost})`}`,
-      fn:()=>completeShopping(foodKey,a),
+      fn:()=>completeShopping(foodKey,a,done),
     }))
   );
 }
 
 // ── STEP 3: confirm purchase ──────────────────────────────────────────────────
-function completeShopping(foodKey,alcoholOpt){
+function completeShopping(foodKey,alcoholOpt,onDoneCallback){
   const p=FOOD_PROFILES[foodKey];
   const fCost=effectiveFoodCost(p);
+  const done = onDoneCallback || (()=>mainMenuActions());
   let total=fCost+alcoholOpt.cost;
 
   if(G.savings<total){
@@ -2619,7 +2626,7 @@ function completeShopping(foodKey,alcoholOpt){
       G.pantry={servings:3,key:"budget"};
       applyFoodProfile(fallback);
       storyEntry("Nearly broke","You scrape together €20 of basics. Pasta, bread, a tin of beans.",[{type:"bad",label:"emergency shop"}]);
-      mainMenuActions(); return;
+      done(); return;
     }
     // Can afford food but not alcohol
     storyEntry("Skipping the alcohol","You can't stretch to drinks this week — just the food.",[]);
@@ -2654,11 +2661,12 @@ function completeShopping(foodKey,alcoholOpt){
   ].filter(Boolean));
 
   applyFoodProfile(p);
-  mainMenuActions();
+  done();
 }
 
 // ── SET DEFAULT SHOP ─────────────────────────────────────────────────────────
-function openGrocerySetDefault(){
+function openGrocerySetDefault(onDoneCallback){
+  const done = onDoneCallback || (()=>mainMenuActions());
   storyEntry("Default shop","This runs automatically each week when the pantry runs out.");
   setActions([
     ...Object.values(FOOD_PROFILES).map(p=>({
@@ -2669,10 +2677,10 @@ function openGrocerySetDefault(){
         G.pantry={servings:p.servings,key:p.key};
         applyFoodProfile(p);
         storyEntry("Default set",p.desc,[]);
-        mainMenuActions();
+        done();
       },
     })),
-    {label:"Back",fn:()=>openGroceryMenu()},
+    {label:"Back",fn:()=>openGroceryMenu(onDoneCallback)},
   ]);
 }
 
@@ -3536,15 +3544,142 @@ function openJobMenu(){
   ].filter(Boolean));
 }
 function takeJob(job){
-  G.job=job.title; G.salary=job.sal;
-  G.skills[job.type]=(G.skills[job.type]||0)+5;
-  G.happy=clamp(G.happy+8);G.conf=clamp(G.conf+5);
-  storyEntry(`New job: ${job.title}`,`Starting salary €${job.sal.toLocaleString()}/mo. ${job.desc} ${job.active?"An active job — your body will reflect that over time.":"A desk job — don't let the sedentary lifestyle catch up with you."}`,[{type:"stat",label:"employed"}]);
-  if(!job.active){
-    // Sedentary warning — passive fat gain
-    G.weeklyCalories=clamp(G.weeklyCalories+5);
+  // Application system: calculate base success chance from skills + qualifications
+  const skillField = job.type || "office";
+  const playerSkill = G.skills[skillField] || 0;
+  const reqSkill = job.req && job.req[skillField] ? job.req[skillField] : 0;
+  const skillGap = Math.max(0, reqSkill - playerSkill);
+  const overqualified = playerSkill - reqSkill;
+
+  // Base chance: 40-90% depending on skills, reputation, experience
+  let baseChance = 0.50;
+  baseChance += (overqualified * 0.02);
+  baseChance -= (skillGap * 0.04);
+  baseChance += ((G.weeksEmployed||0) > 52 ? 0.10 : 0);
+  baseChance += (G.conf > 60 ? 0.05 : G.conf < 30 ? -0.10 : 0);
+  baseChance *= getRepHireChance(skillField);
+  baseChance = Math.max(0.05, Math.min(0.90, baseChance));
+
+  // Higher tier jobs need a 3-question interview test
+  const needsTest = job.tier >= 2;
+
+  storyEntry(`Applying: ${job.title}`,
+    `€${job.sal.toLocaleString()}/mo · ${job.desc}\n\n${needsTest ? `This is a competitive role. You'll face a short interview test before the offer.` : `Entry-level position. Straightforward application process.`}\n\nYour ${skillField} skill: ${playerSkill}. Required: ${reqSkill}. ${skillGap>0?'You\'re below the requirement — it\'ll be harder.':overqualified>5?'You\'re overqualified — strong chance.':'You meet the requirements.'}`
+  );
+
+  if(needsTest){
+    setActions([
+      {label:"📝 Apply & take the interview test", cls:"good",
+       fn:()=>startJobInterview(job, baseChance)},
+      {label:"← Back", fn:()=>openJobMenu()},
+    ]);
+  } else {
+    // Direct application — roll the dice
+    setActions([
+      {label:`✉ Submit application (${Math.round(baseChance*100)}% est. success rate)`, cls:"good",
+       fn:()=>resolveJobApplication(job, baseChance, 0)},
+      {label:"← Back", fn:()=>openJobMenu()},
+    ]);
   }
-  advanceWeeks(2);updateStats();mainMenuActions();
+}
+
+// Job interview questions by field and tier
+const JOB_QUESTIONS = {
+  office:[
+    // tier 2-3
+    { q:"Your manager asks you to present last quarter's figures to the board on two hours' notice. You:", a:["Panic and ask a colleague to do it","Present confidently with a quick prep","Send it over email instead","Reschedule the board meeting"], correct:1, tier:2 },
+    { q:"A client emails a complaint at 5pm on Friday. You:", a:["Ignore it until Monday","Forward it to your manager and leave","Reply professionally, flag it internally, and follow up Monday","Delete it — not your problem"], correct:2, tier:2 },
+    { q:"You notice a colleague consistently taking credit for your work. You:", a:["Say nothing and hope it stops","Confront them publicly in a meeting","Raise it privately with them first","Go straight to HR"], correct:2, tier:2 },
+    { q:"You're asked to produce a report in Excel you've never used before. You:", a:["Admit you don't know and refuse","Use formulas you do know and Google the rest","Submit a Word document instead","Ask someone else to do it"], correct:1, tier:2 },
+    // tier 3-4
+    { q:"As team lead, two high performers have a serious conflict affecting output. You:", a:["Let them resolve it themselves","Mediate a structured conversation with both","Side with the higher performer","Separate them into different projects immediately"], correct:1, tier:3 },
+    { q:"Your department is 15% over budget with two months remaining. You:", a:["Say nothing and hope finance doesn't notice","Present a recovery plan to management with options","Cut all discretionary spend immediately","Ask for more budget"], correct:1, tier:3 },
+    { q:"A regulatory audit finds a process your team owns is non-compliant. You:", a:["Blame whoever designed the process","Document the issue, fix it, and brief management proactively","Quietly fix it without reporting","Request more time from the regulator"], correct:2, tier:3 },
+  ],
+  hospitality:[
+    { q:"A customer is being rude to a junior colleague in front of other guests. You:", a:["Do nothing — it's not your table","Calmly intervene and redirect the situation","Escalate to the manager immediately","Ask the customer to leave"], correct:1, tier:2 },
+    { q:"The kitchen is running 20 minutes behind on a busy Saturday. You:", a:["Tell guests nothing and hope it resolves","Proactively update guests, offer drinks, manage expectations","Blame the kitchen in earshot of customers","Pretend the wait is normal"], correct:1, tier:2 },
+    { q:"A guest claims they booked a table but there's no record. You:", a:["Tell them they must be mistaken","Apologise, check all systems, and offer solutions","Blame the booking system","Seat them immediately without checking"], correct:1, tier:2 },
+  ],
+  manual:[
+    { q:"You notice a safety procedure isn't being followed on site. You:", a:["Do it yourself but say nothing","Report it to the site supervisor immediately","Ignore it — not your job","Post about it on social media"], correct:1, tier:2 },
+    { q:"A piece of equipment behaves unexpectedly during operation. You:", a:["Carry on — it's probably fine","Stop, secure the equipment, and report it","Try to fix it yourself first","Speed up to get the task done before anything happens"], correct:1, tier:2 },
+    { q:"You're asked to sign off on work you didn't fully complete due to time pressure. You:", a:["Sign it — the boss said to","Flag the incomplete items and refuse to sign off incorrectly","Complete it in your own time and say nothing","Let the next shift deal with it"], correct:1, tier:2 },
+  ],
+  fitness:[
+    { q:"A client says they haven't lost weight despite following your programme. You:", a:["Tell them they're not trying hard enough","Review their nutrition, training, sleep and lifestyle holistically","Add more cardio to their programme","Blame their genetics"], correct:1, tier:2 },
+    { q:"A client pushes through knee pain during a session you're running. You:", a:["Let them — no pain no gain","Stop the exercise, assess the issue, modify if needed","Reduce the weight and carry on","End the session immediately"], correct:1, tier:2 },
+    { q:"You notice a client's form is worsening due to fatigue but they want to keep going. You:", a:["Let them — it's their choice","Coach the form correction and decide together if it's safe to continue","Add more weight to push through","Distract them with conversation"], correct:1, tier:2 },
+  ],
+  creative:[
+    { q:"A client hates the creative direction you've worked on for three weeks. You:", a:["Defend your work at all costs","Listen, understand their actual needs, and iterate","Start from scratch without discussion","Offer a refund and end the project"], correct:1, tier:2 },
+    { q:"Your brief changes significantly mid-project. You:", a:["Deliver the original brief anyway","Clarify the new scope, discuss timeline and cost implications, and adapt","Refuse to change direction mid-project","Ask for double the fee immediately"], correct:1, tier:2 },
+    { q:"You're asked to produce something by Friday that would take two weeks to do properly. You:", a:["Agree and deliver something poor","Push back, explain the timeline clearly, and propose a realistic schedule","Work 100-hour weeks to make it happen","Quit the project"], correct:1, tier:2 },
+  ],
+};
+
+function startJobInterview(job, baseChance){
+  const field = job.type || "office";
+  const tier = job.tier || 2;
+  const fieldQs = (JOB_QUESTIONS[field]||JOB_QUESTIONS.office).filter(q=>q.tier<=tier);
+  // Pick 3 random questions
+  const shuffled = [...fieldQs].sort(()=>Math.random()-0.5).slice(0,3);
+  if(shuffled.length < 3){
+    // Not enough questions — fall back to skill-only check
+    resolveJobApplication(job, baseChance, 0);
+    return;
+  }
+  // Run interview as sequential choices
+  let correctCount = 0;
+  const runQ = (idx)=>{
+    if(idx >= shuffled.length){
+      // Done — resolve
+      const testBonus = correctCount/shuffled.length; // 0 to 1
+      resolveJobApplication(job, baseChance, testBonus, correctCount, shuffled.length);
+      return;
+    }
+    const qData = shuffled[idx];
+    storyEntry(`Interview — Question ${idx+1} of ${shuffled.length}`, qData.q);
+    setActions(qData.a.map((answer, i)=>({
+      label:answer,
+      fn:()=>{
+        const isRight = i===qData.correct;
+        if(isRight){ correctCount++; toast("✓ Good answer"); }
+        else{ toast("✗ Hmm — not ideal"); }
+        runQ(idx+1);
+      }
+    })));
+  };
+  storyEntry("Interview","You're called in. The interviewer has a list of questions. Answer clearly and professionally.");
+  setActions([{label:"→ Begin interview", cls:"pri", fn:()=>runQ(0)}]);
+}
+
+function resolveJobApplication(job, baseChance, testBonus, correct, total){
+  // testBonus: 0 (all wrong) to 1 (all right) — modifies final chance
+  const finalChance = Math.max(0.03, Math.min(0.97,
+    baseChance * (0.5 + testBonus * 0.5) + (testBonus > 0.6 ? 0.10 : 0)
+  ));
+  const success = Math.random() < finalChance;
+  const scoreNote = total ? ` You answered ${correct}/${total} interview questions correctly.` : "";
+
+  if(success){
+    // Handle existing job: quit without notice if lower tier, with notice if same
+    if(G.salary > 0 && job.sal < G.salary){
+      // Taking a step down? Warn
+    }
+    if(G.salary > 0) recordJobLeave("quit_notice");
+    G.job=job.title; G.salary=job.sal;
+    G.skills[job.type]=(G.skills[job.type]||0)+5;
+    G.weeksEmployed=0;
+    G.happy=clamp(G.happy+8);G.conf=clamp(G.conf+5);
+    changeRep(job.type, 5, "Hired");
+    storyEntry(`Offer received: ${job.title}`,`Starting salary €${job.sal.toLocaleString()}/mo.${scoreNote} ${job.desc} ${job.active?"An active job — your body will reflect that over time.":"A desk job — don't let the sedentary lifestyle catch up with you."}`,[{type:"stat",label:"employed"},{type:"stat",label:`€${job.sal}/mo`}]);
+    advanceWeeks(2);updateStats();mainMenuActions();
+  } else {
+    G.conf=clamp(G.conf-5);
+    storyEntry(`Application unsuccessful`,`${job.title} — not this time.${scoreNote} ${testBonus<0.5?"Your interview answers weren't strong enough.":"Your experience didn't match what they were looking for."} You can try again when the role comes up again.`,[{type:"bad",label:"rejected"},{type:"bad",label:"−confidence"}]);
+    mainMenuActions();
+  }
 }
 
 function openStudyMenu(){
@@ -4356,9 +4491,24 @@ function renderWeekQueue(){
     renderTimeBudget();
     return;
   }
-  if(container) container.innerHTML = weekQueue.map((a,i)=>
-    `<span class="wplan-pill" onclick="removeFromWeekPlan(${i})">${a.emoji} ${a.label}${a.hours?' ('+a.hours+'h)':''} ✕</span>`
-  ).join('');
+  // Group same activities together — show merged pill with total hours
+  const groups = [];
+  weekQueue.forEach((a, i) => {
+    const key = a.label;
+    const existing = groups.find(g => g.label === key);
+    if(existing){
+      existing.totalHours = (existing.totalHours||0) + (a.hours||0);
+      existing.indices.push(i);
+    } else {
+      groups.push({ emoji: a.emoji, label: key, totalHours: a.hours||0, indices: [i] });
+    }
+  });
+  if(container) container.innerHTML = groups.map(g => {
+    const hoursLabel = g.totalHours > 0 ? ` (${g.totalHours}h)` : '';
+    // clicking a merged pill removes the last occurrence
+    const removeIdx = g.indices[g.indices.length-1];
+    return `<span class="wplan-pill" onclick="removeFromWeekPlan(${removeIdx})">${g.emoji} ${g.label}${hoursLabel} ✕</span>`;
+  }).join('');
   renderTimeBudget();
 }
 
@@ -4425,7 +4575,15 @@ function openEndWeekChoices(){
   // ── 5: Sleep LAST (player knows what they planned) ──
   steps.push({
     title:"😴 Sleep this week",
-    body:"You know what you've packed in. Choose how much sleep you got — it won't change your activities, but it affects your energy and mood going into next week.",
+    get body(){
+      const workH = calcWorkHoursPerWeek(_ewState.workEffort||"normal");
+      const freeHUsed = (_ewState.freeH||0) - Math.max(0, _ewState.remainingH||0);
+      const hoursAccountedFor = Math.round((workH * 5/7) + calcCommuteHours() + freeHUsed);
+      const maxSleepH = Math.max(0, 168 - hoursAccountedFor);
+      const maxPerNight = Math.min(10, Math.round(maxSleepH / 7));
+      const canSleep8 = maxPerNight >= 8;
+      return `You know what you've packed in. Choose how much sleep you got — it affects your energy and mood going into next week.\n\n⏱ Based on your schedule, you have up to ${maxSleepH}h for sleep this week (~${maxPerNight}h/night).${!canSleep8?' You packed too much in for a full 8h.':''}`;
+    },
     acts:[
       {label:"🌙 8h — well rested · +energy +mood",cls:"good",fn:()=>{
         _ewState.sleepH=8; G.sleepHoursPerNight=8;
@@ -4449,6 +4607,34 @@ function openEndWeekChoices(){
   // ── 6: Social/housemate event ──
   const evt = pickWeeklySocialEvent();
   if(evt) steps.push(evt);
+
+  // ── 7: Free will desire ──
+  const desire = generateFreeWillDesire();
+  if(desire){
+    G.freeWillDesire = desire;
+    G.freeWillDesireWeek = G.week;
+    steps.push({
+      title:`💫 This week you feel it — ${desire.title}`,
+      body:`${desire.impulse}\n\nThis is your free will. The raw, unscripted urge of who you are right now.`,
+      acts:[
+        {label:`✅ Do it — ${desire.actionLabel}`, cls: desire.isPositive?"good":"warn",
+          fn:()=>{
+            desire.doFn();
+            const bonus = desire.isPositive ? 8 : 12; // indulging a vice feels extra good
+            G.happy = clamp(G.happy + bonus);
+            G.mood  = clamp(G.mood  + 6);
+            storyEntry("Free will satisfied", desire.resultText + " You did what you wanted. It felt like being yourself.", [{type:"stat",label:"+happiness"},{type:"stat",label:"indulged"}]);
+          }
+        },
+        {label:"🚫 Ignore it — resist the urge", cls:"",
+          fn:()=>{
+            G.mood = clamp(G.mood - 4);
+            storyEntry("Suppressed", "You talk yourself out of it. Maybe sensible. Doesn't quite feel like a win.", [{type:"bad",label:"−mood"}]);
+          }
+        },
+      ]
+    });
+  }
 
   runEndWeekSteps(steps, 0);
 }
@@ -4489,7 +4675,7 @@ function runEndWeekSteps(steps, idx){
     if(tag==="__bills__"){    showBillsStep(steps, idx); return; }
   }
 
-  storyEntry(step.title, step.body);
+  storyEntry(step.title, typeof step.body === 'function' ? step.body() : step.body);
   setActions(step.acts.map(a=>({...a, fn:()=>{ a.fn(); next(); }})));
 }
 
@@ -4566,7 +4752,9 @@ function showFreeTimeStep(steps, idx){
            applyFoodProfile(p);
            storyEntry("Weekly shop",`You pick up your usual: ${p.label}. Fridge stocked.`,[{type:"stat",label:"pantry restocked"},{type:"bad",label:`−€${effectiveFoodCost(p)}`}]);
          } else {
-           openGroceryMenu(); return;
+           // Open grocery with a callback that resumes the end-week chain
+           openGroceryMenu(()=>runEndWeekSteps(steps, idx+1));
+           return;
          }
        }
        if(_ewState.doStudy){ _ewState.doStudy=false; openStudyMenu(); return; }
@@ -4605,11 +4793,8 @@ function showFoodStep(steps, idx){
   if(!hasFood || lowFood){
     acts.push({label:`🛒 Do the groceries (${rem>=2?"2h":"⚠ short on time"})`, fn:()=>{
       if(rem>=2) _ewState.remainingH-=2;
-      // grocery then come back to food choice
-      openGroceryMenu();
-      // NOTE: grocery menu calls mainMenuActions at end — we'll lose the chain
-      // So we resolve food here and let grocery be standalone
-      next();
+      // Open grocery with callback that resumes the end-week chain
+      openGroceryMenu(()=>next());
     }});
   }
   acts.push({label:"🍕 Takeaway all week (~€70, unhealthy)", cls:"warn", fn:()=>{
@@ -4781,6 +4966,251 @@ function pickWeeklySocialEvent(){
   return pool[Math.floor(Math.random()*pool.length)];
 }
 
+// ── FREE WILL DESIRE GENERATOR ────────────────────────────────────────────────
+// Generates a personality-fitting impulse for the week. Random but character-aware.
+function generateFreeWillDesire(){
+  if(Math.random()<0.2) return null; // not every week
+
+  const traits = G.traits||[];
+  const isAnxious    = traits.includes("anxious")    || G.depressionScore>40;
+  const isFoodie     = traits.includes("foodie")     || G.appetite>65;
+  const isAthlete    = traits.includes("athlete")    || G.fitness>65;
+  const isLazy       = traits.includes("lazy")       || G.fitness<30;
+  const isSocial     = traits.includes("social")     || G.social>65;
+  const isIntrovert  = traits.includes("introvert")  || G.social<35;
+  const isReckless   = traits.includes("reckless")   || G.bingeTendency>40;
+  const isAmbitious  = traits.includes("ambitious");
+  const isNightOwl   = traits.includes("nightowl");
+  const isSmoker     = G.cigarettesPerDay>0;
+  const isDrinker    = G.drinksPerWeek>5;
+  const isGambler    = G.gambling;
+  const isCreative   = traits.includes("creative");
+  const isHomebody   = traits.includes("homebody");
+  const isFrugal     = traits.includes("frugal");
+
+  // Pool of possible desires — each has: title, impulse, actionLabel, resultText, isPositive, doFn
+  const pool = [];
+
+  // Universal desires (everyone gets these sometimes)
+  pool.push({
+    title:"binge TV all weekend",
+    impulse:"The sofa, a blanket, something to stream. Nothing scheduled. Nobody expecting anything. Just you and the screen for two days straight.",
+    actionLabel:"Stay in, watch everything",
+    resultText:"You do it. Six episodes. Then four more. You feel vaguely guilty and completely rested.",
+    isPositive:false,
+    doFn:()=>{ G.mood=clamp(G.mood+10); G.screenHoursPerDay=clamp(G.screenHoursPerDay+3); G.depressionScore=clamp(G.depressionScore+2); }
+  });
+
+  pool.push({
+    title:"order junk food",
+    impulse:"Not the nutritious option. Not the sensible choice. The greasy, the guilty, the deeply satisfying. Your body knows exactly what it wants.",
+    actionLabel:"Order it, eat it, don't apologise",
+    resultText:"You eat every last bite. It's everything you wanted and more. You lie on the sofa feeling fully content.",
+    isPositive:false,
+    doFn:()=>{ gainFat(2,"carb"); G.weeklyJunk+=40; G.happy=clamp(G.happy+12); G.appetite=clamp(G.appetite+5); }
+  });
+
+  pool.push({
+    title:"impulse-buy something",
+    impulse:"Something you've been eyeing for weeks. Not necessary. Just deeply, unreasonably wanted. The kind of purchase you justify after the fact.",
+    actionLabel:"Buy it",
+    resultText:"You spend the money. The item arrives. It makes you unreasonably happy for exactly four days.",
+    isPositive:false,
+    doFn:()=>{ const cost=30+Math.round(Math.random()*120); G.savings=Math.max(0,G.savings-cost); G.happy=clamp(G.happy+10); toast(`−€${cost} — worth it`); }
+  });
+
+  pool.push({
+    title:"go on a long walk with no destination",
+    impulse:"No route planned. No podcast. Just walking until you don't feel like walking anymore. The city or the countryside or somewhere in between.",
+    actionLabel:"Go — just start walking",
+    resultText:"You walk for two hours. You end up somewhere you've never been before. You feel strangely clear.",
+    isPositive:true,
+    doFn:()=>{ G.mood=clamp(G.mood+12); G.health=clamp(G.health+3); G.depressionScore=clamp(G.depressionScore-5); }
+  });
+
+  pool.push({
+    title:"stay out until 3am",
+    impulse:"Not for any particular reason. Just that the night is good and the conversation is real and going home feels like giving up on something.",
+    actionLabel:"Stay — see where the night goes",
+    resultText:"You get home at 3:15am. You're tired and a little too loud and completely alive. Worth it.",
+    isPositive:false,
+    doFn:()=>{ G.social=clamp((G.social||50)+12); G.energy=clamp(G.energy-15); G.sleepHoursPerNight=Math.max(4,G.sleepHoursPerNight-1); }
+  });
+
+  pool.push({
+    title:"call someone you've been avoiding",
+    impulse:"A call you've been putting off for weeks. Not bad news — just overdue. You know you'll feel better after. You're still sitting with the phone in your hand.",
+    actionLabel:"Call them",
+    resultText:"Twenty minutes. It was fine. It was good, actually. You've been carrying that for nothing.",
+    isPositive:true,
+    doFn:()=>{ G.mood=clamp(G.mood+8); G.depressionScore=clamp(G.depressionScore-4); const rel=G.relationships.find(r=>r.type==="friend"); if(rel) rel.closeness=clamp(rel.closeness+8); }
+  });
+
+  // Trait-specific desires
+  if(isFoodie){
+    pool.push({
+      title:"cook an elaborate meal",
+      impulse:"Something that takes all afternoon. Multiple components. Things that need reducing and resting and timing. You've been saving this recipe.",
+      actionLabel:"Get the ingredients, spend the afternoon cooking",
+      resultText:"Four hours in the kitchen. You eat at 9pm and it is extraordinary. You feel like yourself.",
+      isPositive:true,
+      doFn:()=>{ G.weeklyHealthy+=20; G.happy=clamp(G.happy+14); G.savings=Math.max(0,G.savings-35); G.skills.hospitality=(G.skills.hospitality||0)+1; }
+    });
+    pool.push({
+      title:"eat at a restaurant alone",
+      impulse:"A proper restaurant. A nice one. Just you, a table for one, and something you've been wanting to eat for weeks. No need for company.",
+      actionLabel:"Book a table",
+      resultText:"You sit alone and order exactly what you want. Nobody to share with, nobody to compromise for. It's one of the best meals you've had.",
+      isPositive:true,
+      doFn:()=>{ G.savings=Math.max(0,G.savings-60); G.happy=clamp(G.happy+12); G.conf=clamp(G.conf+5); gainFat(1,"meat"); }
+    });
+  }
+
+  if(isAthlete){
+    pool.push({
+      title:"push yourself to a personal best",
+      impulse:"Not for anyone else. Not logged, not shared. You want to find out what you're actually capable of right now.",
+      actionLabel:"Go — give it everything",
+      resultText:"You beat your previous record by enough to matter. You stand there breathing hard and feel briefly invincible.",
+      isPositive:true,
+      doFn:()=>{ G.fitness=clamp(G.fitness+6); loseFat(3); G.conf=clamp(G.conf+8); G.depressionScore=clamp(G.depressionScore-6); }
+    });
+  }
+
+  if(isLazy){
+    pool.push({
+      title:"do absolutely nothing all day",
+      impulse:"Not even productive nothing. Real nothing. No tasks completed. No goals achieved. The specific luxury of a truly wasted day.",
+      actionLabel:"Cancel everything, stay in",
+      resultText:"You do nothing. Completely, magnificently nothing. It turns out this was what you needed.",
+      isPositive:false,
+      doFn:()=>{ G.energy=clamp(G.energy+20); G.mood=clamp(G.mood+10); G.depressionScore=clamp(G.depressionScore+3); }
+    });
+  }
+
+  if(isSmoker){
+    pool.push({
+      title:"smoke more than usual",
+      impulse:`You've been at ${G.cigarettesPerDay} a day. But tonight — the stress, the week — you just want more. Just tonight.`,
+      actionLabel:"Light up, don't count",
+      resultText:"More than usual. You feel it the next morning — the throat, the head. Tonight it was worth it. Tomorrow you'll think otherwise.",
+      isPositive:false,
+      doFn:()=>{ G.cigarettesPerDay=clamp(G.cigarettesPerDay+3,1,60); G.smokingWeeks++; G.health=clamp(G.health-3); }
+    });
+  } else {
+    pool.push({
+      title:"try a cigarette",
+      impulse:"Someone offers. Or there's a packet left on the table. Or the week has been exactly this kind of week. You've never smoked. You're thinking about it.",
+      actionLabel:"Try one",
+      resultText:"You take one. You cough. It's unpleasant and strangely satisfying and you understand immediately why people keep doing this.",
+      isPositive:false,
+      doFn:()=>{ G.cigarettesPerDay=1; G.smokingWeeks=1; G.health=clamp(G.health-2); }
+    });
+  }
+
+  if(isDrinker){
+    pool.push({
+      title:"drink too much tonight",
+      impulse:`You've been keeping it reasonable. But tonight the urge is just there — full, insistent, unreasonable.`,
+      actionLabel:"Have one more. Then another.",
+      resultText:"You drink more than you meant to. The night blurs pleasantly. The morning is less forgiving.",
+      isPositive:false,
+      doFn:()=>{ G.drinksPerWeek+=6; G.drinkingWeeks++; gainFat(2,"alcohol"); G.energy=clamp(G.energy-15); G.health=clamp(G.health-3); }
+    });
+  }
+
+  if(isSocial){
+    pool.push({
+      title:"throw an impromptu get-together",
+      impulse:"No plan. Just a message to a handful of people: 'come over tonight.' Some kind of snacks. Some kind of music. See who shows up.",
+      actionLabel:"Send the message",
+      resultText:"Six people come. Someone brings wine. It goes until 1am. You feel alive and like yourself.",
+      isPositive:true,
+      doFn:()=>{ G.social=clamp((G.social||50)+15); G.happy=clamp(G.happy+12); G.savings=Math.max(0,G.savings-40); }
+    });
+  }
+
+  if(isIntrovert){
+    pool.push({
+      title:"cancel all plans and disappear",
+      impulse:"Not in a bad way. Just the irresistible need to be completely alone for the weekend. No explaining. No apologies. Just: you, your space, silence.",
+      actionLabel:"Cancel everything, switch the phone to silent",
+      resultText:"You disappear for the weekend. You feel recharged in a way that no social event has ever achieved.",
+      isPositive:true,
+      doFn:()=>{ G.mood=clamp(G.mood+14); G.social=clamp((G.social||50)-5); G.energy=clamp(G.energy+15); G.depressionScore=clamp(G.depressionScore-5); }
+    });
+  }
+
+  if(isReckless||isNightOwl){
+    pool.push({
+      title:"stay awake all night for no reason",
+      impulse:"You're not tired. Or you are and it doesn't matter. Something about the late hours feels like yours alone. The world gets quiet and you like who you become at 4am.",
+      actionLabel:"Don't go to sleep",
+      resultText:"You see the sunrise. You feel wrecked and weirdly serene at the same time.",
+      isPositive:false,
+      doFn:()=>{ G.sleepHoursPerNight=Math.max(2,G.sleepHoursPerNight-2); G.energy=clamp(G.energy-20); G.mood=clamp(G.mood+8); }
+    });
+  }
+
+  if(isCreative){
+    pool.push({
+      title:"spend the whole day on a creative project",
+      impulse:"Something you've had half-started for weeks. Or something brand new. Just time — uninterrupted, unscheduled, just to make something.",
+      actionLabel:"Clear the day",
+      resultText:"You lose six hours. You don't notice. Whatever you made might not be good but it's real, and you made it.",
+      isPositive:true,
+      doFn:()=>{ G.mood=clamp(G.mood+12); G.depressionScore=clamp(G.depressionScore-6); G.skills.creative=(G.skills.creative||0)+2; }
+    });
+  }
+
+  if(isAmbitious){
+    pool.push({
+      title:"work through the weekend",
+      impulse:"Not because you have to. Because something's bothering you — an unfinished task, an unanswered question. You'll feel better when it's done.",
+      actionLabel:"Work the weekend",
+      resultText:"You get it done. Monday feels different. You walk in already ahead.",
+      isPositive:true,
+      doFn:()=>{ G.skills.office=(G.skills.office||0)+3; G.conf=clamp(G.conf+5); G.energy=clamp(G.energy-10); G.depressionScore=clamp(G.depressionScore+2); }
+    });
+  }
+
+  if(isHomebody){
+    pool.push({
+      title:"redecorate or reorganise your space",
+      impulse:"You've been living with this arrangement for months and something about it is wrong. You want to move things. Change the energy. Make it yours again.",
+      actionLabel:"Start rearranging",
+      resultText:"You spend three hours moving furniture and sorting things out. The flat feels different. Feels right.",
+      isPositive:true,
+      doFn:()=>{ G.mood=clamp(G.mood+10); G.happy=clamp(G.happy+8); G.savings=Math.max(0,G.savings-20); }
+    });
+  }
+
+  if(isAnxious){
+    pool.push({
+      title:"go somewhere completely new, alone",
+      impulse:"Against the grain of every anxious instinct: leave without a plan. A new neighbourhood, a new town. Just go.",
+      actionLabel:"Go — figure it out when you get there",
+      resultText:"It's uncomfortable for the first hour. Then something loosens. You find a place and stay for a while and come back feeling like you did something.",
+      isPositive:true,
+      doFn:()=>{ G.depressionScore=clamp(G.depressionScore-8); G.conf=clamp(G.conf+6); G.mood=clamp(G.mood+10); }
+    });
+  }
+
+  if(isGambler){
+    pool.push({
+      title:"place a big bet",
+      impulse:"You've been disciplined. But there's this certainty — irrational, insistent — that this one would come in.",
+      actionLabel:"Place the bet",
+      resultText: Math.random()<0.35 ? "It comes in. Of course it does. You're untouchable for exactly one afternoon." : "It doesn't. You knew the odds. You know them again now.",
+      isPositive:false,
+      doFn:()=>{ const stake=Math.round(100+Math.random()*300); if(Math.random()<0.35){ G.savings+=stake*3; toast("+€"+(stake*3)+" — you won"); } else { G.savings=Math.max(0,G.savings-stake); } }
+    });
+  }
+
+  if(!pool.length) return null;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
 function finaliseEndWeek(){
   _endWeekAborted = false;
   // Run queued activities
@@ -4920,6 +5350,7 @@ function mainMenuActions(){
       {label:"😴 Sleep habits",               fn:()=>openSleepMenu()},
       {label:"🏠 Self-care (event) · 4h",    fn:()=>doOneTimeEvent('selfcare',doSelfCare)},
       {label:"💇 Hair",                       fn:()=>openHairMenu()},
+      {label:"💉 Tattoos & Piercings",         fn:()=>openBodyArtMenu()},
       {label:"👁 Eye care",                   fn:()=>openEyeCareMenu()},
       {label:"🚬 Smoking",                    fn:()=>openSmokeMenu()},
       {label:"📱 Social media",               fn:()=>openSocialMediaMenu()},
@@ -5425,13 +5856,8 @@ document.getElementById('cc-start').addEventListener('click',()=>{
   updateStats();
 
   renderCharacter(false).then(()=>{
-    if(G.housingTier===0){
-      const count = 1+Math.floor(Math.random()*2);
-      G.housemates=[];
-      for(let i=0;i<count;i++) G.housemates.push(generateHousemate());
-      const names = G.housemates.map(h=>`${h.emoji} ${h.name}`).join(" and ");
-      storyEntry("Your flatmates",`You share the flat with ${names}. ${G.housemates.map(h=>h.shortDesc).join(" ")}`,[]);
-    }
+    // Start with an empty flat — flatmates arrive through the housing menu
+    G.housemates = [];
     const cityConfig = G_CITY;
     storyEntry(
       `${name}, age ${G.age} — ${cityConfig.name}`,
@@ -5462,6 +5888,235 @@ function traitDesc(traits){
     nightowl:"comes alive after midnight and pays for it in the morning",
   };
   return traits.map(t=>d[t]||t).join(", and who ");
+}
+
+// ═══════════════════════════════════════════════════════
+//  TATTOO & PIERCING SYSTEM
+// ═══════════════════════════════════════════════════════
+
+// Piercing options — (id, name, cost, description)
+const PIERCINGS = [
+  { id:"lobe",       name:"Earlobe piercing",        cost:30,  desc:"Standard, clean. You get both done. They heal within six weeks. You forget they're new within two months." },
+  { id:"helix",      name:"Helix / cartilage",       cost:45,  desc:"Upper ear. It aches for a week. You sleep on the wrong side by accident on night three. Worth it." },
+  { id:"industrial", name:"Industrial bar",          cost:60,  desc:"A long barbell running through two cartilage holes. It takes months to fully heal. People always notice it." },
+  { id:"daith",      name:"Daith piercing",          cost:55,  desc:"Through the inner cartilage fold. Tucked and intimate. Some people swear it helps with migraines. It might." },
+  { id:"tragus",     name:"Tragus piercing",         cost:50,  desc:"The small triangular flap of cartilage. Subtle when not pointed out, surprising when noticed." },
+  { id:"septum",     name:"Septum piercing",         cost:50,  desc:"A horseshoe ring through the middle of your nose. Bold. You can flip it up for formal occasions and nobody knows." },
+  { id:"nostril",    name:"Nostril piercing",        cost:40,  desc:"A small stud on one side. Common enough to be unremarkable in most contexts. You still feel like yourself in it." },
+  { id:"tongue",     name:"Tongue piercing",        cost:55,  desc:"Your speech is slurred for a week. You eat soft food. When it heals, you're surprised how quickly you forget it's there." },
+  { id:"lip",        name:"Lip / labret piercing",   cost:50,  desc:"A stud or ring at the edge of your lip. Noticeable. Some workplaces will have opinions about this." },
+  { id:"eyebrow",    name:"Eyebrow surface piercing",cost:55,  desc:"A small barbell along the brow ridge. Has a higher rejection rate than others. You know this going in." },
+  { id:"navel",      name:"Navel piercing",          cost:40,  desc:"Takes up to a year to fully heal. You have to be careful about waistbands. Easy to hide when needed." },
+  { id:"nipple",     name:"Nipple piercing",         cost:60,  desc:"Intimate. Private unless you choose otherwise. Heals slowly. You'll need to sleep on your back for a while." },
+];
+
+// Tattoo presets — location+description pairs, many options
+const TATTOO_PRESETS = [
+  // Minimalist / small
+  { name:"Small wrist tattoo",   location:"wrist",         style:"minimalist", cost:80,
+    descs:["A small symbol on your inner wrist — something that means something to you. Simple lines. It's there every time you look down.", "Tiny coordinates tattooed at your pulse point. You always know where you were."] },
+  { name:"Behind-ear tattoo",    location:"behind the ear", style:"minimalist", cost:70,
+    descs:["Something small tucked behind your ear. Only visible when you pull your hair back. Private and impulsive at once."] },
+  { name:"Ankle tattoo",         location:"ankle",          style:"minimalist", cost:90,
+    descs:["A delicate design on your ankle. Easily covered by socks, easily revealed by summer.", "A small botanical — a sprig, a single leaf — wrapped around the ankle bone."] },
+  { name:"Finger tattoo",        location:"finger",         style:"minimalist", cost:60,
+    descs:["A single word or symbol across one finger. Fades faster than most — the skin there doesn't hold ink well. You know this. You get it anyway."] },
+  // Medium
+  { name:"Forearm piece",        location:"forearm",        style:"illustrative", cost:180,
+    descs:["A medium piece running along your forearm. Visible in short sleeves. You stop hiding the arm without thinking about it.", "Bold lines on the outer forearm. Something that could be a conversation starter, or a conversation ender, depending on who's asking."] },
+  { name:"Upper arm / shoulder", location:"upper arm",      style:"illustrative", cost:200,
+    descs:["A piece spanning from your shoulder down the upper arm. Covered by a t-shirt but not by anything shorter.", "A design wrapping the shoulder. You see it in mirrors. It surprises you how much you like it."] },
+  { name:"Ribcage tattoo",       location:"ribcage",        style:"fine line", cost:220,
+    descs:["Along the ribs, the most painful placement you've tried. You breathe through it. The finished piece is worth every second.", "Fine-line work along the side of your torso. Intimate. Nobody sees it unless you show them."] },
+  { name:"Calf tattoo",          location:"calf",           style:"traditional", cost:160,
+    descs:["A bold traditional piece on the calf. Visible in shorts. You catch people glancing at it.", "The calf is a good canvas — enough space to be expressive without being overwhelming."] },
+  { name:"Back tattoo",          location:"upper back",     style:"illustrative", cost:280,
+    descs:["A larger piece across your upper back. You can only see it in mirrors or photographs. Everyone else sees it first.", "Something between your shoulder blades. It feels like armour, somehow."] },
+  // Large / full
+  { name:"Half sleeve",          location:"forearm and upper arm", style:"sleeve", cost:600,
+    descs:["A connected piece running from shoulder to wrist on one side. Cohesive, evolving. You're not done with it.", "A sleeve in progress — different artists, different sessions, slowly becoming one thing."] },
+  { name:"Full back piece",      location:"full back",      style:"illustrative", cost:900,
+    descs:["The full back as a canvas. Multiple sessions spread over months. An ongoing project that becomes part of your routine.", "Something architectural across your back — you'll never see the whole thing properly, but you'll feel it."] },
+  { name:"Thigh tattoo",         location:"thigh",          style:"illustrative", cost:250,
+    descs:["The thigh holds ink well and hurts less than most. A generous canvas. You pick something you've wanted for a while.", "A large piece on the outer thigh — hidden in everyday clothes, revealed at the beach."] },
+  // Custom (handled separately)
+];
+
+function describeBodyArt(){
+  const tattoos = G.tattoos||[];
+  const piercings = G.piercings||[];
+  let lines = [];
+  if(piercings.length) lines.push(`Piercings: ${piercings.map(p=>p.name).join(', ')}.`);
+  if(tattoos.length) lines.push(`Tattoos: ${tattoos.map(t=>t.name+(t.custom?` (${t.location})`:'')).join('; ')}.`);
+  return lines.join(' ') || 'No tattoos or piercings yet.';
+}
+
+function openBodyArtMenu(){
+  if(!G.tattoos)   G.tattoos=[];
+  if(!G.piercings) G.piercings=[];
+
+  const bodyArtDesc = describeBodyArt();
+  storyEntry("Tattoos & Piercings", bodyArtDesc);
+  setActions([
+    {label:"💉 Get a piercing", fn:()=>openPiercingMenu()},
+    {label:"🖊 Get a tattoo", fn:()=>openTattooMenu()},
+    {label:"✏ Custom tattoo (describe it)", fn:()=>openCustomTattooMenu()},
+    G.piercings.length||G.tattoos.length ? {label:"🪞 View all body art", fn:()=>viewBodyArt()} : null,
+    {label:"← Back", fn:()=>mainMenuActions()},
+  ].filter(Boolean));
+}
+
+function openPiercingMenu(){
+  const existing = (G.piercings||[]).map(p=>p.id);
+  storyEntry("Piercing studio","Clean, professional. The artist snaps on gloves and asks what you're thinking.");
+  setActions([
+    ...PIERCINGS.map(p=>{
+      const has = existing.includes(p.id);
+      return {
+        label:`${has?'✓ ':''}${p.name} — €${p.cost}${has?' (already pierced)':''}`,
+        disabled: has || G.savings<p.cost,
+        fn:()=>{
+          G.savings -= p.cost;
+          G.piercings = G.piercings||[];
+          G.piercings.push({id:p.id, name:p.name, week:G.week});
+          G.conf=clamp(G.conf+3); G.mood=clamp(G.mood+5);
+          storyEntry(p.name, p.desc, [{type:"stat",label:"new piercing"},{type:"bad",label:`−€${p.cost}`}]);
+          mainMenuActions();
+        }
+      };
+    }),
+    {label:"← Back", fn:()=>openBodyArtMenu()},
+  ]);
+}
+
+function openTattooMenu(){
+  storyEntry("Tattoo parlour","The smell of ink. The low hum of machines. A portfolio on the wall. You browse the presets or describe something original.");
+  setActions([
+    ...TATTOO_PRESETS.map(t=>({
+      label:`${t.name} — €${t.cost}`,
+      disabled: G.savings<t.cost,
+      fn:()=>{
+        const desc = t.descs[Math.floor(Math.random()*t.descs.length)];
+        G.savings -= t.cost;
+        G.tattoos = G.tattoos||[];
+        G.tattoos.push({name:t.name, location:t.location, style:t.style, week:G.week});
+        G.conf=clamp(G.conf+5); G.mood=clamp(G.mood+8);
+        storyEntry(t.name, desc, [{type:"stat",label:"new tattoo"},{type:"bad",label:`−€${t.cost}`}]);
+        mainMenuActions();
+      }
+    })),
+    {label:"✏ Describe a custom tattoo", fn:()=>openCustomTattooMenu()},
+    {label:"← Back", fn:()=>openBodyArtMenu()},
+  ]);
+}
+
+function openCustomTattooMenu(){
+  // Present a 2-step custom tattoo flow using prompt-style text inputs
+  storyEntry("Custom tattoo","The artist pulls out a sketchbook. 'Tell me what you want and where.' You think about it.");
+  
+  // Simple body part selection + description via sequential prompts
+  const bodyParts = ["wrist","forearm","upper arm","shoulder","neck","chest","ribcage","back","hip","thigh","calf","ankle","finger","foot","behind the ear"];
+  const costByComplexity = {simple:100, medium:250, detailed:450, large:700};
+  
+  let selectedPart = null;
+  let selectedComplexity = null;
+
+  const showDescriptionPrompt = ()=>{
+    const cost = costByComplexity[selectedComplexity];
+    storyEntry("Describe your tattoo",`On your ${selectedPart}. Estimated cost: €${cost}.\n\nType a description in the box below — for example: "a bouquet of red roses with thorns", "a small crescent moon", "a wolf howling at the moon with pine trees".`);
+    // Use a simple inline text-input approach
+    const abar = document.getElementById('action-bar');
+    if(!abar) return;
+    const inputWrap = document.createElement('div');
+    inputWrap.style.cssText='display:flex;gap:8px;margin-bottom:8px;';
+    const inp = document.createElement('input');
+    inp.type='text';
+    inp.placeholder='Describe your tattoo…';
+    inp.className='cc-input';
+    inp.style.cssText='flex:1;padding:8px 12px;font-size:.85rem;';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.textContent='✓ Confirm';
+    confirmBtn.className='a-btn pri';
+    confirmBtn.style.cssText='white-space:nowrap;';
+    confirmBtn.onclick=()=>{
+      const description = inp.value.trim();
+      if(!description){ toast("Please describe your tattoo first."); return; }
+      if(G.savings<cost){ toast(`You need €${cost} for this.`); return; }
+      G.savings -= cost;
+      G.tattoos = G.tattoos||[];
+      G.tattoos.push({name:`Custom tattoo`, location:selectedPart, style:selectedComplexity, custom:true, description, week:G.week});
+      G.conf=clamp(G.conf+6); G.mood=clamp(G.mood+10);
+      const narrative = generateCustomTattooNarrative(description, selectedPart, selectedComplexity);
+      storyEntry(`${description} — ${selectedPart}`, narrative, [{type:"stat",label:"new tattoo"},{type:"bad",label:`−€${cost}`}]);
+      mainMenuActions();
+    };
+    inputWrap.appendChild(inp);
+    inputWrap.appendChild(confirmBtn);
+    // Prepend to action bar
+    const existingGrid = abar.querySelector('.abar-grid');
+    if(existingGrid) abar.insertBefore(inputWrap, existingGrid);
+    setActions([{label:"← Back", fn:()=>openCustomTattooMenu()}]);
+  };
+
+  const showComplexityStep = ()=>{
+    storyEntry(`Placement: ${selectedPart}`,"How detailed do you want it?");
+    setActions([
+      {label:`Simple / fine line — €${costByComplexity.simple}`, fn:()=>{ selectedComplexity="simple"; showDescriptionPrompt(); }},
+      {label:`Medium detail — €${costByComplexity.medium}`, fn:()=>{ selectedComplexity="medium"; showDescriptionPrompt(); }},
+      {label:`Detailed / shading — €${costByComplexity.detailed}`, fn:()=>{ selectedComplexity="detailed"; showDescriptionPrompt(); }},
+      {label:`Large / full piece — €${costByComplexity.large}`, fn:()=>{ selectedComplexity="large"; showDescriptionPrompt(); }},
+      {label:"← Back", fn:()=>openCustomTattooMenu()},
+    ]);
+  };
+
+  storyEntry("Where?","Pick the body part.");
+  setActions([
+    ...bodyParts.map(part=>({
+      label:part.charAt(0).toUpperCase()+part.slice(1),
+      fn:()=>{ selectedPart=part; showComplexityStep(); }
+    })),
+    {label:"← Back", fn:()=>openBodyArtMenu()},
+  ]);
+}
+
+function generateCustomTattooNarrative(description, location, complexity){
+  const timeByComplexity = {simple:"about an hour", medium:"two and a half hours", detailed:"a full four-hour session", large:"multiple sessions spread over weeks"};
+  const painByLocation = {
+    "wrist":"the wrist is bony — it stings more than expected",
+    "ribcage":"the ribcage hurts. Every breath moves the skin. You clench your jaw and breathe carefully",
+    "neck":"the neck is sensitive — a buzzing, intimate discomfort",
+    "spine":"the spine is one of the worst spots. You'd heard this. Now you know it",
+    "foot":"the foot is surprisingly painful — thin skin over bone",
+    "inner arm":"the inner arm is tender; you grip the chair",
+  };
+  const painNote = painByLocation[location] || "the feeling is sharp in places, manageable elsewhere";
+  const time = timeByComplexity[complexity]||"a few hours";
+  const narratives = [
+    `You sit in the chair for ${time}. ${painNote.charAt(0).toUpperCase()+painNote.slice(1)}. The artist works methodically. When it's done, you look at it in the mirror — ${description} on your ${location}. Permanent. Yours.`,
+    `${time} in the chair. You talk a little, fall quiet. The machine hums. When the bandage goes on you feel a particular satisfaction — the specific pride of having decided something and followed through. ${description}, on your ${location}.`,
+    `The ${location} takes ${time}. The artist seems pleased with it. So are you. You take a photo before the wrap goes on. ${description} — something you'll carry for the rest of your life. That still feels strange and right at the same time.`,
+    `You chose ${description} for your ${location} and now it exists in the world and on your skin. ${time} of sitting still, of watching it emerge line by line. The sting lingers for a day. The art stays.`,
+  ];
+  return narratives[Math.floor(Math.random()*narratives.length)];
+}
+
+function viewBodyArt(){
+  if(!G.tattoos)   G.tattoos=[];
+  if(!G.piercings) G.piercings=[];
+  let body = '';
+  if(G.piercings.length){
+    body += 'Piercings:\n';
+    G.piercings.forEach(p=>{ body += `• ${p.name}\n`; });
+  }
+  if(G.tattoos.length){
+    body += '\nTattoos:\n';
+    G.tattoos.forEach(t=>{
+      if(t.custom) body += `• Custom: ${t.description} — ${t.location} (${t.style})\n`;
+      else body += `• ${t.name} — ${t.location} (${t.style})\n`;
+    });
+  }
+  storyEntry("Your body art", body.trim());
+  setActions([{label:"← Back", fn:()=>openBodyArtMenu()}]);
 }
 
 // ═══════════════════════════════════════════════════════
