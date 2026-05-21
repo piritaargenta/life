@@ -949,7 +949,7 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
     <div class="tb-date" id="tb-date">Week 1, 2007</div>
     <button class="tb-btn" id="btn-theme" onclick="toggleTheme()">☀ Light</button>
     <button class="tb-btn" onclick="openSaveLoadMenu()" title="Save / Load game">💾</button>
-    <button class="tb-btn" onclick="toggleDebug()">⚙ Debug</button>
+    <button class="tb-btn" onclick="openSettingsMenu()">⚙ Settings</button>
     <button id="btn-hamburger" onclick="openMobDrawer()" aria-label="Menu" style="display:none">☰</button>
   </div>
 
@@ -965,7 +965,7 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   <div class="mob-drawer-btn-row">
     <button class="mob-drawer-btn" onclick="closeMobDrawer();toggleTheme()" id="mob-btn-theme">☀ Light</button>
     <button class="mob-drawer-btn" onclick="closeMobDrawer();openSaveLoadMenu()">💾 Save / Load</button>
-    <button class="mob-drawer-btn" onclick="closeMobDrawer();toggleDebug()">⚙ Debug</button>
+    <button class="mob-drawer-btn" onclick="closeMobDrawer();openSettingsMenu()">⚙ Settings</button>
   </div>
   <div class="mob-drawer-section" id="mob-wellbeing-section">
     <span class="mob-drawer-section-title">Wellbeing</span>
@@ -1077,6 +1077,7 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
         <span id="energy-tracker" style="font-size:.7rem;color:var(--ink3);white-space:nowrap;font-family:'IBM Plex Mono',monospace;"></span>
         <button class="wplan-commit" id="wplan-commit-btn" onclick="commitWeek()">End week →</button>
       </div>
+      <div id="time-budget-bar" style="padding:4px 14px 5px;background:var(--bg2);border-bottom:1px solid var(--line);min-height:20px;"></div>
       <div id="action-bar">
         <div class="abar-label">Plan your week — pick a category</div>
         <div class="abar-grid" id="abar-grid"></div>
@@ -1513,6 +1514,58 @@ function deleteSave(){
   localStorage.removeItem(SAVE_KEY);
   toast("Save deleted.");
 }
+// ═══════════════════════════════════════════════════════
+//  WEIGHT-BASED MOBILITY SYSTEM
+// ═══════════════════════════════════════════════════════
+function getMobilityLevel(){
+  const w = calcWeight();
+  if(w >= 300) return "immobile";
+  if(w >= 250) return "very_limited";
+  if(w >= 200) return "limited";
+  if(w >= 150) return "reduced";
+  return "normal";
+}
+
+function checkMobilityEffects(){
+  const level = getMobilityLevel();
+  const w = calcWeight();
+  const prev = G.lastMobilityLevel || "normal";
+  G.lastMobilityLevel = level;
+
+  if(level==="reduced")      G.energy=clamp(G.energy-3);
+  if(level==="limited")      G.energy=clamp(G.energy-8);
+  if(level==="very_limited") G.energy=clamp(G.energy-15);
+  if(level==="immobile")     G.energy=clamp(G.energy-25);
+
+  if(prev==="normal"&&level==="reduced")
+    storyEntry("Movement harder",`At ${w.toFixed(0)}kg, everyday tasks cost noticeably more. Stairs, the bus, carrying bags.`,[{type:"bad",label:"−energy/week"}]);
+  else if(prev==="reduced"&&level==="limited")
+    storyEntry("Mobility significantly limited",`${w.toFixed(0)}kg. Getting around is genuinely difficult. Every distance feels longer.`,[{type:"bad",label:"mobility limited"}]);
+  else if(prev==="limited"&&level==="very_limited"){
+    storyEntry("Unable to use public transport",`${w.toFixed(0)}kg. Standard seats don't fit. Public transport is no longer an option.`,[{type:"bad",label:"no public transport"}]);
+    if(!G.car||G.car==="None") storyEntry("Transport crisis","Without a car, getting anywhere is a serious problem.",[{type:"bad",label:"stranded"}]);
+  } else if(prev==="very_limited"&&level==="immobile"){
+    storyEntry("Immobile — carer needed",`${w.toFixed(0)}kg. You cannot move unassisted. Basic daily life is impossible alone.`,[{type:"bad",label:"IMMOBILE"},{type:"bad",label:"carer needed"}]);
+    G.needsCarer=true;
+    if(G.salary>0&&G.job){ const jd=JOBS.find(j=>j.title===G.job); if(jd&&jd.active){ G.salary=0; G.job=""; storyEntry("Job lost","You can no longer physically attend work.",[{type:"bad",label:"unemployed"}]); } }
+  }
+  if(G.needsCarer&&G.weekOfYear%4===0){
+    G.savings-=800;
+    if(w<280){ G.needsCarer=false; storyEntry("Regained independence","You're able to manage more on your own.",[{type:"stat",label:"independence"}]); }
+  }
+}
+
+function canDoActivity(actType){
+  const level=getMobilityLevel(); const w=calcWeight(); const fit=G.fitness||50;
+  if(actType==="gym")     return level!=="immobile"&&level!=="very_limited"&&w<300;
+  if(actType==="run")     return level==="normal"&&w<180&&fit>10;
+  if(actType==="yoga")    return (level==="normal"||(level==="reduced"&&w<180))&&fit>5;
+  if(actType==="walk")    return level!=="immobile";
+  if(actType==="transit") return level!=="immobile"&&level!=="very_limited";
+  if(actType==="work_active") return level!=="immobile";
+  return true;
+}
+
 const canvas=document.getElementById('characterCanvas');
 const ctx=canvas.getContext('2d');
 let drawPending=false;
@@ -2203,12 +2256,14 @@ function passiveWeeklyEffects(){
 
   // ── Housemate passive effects ──
   updateHousemateEffects();
-
   // ── Hair growth ──
   growHair();
-
-  // ── Myopia risk check ──
+  // ── Myopia risk ──
   checkMyopiaRisk();
+  // ── Mobility / weight effects ──
+  checkMobilityEffects();
+  // ── Habit escalation ──
+  checkHabitEscalation();
 
   // ── Relationship tension ──
   if(G.partnerID){
@@ -3936,90 +3991,142 @@ const ACTIVITY_HOURS = {
 };
 
 // ═══════════════════════════════════════════════════════
+//  WEEK TIME BUDGET HUD (updates in-place, no story spam)
+// ═══════════════════════════════════════════════════════
+function renderTimeBudget(){
+  const workH = calcWorkHoursPerWeek(_ewState.workEffort || "normal");
+  const sleepH = _ewState.sleepH || G.sleepHoursPerNight || 7;
+  const freeH  = _ewState.freeH || calcFreeHours(workH, sleepH);
+  const rem    = (_ewState.remainingH !== undefined) ? _ewState.remainingH : freeH;
+  const used   = freeH - rem;
+
+  const bar = document.getElementById('time-budget-bar');
+  if(!bar) return;
+  const pct = freeH > 0 ? Math.min(100, (used/freeH)*100) : 0;
+  const col = rem > freeH*0.5 ? 'var(--green)' : rem > freeH*0.2 ? 'var(--amber)' : 'var(--red)';
+  bar.innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--ink3);margin-bottom:3px;">
+      <span>⏱ <strong style="color:${col}">${Math.max(0,rem)}h free</strong> of ${freeH}h</span>
+      <span>💼${Math.round(workH*5/7)}h · 😴${sleepH*7}h · 🚌${calcCommuteHours()}h/wk</span>
+    </div>
+    <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;">
+      <div style="height:100%;width:${pct}%;background:${col};border-radius:2px;transition:width .3s;"></div>
+    </div>`;
+}
+
+function addToWeekPlan(emoji, label, hours, fn){
+  const rem = _ewState.remainingH !== undefined ? _ewState.remainingH : 0;
+  if(hours > rem + 0.1){ toast(`Not enough time — ${Math.max(0,Math.round(rem))}h left.`); return false; }
+  _ewState.remainingH = rem - hours;
+  weekQueue.push({emoji, label, fn, energyCost: Math.round(hours*2), hours});
+  renderWeekQueue();
+  renderTimeBudget();
+  return true;
+}
+
+function removeFromWeekPlan(idx){
+  const act = weekQueue[idx];
+  if(act && act.hours) _ewState.remainingH = (_ewState.remainingH||0) + act.hours;
+  weekQueue.splice(idx,1);
+  renderWeekQueue();
+  renderTimeBudget();
+}
+
+function renderWeekQueue(){
+  const container = document.getElementById('wplan-pills');
+  const energyEl = document.getElementById('energy-tracker');
+  if(!weekQueue.length){
+    if(container) container.innerHTML = '<span class="wplan-empty">nothing queued</span>';
+    if(energyEl) energyEl.textContent = '';
+    renderTimeBudget();
+    return;
+  }
+  if(container) container.innerHTML = weekQueue.map((a,i)=>
+    `<span class="wplan-pill" onclick="removeFromWeekPlan(${i})">${a.emoji} ${a.label}${a.hours?' ('+a.hours+'h)':''} ✕</span>`
+  ).join('');
+  renderTimeBudget();
+}
+
+// ═══════════════════════════════════════════════════════
 //  END-WEEK SEQUENTIAL FLOW
+//  Order: Work → Free time → Food → Bills → Sleep → Social event
 // ═══════════════════════════════════════════════════════
 let _endWeekAborted = false;
 let _ewState = {};
 
 function openEndWeekChoices(){
   _endWeekAborted = false;
-  _ewState = { workEffort:"normal", sleepH:G.sleepHoursPerNight||7, freeH:0, remainingH:0 };
+  const defaultSleep = G.sleepHoursPerNight || 7;
+  const defaultWorkH = calcWorkHoursPerWeek("normal");
+  _ewState = {
+    workEffort: "normal",
+    sleepH: defaultSleep,
+    freeH: calcFreeHours(defaultWorkH, defaultSleep),
+    remainingH: calcFreeHours(defaultWorkH, defaultSleep),
+  };
+  renderTimeBudget();
 
   const steps = [];
 
-  // ── 1: Sleep ──
-  steps.push({
-    title:"😴 How much sleep this week?",
-    body:"More sleep = more energy but fewer free hours for activities. Less sleep = more time but real physical and mental costs.",
-    acts:[
-      {label:"🌙 8h — well rested (fewer free hours)",fn:()=>{
-        _ewState.sleepH=8; G.sleepHoursPerNight=8;
-        G.energy=clamp(G.energy+15); G.mood=clamp(G.mood+8);
-        G.depressionScore=clamp(G.depressionScore-2);
-        storyEntry("Good sleep","Early nights. You feel sharp and human.",[{type:"stat",label:"+energy +mood"}]);
-      }},
-      {label:"🛏 7h — balanced",fn:()=>{
-        _ewState.sleepH=7; G.sleepHoursPerNight=7;
-        storyEntry("Normal sleep","Seven hours. Functional.",[]); 
-      }},
-      {label:"⏰ 6h — more time, tiredness builds",cls:"warn",fn:()=>{
-        _ewState.sleepH=6; G.sleepHoursPerNight=6;
-        G.energy=clamp(G.energy-10); G.mood=clamp(G.mood-5);
-        G.depressionScore=clamp(G.depressionScore+2);
-        storyEntry("Short nights","More hours in the day, but you feel it.",[{type:"bad",label:"−energy −mood"}]);
-      }},
-      {label:"🌃 5h — maximum time, real cost",cls:"bad",fn:()=>{
-        _ewState.sleepH=5; G.sleepHoursPerNight=5;
-        G.energy=clamp(G.energy-22); G.mood=clamp(G.mood-12);
-        G.health=clamp(G.health-3); G.depressionScore=clamp(G.depressionScore+5);
-        storyEntry("Sleep deprivation","Running on nothing. Your body is keeping score.",[{type:"bad",label:"−health −energy −mood"}]);
-      }},
-    ]
-  });
-
-  // ── 2: Work effort ──
-  if(G.salary > 0){
+  // ── 1: Work effort (sets free time budget) ──
+  if(G.salary > 0 && !G.surrogacyActive){
     const contract = G.salary<1200?20 : G.salary<2000?37 : 40;
     steps.push({
-      title:"💼 Work effort this week",
-      body:`Your contract is ${contract}h/week. You can coast, show up properly, or push for overtime. Overtime costs free time but may earn extra.`,
+      title:"💼 Work this week",
+      body:`${G.job||"Your job"} — ${contract}h/week contract. Choosing overtime means less free time but possible bonus.`,
       acts:[
-        {label:`😴 Minimum — ~${Math.round(contract*0.8)}h (risk of being noticed)`,cls:"warn",fn:()=>{
+        {label:`😴 Minimum (~${Math.round(contract*0.8)}h) · risk of being noticed`,cls:"warn",fn:()=>{
           _ewState.workEffort="minimal";
           G.energy=clamp(G.energy+8);
-          if(Math.random()<0.25){
-            G.conf=clamp(G.conf-6); G.savings-=Math.round(G.salary*0.05);
-            storyEntry("Performance warning","Your manager notices the drop-off. A quiet word.",[{type:"bad",label:"docked pay"}]);
-          } else {
-            storyEntry("Coasted","You do the minimum. Undetected this week.",[]); 
-          }
+          const caught=Math.random()<0.22;
+          if(caught){ G.conf=clamp(G.conf-6); G.savings-=Math.round(G.salary*0.05); toast("Manager noticed. Pay docked."); }
         }},
-        {label:`✅ Normal — ${contract}h (as contracted)`,fn:()=>{
+        {label:`✅ Normal (${contract}h) · as contracted`,fn:()=>{
           _ewState.workEffort="normal";
-          storyEntry("Standard week","You put in the contracted hours.",[]); 
         }},
-        {label:`🔥 Overtime — ${contract+10}h (bonus chance)`,cls:"good",fn:()=>{
+        {label:`🔥 Overtime (${contract+10}h) · bonus chance`,cls:"good",fn:()=>{
           _ewState.workEffort="overtime";
           G.energy=clamp(G.energy-15); G.health=clamp(G.health-2);
           G.depressionScore=clamp(G.depressionScore+3);
-          const bonus=Math.random()<0.65 ? Math.round(G.salary*0.1+Math.random()*G.salary*0.1) : 0;
-          if(bonus){ G.savings+=bonus; storyEntry("Overtime",`Long hours. €${bonus} bonus lands.`,[{type:"stat",label:"+€"+bonus},{type:"bad",label:"−energy"}]); }
-          else storyEntry("Overtime, no bonus","Long hours. Your manager noticed — no bonus yet.",[{type:"bad",label:"−energy"}]);
+          const bonus=Math.random()<0.65?Math.round(G.salary*0.1+Math.random()*G.salary*0.1):0;
+          if(bonus){ G.savings+=bonus; toast("Overtime bonus: +€"+bonus); }
         }},
       ]
     });
   }
 
-  // ── 3: Free time allocation (dynamic) ──
+  // ── 2: Free time allocation ──
   steps.push({ title:"__freetime__", dynamic:true });
 
-  // ── 4: Food (dynamic) ──
+  // ── 3: Food ──
   steps.push({ title:"__food__", dynamic:true });
 
-  // ── 5: Bills (when due) ──
-  if(G.weekOfYear % 4 === 0 || G.overdraft > 0){
-    steps.push({ title:"__bills__", dynamic:true });
-  }
+  // ── 4: Bills ──
+  if(G.weekOfYear % 4 === 0 || G.overdraft > 0) steps.push({ title:"__bills__", dynamic:true });
+
+  // ── 5: Sleep LAST (player knows what they planned) ──
+  steps.push({
+    title:"😴 Sleep this week",
+    body:"You know what you've packed in. Choose how much sleep you got — it won't change your activities, but it affects your energy and mood going into next week.",
+    acts:[
+      {label:"🌙 8h — well rested · +energy +mood",cls:"good",fn:()=>{
+        _ewState.sleepH=8; G.sleepHoursPerNight=8;
+        G.energy=clamp(G.energy+15); G.mood=clamp(G.mood+8);
+        G.depressionScore=clamp(G.depressionScore-2);
+      }},
+      {label:"🛏 7h — balanced",fn:()=>{ _ewState.sleepH=7; G.sleepHoursPerNight=7; }},
+      {label:"⏰ 6h — tired · −energy −mood",cls:"warn",fn:()=>{
+        _ewState.sleepH=6; G.sleepHoursPerNight=6;
+        G.energy=clamp(G.energy-10); G.mood=clamp(G.mood-5);
+        G.depressionScore=clamp(G.depressionScore+2);
+      }},
+      {label:"🌃 5h — exhausted · real cost",cls:"bad",fn:()=>{
+        _ewState.sleepH=5; G.sleepHoursPerNight=5;
+        G.energy=clamp(G.energy-22); G.mood=clamp(G.mood-12);
+        G.health=clamp(G.health-3); G.depressionScore=clamp(G.depressionScore+5);
+      }},
+    ]
+  });
 
   // ── 6: Social/housemate event ──
   const evt = pickWeeklySocialEvent();
@@ -4037,7 +4144,23 @@ function runEndWeekSteps(steps, idx){
   const step = steps[idx];
   const next = ()=>{ if(!_endWeekAborted) runEndWeekSteps(steps, idx+1); };
 
-  // Dynamic step dispatch
+  // After work step, recalculate free time
+  const isWorkStep = step.title && step.title.startsWith("💼");
+  if(isWorkStep){
+    storyEntry(step.title, step.body);
+    setActions(step.acts.map(a=>({...a, fn:()=>{
+      a.fn();
+      // recalculate free time now that work effort is known
+      const workH = calcWorkHoursPerWeek(_ewState.workEffort);
+      const sleepH = _ewState.sleepH || G.sleepHoursPerNight || 7;
+      _ewState.freeH = calcFreeHours(workH, sleepH);
+      _ewState.remainingH = _ewState.freeH;
+      renderTimeBudget();
+      next();
+    }})));
+    return;
+  }
+
   if(step.dynamic || (step.title||"").startsWith("__")){
     const tag = step.title;
     if(tag==="__freetime__"){ showFreeTimeStep(steps, idx); return; }
@@ -4049,50 +4172,74 @@ function runEndWeekSteps(steps, idx){
   setActions(step.acts.map(a=>({...a, fn:()=>{ a.fn(); next(); }})));
 }
 
-// ── Free time step ────────────────────────────────────────────────────────────
+// ── Free time step — uses HUD, no story spam per action ──────────────────────
 function showFreeTimeStep(steps, idx){
-  const workH = calcWorkHoursPerWeek(_ewState.workEffort);
-  const sleepH = _ewState.sleepH;
-  const freeH  = calcFreeHours(workH, sleepH);
-  _ewState.freeH = freeH;
-  if(!_ewState.remainingH) _ewState.remainingH = freeH; // initialise once
+  // Make sure free time is calculated
+  if(!_ewState.freeH){
+    const workH = calcWorkHoursPerWeek(_ewState.workEffort||"normal");
+    const sleepH = _ewState.sleepH || G.sleepHoursPerNight || 7;
+    _ewState.freeH = calcFreeHours(workH, sleepH);
+    _ewState.remainingH = _ewState.freeH;
+  }
 
-  const rem = _ewState.remainingH;
+  const rem = Math.max(0, _ewState.remainingH||0);
+  const w = calcWeight();
+  const fit = G.fitness || 50;
+
+  // Weight/fitness restrictions
+  const canDoYoga  = w < 200 && fit > 5;
+  const canDoGym   = w < 300;
+  const canDoRun   = w < 180 && fit > 10;
+
   storyEntry(
-    `🗓 Free time — ${rem}h left this week`,
-    `Work: ~${Math.round(workH*5/7)}h · Sleep: ${sleepH*7}h · Commute: ~${calcCommuteHours()}h → ${freeH}h free total. ${rem<freeH?`You've used ${freeH-rem}h so far. `:``}Add activities or move on.`
+    "🗓 Plan your free time",
+    `${rem}h available this week. Add activities — see the time bar above. Tap ✕ on any pill to remove. Move on when you're done.`
   );
+  renderTimeBudget();
 
-  const act = (emoji, label, hours, fn, cls)=>({
-    label:`${emoji} ${label} — ${hours}h`,
-    cls: hours>rem?"":"(cls||'')",
-    disabled: hours>rem,
-    fn:()=>{
-      _ewState.remainingH -= hours;
-      weekQueue.push({emoji, label, fn, energyCost:0});
-      renderWeekQueue();
-      showFreeTimeStep(steps, idx); // stay on this step to add more
-    }
+  const act = (emoji, label, hours, fn, cls, disabled, disabledReason)=>({
+    label: `${emoji} ${label} — ${hours}h${disabled&&disabledReason?" ["+disabledReason+"]":""}`,
+    cls: (disabled||hours>rem) ? "" : (cls||""),
+    disabled: disabled || hours>rem,
+    fn:()=>{ if(addToWeekPlan(emoji, label, hours, fn)) showFreeTimeStep(steps, idx); }
   });
 
   setActions([
-    act("🏋","Gym sessions",   ACTIVITY_HOURS.gym,      doGymQ,        "good"),
-    act("🏃","Running",        ACTIVITY_HOURS.run,      doRunQ,        "good"),
-    act("🧘","Yoga & rest",    ACTIVITY_HOURS.yoga,     doYoga,        ""),
-    act("🛁","Self-care",      ACTIVITY_HOURS.selfcare, doSelfCare,    ""),
-    act("📚","Study",          ACTIVITY_HOURS.study,    ()=>openStudyMenu(), ""),
-    act("🎨","Hobby",          ACTIVITY_HOURS.hobby,    ()=>openHobbyMenu(), ""),
-    act("👥","See friends",    ACTIVITY_HOURS.social,   ()=>openFriendsMenu(), ""),
-    act("💇","Get a haircut",  2,                       ()=>openHairMenu(), ""),
-    act("🛒","Do groceries",   ACTIVITY_HOURS.grocery,  ()=>openGroceryMenu(), ""),
-    act("🍽","Cook properly",  ACTIVITY_HOURS.cook,     doHomeCook, "good"),
-    act("🎮","Gaming session", 3,                       ()=>{ G.mood=clamp(G.mood+8); G.screenHoursPerDay=clamp(G.screenHoursPerDay+2); storyEntry("Gaming","A few hours lost to it. You feel fine about this.",[]); }, ""),
-    act("📺","Binge TV",       2,                       ()=>{ G.mood=clamp(G.mood+5); G.depressionScore=clamp(G.depressionScore+1); storyEntry("Watching TV","Three episodes become six. Time passes pleasantly.",[]); }, ""),
-    act("🧹","Deep clean flat",3,                       ()=>{ G.mood=clamp(G.mood+6); G.happy=clamp(G.happy+4); storyEntry("Cleaning","The flat is spotless. You feel inexplicably accomplished.",[]); (G.housemates||[]).forEach(h=>h.tension=Math.max(0,(h.tension||0)-0.5)); }, ""),
-    act("🌳","Walk in nature", 2,                       ()=>{ G.mood=clamp(G.mood+9); G.health=clamp(G.health+2); G.depressionScore=clamp(G.depressionScore-3); storyEntry("Walk outside","Green space, fresh air, nothing to decide. Your head clears.",[]); }, "good"),
-    act("✈","Day trip",        8,                       ()=>{ G.mood=clamp(G.mood+15); G.happy=clamp(G.happy+10); G.savings-=80; storyEntry("Day trip","A train, a new place, a different view of the week.",[{type:"stat",label:"+mood"},{type:"bad",label:"−€80"}]); }, ""),
-    {label:`✅ Done — ${rem}h remaining, move on`, cls:"pri",
-     fn:()=>runEndWeekSteps(steps, idx+1)},
+    act("🏋","Gym",          5, doGymQ,      "good", !canDoGym,  w>=300?"immobile":""),
+    act("🏃","Running",      3, doRunQ,      "good", !canDoRun,  w>=180?"too heavy":""),
+    act("🧘","Yoga",         2, doYoga,      "",     !canDoYoga, !canDoYoga?(w>=200?"too heavy":"low fitness"):""),
+    act("🛁","Self-care",    4, doSelfCare,  ""),
+    act("📚","Study",        8, ()=>{ _ewState.doStudy=true;  },  ""),
+    act("🎨","Hobby",        6, ()=>{ _ewState.doHobby=true;  },  ""),
+    act("👥","See friends",  4, ()=>{ _ewState.doSocial=true; },  ""),
+    act("🛒","Groceries",    2, ()=>{ _ewState.doGroceries=true; }, ""),
+    act("🍳","Cook",         5, doHomeCook,  "good"),
+    act("🎮","Gaming",       3, ()=>{ G.mood=clamp(G.mood+8); G.screenHoursPerDay=clamp(G.screenHoursPerDay+2); }, ""),
+    act("📺","TV",           2, ()=>{ G.mood=clamp(G.mood+5); G.depressionScore=clamp(G.depressionScore+1); }, ""),
+    act("🧹","Clean flat",   3, ()=>{ G.mood=clamp(G.mood+6); G.happy=clamp(G.happy+4); (G.housemates||[]).forEach(h=>h.tension=Math.max(0,(h.tension||0)-0.5)); }, ""),
+    act("🌳","Walk",         2, ()=>{ G.mood=clamp(G.mood+9); G.health=clamp(G.health+2); G.depressionScore=clamp(G.depressionScore-3); }, "good"),
+    act("✈","Day trip",      8, ()=>{ G.mood=clamp(G.mood+15); G.happy=clamp(G.happy+10); G.savings-=80; }, ""),
+    act("💇","Haircut",      2, ()=>{ /* handled at end */ _ewState.doHaircut=true; }, ""),
+    {label:`✅ Done — ${rem}h remaining · continue`, cls:"pri",
+     fn:()=>{
+       // Process deferred activities that need menus
+       if(_ewState.doGroceries){
+         _ewState.doGroceries=false;
+         if(G.grocerySet && G.groceryProfile){
+           processGroceryProfile(G.groceryProfile);
+           storyEntry("Weekly shop","You do the groceries. Fridge stocked.",[{type:"stat",label:"pantry restocked"}]);
+         } else {
+           // Open grocery menu — player must pick profile; continue will resume from mainMenu
+           openGroceryMenu(); return;
+         }
+       }
+       if(_ewState.doStudy){ _ewState.doStudy=false; openStudyMenu(); return; }
+       if(_ewState.doHobby){ _ewState.doHobby=false; openHobbyMenu(); return; }
+       if(_ewState.doSocial){ _ewState.doSocial=false; openFriendsMenu(); return; }
+       if(_ewState.doHaircut){ _ewState.doHaircut=false; openHairMenu(); return; }
+       runEndWeekSteps(steps, idx+1);
+     }
+    },
   ]);
 }
 
@@ -4373,25 +4520,6 @@ function queueActivity(emoji, label, fn, energyCost=15){
   renderWeekQueue();
   // Return to main menu actions immediately so more can be added
   mainMenuActions();
-}
-
-function renderWeekQueue(){
-  const container = document.getElementById('wplan-pills');
-  const energyEl = document.getElementById('energy-tracker');
-  if(!weekQueue.length){
-    container.innerHTML = '<span class="wplan-empty">nothing queued</span>';
-    if(energyEl) energyEl.textContent='';
-    return;
-  }
-  container.innerHTML = weekQueue.map((a,i)=>
-    `<span class="wplan-pill" onclick="removeQueueItem(${i})">${a.emoji} ${a.label} ✕</span>`
-  ).join('');
-  updateEnergyDisplay();
-}
-
-function removeQueueItem(i){
-  weekQueue.splice(i,1);
-  renderWeekQueue();
 }
 
 function commitWeek(){
@@ -4924,12 +5052,24 @@ document.querySelectorAll('#cc-eye-colors .cc-color').forEach(el=>{
   });
 });
 
+const PRESET_DEFAULT_NAMES = { lean:"Sarah", average:"Amy", curvy:"Azura" };
+const PRESET_DEFAULT_NAMES_SET = new Set(Object.values(PRESET_DEFAULT_NAMES));
+
 document.querySelectorAll('#cc-presets .cc-pill').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('#cc-presets .cc-pill').forEach(b=>b.classList.remove('sel'));
     btn.classList.add('sel'); ccPreset=btn.dataset.p;
     const desc = document.getElementById('cc-body-desc');
     if(desc) desc.textContent = BODY_DESCS_CC[ccPreset]||"";
+    // Auto-fill name only if empty or still showing a default preset name
+    const nameEl = document.getElementById('cc-name');
+    if(nameEl){
+      const current = nameEl.value.trim();
+      if(!current || PRESET_DEFAULT_NAMES_SET.has(current)){
+        nameEl.value = PRESET_DEFAULT_NAMES[ccPreset] || "";
+        checkStart(); // re-enable start button
+      }
+    }
   });
 });
 
@@ -4956,6 +5096,12 @@ function checkStart(){
 window.addEventListener('DOMContentLoaded', ()=>{
   const lb = document.getElementById('cc-load');
   if(lb && hasSave()) lb.style.display='block';
+  // Set default name for the initially selected preset (Average → Amy)
+  const nameEl = document.getElementById('cc-name');
+  if(nameEl && !nameEl.value.trim()){
+    nameEl.value = PRESET_DEFAULT_NAMES[ccPreset] || "Amy";
+    checkStart();
+  }
 });
 
 // ═══════════════════════════════════════════════════════
@@ -6710,6 +6856,338 @@ document.querySelectorAll('.ltab').forEach(btn=>{
     if(btn.dataset.tab==='journal') updateJournal();
   });
 });
+
+// ═══════════════════════════════════════════════════════
+//  HABIT ESCALATION SYSTEM
+//  Habits build themselves if left unchecked.
+//  Stress accelerates addiction. Can be actively managed.
+// ═══════════════════════════════════════════════════════
+function checkHabitEscalation(){
+  const stressed = G.depressionScore > 40 || G.mood < 30;
+  const stressMultiplier = stressed ? 1.8 : 1.0;
+
+  // ── Smoking escalation ──
+  if(G.cigarettesPerDay > 0){
+    // Nicotine addiction: passive increase over time
+    const escalationChance = 0.12 * stressMultiplier;
+    if(Math.random() < escalationChance && G.cigarettesPerDay < 60){
+      G.cigarettesPerDay = Math.min(60, G.cigarettesPerDay + 1);
+    }
+    // Health effects scale with amount
+    G.health = clamp(G.health - G.cigarettesPerDay * 0.04);
+    if(G.cigarettesPerDay > 20) G.flags.yellowTeeth = true;
+    if(G.cigarettesPerDay > 30) G.health = clamp(G.health - 0.5);
+    // Stress trigger: if very stressed, might chain-smoke
+    if(stressed && Math.random() < 0.15){
+      const extra = Math.round(1 + Math.random() * 3);
+      G.cigarettesPerDay = Math.min(60, G.cigarettesPerDay + extra);
+      if(extra >= 3) storyEntry("Stress smoking",`The anxiety has you going through ${G.cigarettesPerDay} cigarettes a day now. You light one before you've finished the last.`,[{type:"bad",label:`${G.cigarettesPerDay} cigs/day`}]);
+    }
+    // Flag as chain smoker
+    if(G.cigarettesPerDay >= 20 && !G.flags.chainSmoker){
+      G.flags.chainSmoker = true;
+      storyEntry("Chain smoker","You've crossed into chain-smoking territory. Your fingers smell. Your lungs are starting to complain.",[{type:"bad",label:"chain smoker"}]);
+    }
+  }
+
+  // ── Drinking escalation ──
+  if(G.drinksPerWeek > 0){
+    const drinkChance = 0.08 * stressMultiplier;
+    if(Math.random() < drinkChance) G.drinksPerWeek = Math.min(80, G.drinksPerWeek + 1);
+    G.health = clamp(G.health - G.drinksPerWeek * 0.015);
+    if(G.drinksPerWeek > 21 && !G.flags.drinkingProblem){ G.flags.drinkingProblem = true; storyEntry("Drinking problem","The units have crept up without you quite noticing.",[{type:"bad",label:"drinking problem"}]); }
+    if(G.drinksPerWeek > 35 && !G.flags.alcoholDependency){ G.flags.alcoholDependency = true; storyEntry("Alcohol dependency","You're not sure you could stop even if you wanted to. That's what dependency is.",[{type:"bad",label:"alcohol dependent"}]); }
+    // Stressed → binge
+    if(stressed && Math.random() < 0.2){ const binge=Math.round(3+Math.random()*8); G.drinksPerWeek+=binge; gainFat(binge*0.3,"alcohol"); }
+  }
+
+  // ── Binge eating escalation ──
+  if(G.bingeTendency > 40 && stressed && Math.random() < 0.2){
+    gainFat(Math.round(2+Math.random()*4), "balanced");
+    G.bingeTendency = clamp(G.bingeTendency + 5);
+    if(G.bingeTendency > 70 && !G.flags.bingeEating){ G.flags.bingeEating = true; storyEntry("Binge eating pattern","Food has become both the problem and the comfort.",[{type:"bad",label:"binge eating"}]); }
+  }
+
+  // ── Gambling escalation ──
+  if((G.gamblingDebt||0) > 0 || (G.gamblingWeeks||0) > 4){
+    if(Math.random() < 0.12 * stressMultiplier){
+      G.gamblingWeeks = (G.gamblingWeeks||0) + 1;
+      if(G.gamblingWeeks > 8 && !G.flags.gamblingProblem){ G.flags.gamblingProblem = true; storyEntry("Gambling out of control","What started as a flutter has become something else.",[{type:"bad",label:"gambling problem"}]); }
+    }
+  }
+
+  // ── Social media / screen addiction ──
+  if((G.screenHoursPerDay||0) > 6 && Math.random() < 0.1){
+    G.screenHoursPerDay = clamp(G.screenHoursPerDay + 0.5, 0, 18);
+    G.depressionScore = clamp(G.depressionScore + 0.5);
+    if(G.screenHoursPerDay > 10 && !G.flags.screenAddiction){ G.flags.screenAddiction = true; storyEntry("Screen dependency","Hours vanish. You barely notice. You're always on it.",[{type:"bad",label:"screen addiction"}]); }
+  }
+}
+
+// Smoking/drinking reduction (player-initiated)
+function tryQuitSmoking(){
+  storyEntry("Quitting smoking","You decide to try. Everyone says it's the hardest thing they've done.");
+  setActions([
+    {label:"Cold turkey",fn:()=>{
+      const success = Math.random() < (G.cigarettesPerDay<10?0.5:0.2);
+      if(success){ G.cigarettesPerDay=0; G.flags.chainSmoker=false; storyEntry("You quit","It's brutal for two weeks. Then it gets easier. You genuinely did it.",[{type:"stat",label:"non-smoker"}]); }
+      else { storyEntry("Relapsed","Three days in. The craving was too much. You'll try again.",[{type:"bad",label:"relapsed"}]); }
+      mainMenuActions();
+    }},
+    {label:"Cut down gradually",fn:()=>{
+      G.cigarettesPerDay=Math.max(0,Math.round(G.cigarettesPerDay*0.6));
+      storyEntry("Cutting back",`Down to ${G.cigarettesPerDay} a day. Progress.`,[{type:"stat",label:"reducing"}]); mainMenuActions();
+    }},
+    {label:"Nicotine patches (€30/mo)",disabled:G.savings<30,fn:()=>{
+      G.savings-=30; G.subscriptions=(G.subscriptions||15)+30;
+      const success=Math.random()<0.55;
+      if(success){ setTimeout(()=>{ G.cigarettesPerDay=0; G.flags.chainSmoker=false; storyEntry("Quit with patches","Six weeks later, the patches worked. You're done.",[{type:"stat",label:"non-smoker"}]); },0); }
+      else { storyEntry("Still smoking","The patches help with the craving but you're not there yet.",[{type:"neu",label:"ongoing"}]); }
+      mainMenuActions();
+    }},
+    {label:"Back",fn:()=>mainMenuActions()},
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
+//  SETTINGS MENU
+// ═══════════════════════════════════════════════════════
+function openSettingsMenu(){
+  storyEntry("⚙ Settings","Adjust the game to your preferences.");
+  setActions([
+    {label:`${document.body.classList.contains('light')?'🌙 Switch to dark':'☀ Switch to light'} mode`, fn:()=>{ toggleTheme(); openSettingsMenu(); }},
+    {label:"🔤 Font size: Normal → Large", fn:()=>{ const cur=parseInt(document.documentElement.style.fontSize)||14; document.documentElement.style.fontSize=(cur>=18?14:cur+2)+'px'; toast("Font: "+(parseInt(document.documentElement.style.fontSize))+"px"); openSettingsMenu(); }},
+    {label:"🔤 Font: Serif ↔ Sans", fn:()=>{
+      const body=document.body;
+      body.dataset.fontMode = body.dataset.fontMode==="serif"?"sans":"serif";
+      document.getElementById('story-scroll').style.fontFamily = body.dataset.fontMode==="serif"?"'Lora',serif":"'IBM Plex Sans',sans-serif";
+      toast("Font: "+body.dataset.fontMode); openSettingsMenu();
+    }},
+    {label:"⚙ Debug panel", fn:()=>{ toggleDebug(); }},
+    {label:"💾 Save / Load", fn:()=>openSaveLoadMenu()},
+    {label:"📊 Reset fat accumulators (debug)", fn:()=>{ for(const k of Object.keys(_fatAcc)) _fatAcc[k]=0; for(const k of Object.keys(_lossAcc)) _lossAcc[k]=0; toast("Accumulators reset."); mainMenuActions(); }},
+    {label:"Back", fn:()=>mainMenuActions()},
+  ]);
+}
+
+// Replace the toggleDebug topbar button with settings
+// (done in the HTML directly — also update mainMenuActions to expose settings)
+
+// ═══════════════════════════════════════════════════════
+//  MORE JOBS
+// ═══════════════════════════════════════════════════════
+JOBS.push(
+  // Tier 0 additions
+  {tier:0,title:"Food delivery cyclist",sal:850,type:"manual",req:{manual:0},active:true,commute:0,desc:"Pedalling around the city, rain or shine. Cash in hand tips. Good cardio, unpredictable income.",commuteType:"bike"},
+  {tier:0,title:"Babysitter",sal:650,type:"hospitality",req:{hospitality:0},active:false,commute:1,desc:"Part-time, evenings and weekends. Low stress, low pay."},
+  {tier:0,title:"Laundry worker",sal:900,type:"manual",req:{manual:0},active:true,commute:3,desc:"Industrial laundry. Humid, loud, relentless."},
+  {tier:0,title:"Street musician",sal:600,type:"creative",req:{creative:0},active:true,commute:2,desc:"Irregular income. Deeply satisfying on good days."},
+  // Tier 1 additions
+  {tier:1,title:"Bike courier",sal:1200,type:"manual",req:{manual:5},active:true,commute:0,desc:"Fast, physical, autonomous. Rain soaks you.",commuteType:"bike"},
+  {tier:1,title:"Nail technician",sal:1100,type:"hospitality",req:{hospitality:10},active:true,commute:2,desc:"Creative, repetitive, sociable."},
+  {tier:1,title:"Care assistant",sal:1050,type:"manual",req:{manual:5},active:true,commute:3,desc:"Home visits to elderly and disabled clients. Physically and emotionally demanding."},
+  {tier:1,title:"Stock room assistant",sal:1050,type:"manual",req:{manual:0},active:true,commute:4,desc:"Quiet, predictable, physical."},
+  {tier:1,title:"Data entry clerk",sal:1100,type:"office",req:{office:5},active:false,commute:4,desc:"Sedentary. Headphones in, the world out."},
+  {tier:1,title:"Copywriter assistant",sal:1300,type:"office",req:{office:10,creative:10},active:false,commute:3,desc:"Writing for other people's brands. The beginning of a creative career."},
+  // Tier 2 additions
+  {tier:2,title:"Tattoo artist",sal:2000,type:"creative",req:{creative:30},active:true,commute:2,desc:"Freelance flexibility. Loyal clientele. Your art on people forever."},
+  {tier:2,title:"Librarian",sal:1800,type:"office",req:{office:20,education:25},active:false,commute:4,desc:"Quiet. Purposeful. Surrounded by books."},
+  {tier:2,title:"Pilates instructor",sal:1600,type:"fitness",req:{fitness:20},active:true,commute:3,desc:"Small classes, big focus. Your own body becomes your business card."},
+  {tier:2,title:"Social media manager",sal:2100,type:"office",req:{office:20,creative:20},active:false,commute:3,desc:"Brands, content, analytics. The algorithm is your boss."},
+  {tier:2,title:"Nutritionist",sal:2300,type:"fitness",req:{fitness:15,education:30},active:false,commute:3,desc:"Helping people eat better. Forces you to walk the talk."},
+  {tier:2,title:"Interpreter",sal:2400,type:"office",req:{office:15,education:25},active:false,commute:3,desc:"Conferences, courts, hospitals. Always different, always intense."},
+  // Tier 3 additions
+  {tier:3,title:"UX designer",sal:3300,type:"office",req:{office:40,creative:30,education:30},active:false,commute:4,desc:"Remote-friendly. Portfolio-driven. Very screen-heavy."},
+  {tier:3,title:"Journalist",sal:2800,type:"creative",req:{creative:40,education:30},active:false,commute:3,desc:"Irregular hours, unstable income, deep satisfaction. Or burnout."},
+  {tier:3,title:"Sports coach",sal:2600,type:"fitness",req:{fitness:35,education:20},active:true,commute:4,desc:"Training teams and individuals. Active, rewarding, competitive."},
+  {tier:3,title:"Dietitian",sal:3100,type:"fitness",req:{fitness:20,education:45},active:false,commute:3,desc:"Clinical nutrition. Hospital or private practice."},
+  {tier:3,title:"Architect",sal:3800,type:"office",req:{office:50,creative:40,education:50},active:false,commute:4,desc:"Long projects, intense at deadline. Sedentary but creative."},
+  // Tier 4 additions
+  {tier:4,title:"Surgeon",sal:8000,type:"manual",req:{manual:50,education:80},active:true,commute:4,desc:"Years in the making. On your feet for hours. Immense responsibility."},
+  {tier:4,title:"Investment banker",sal:9000,type:"office",req:{office:80,education:70},active:false,commute:4,desc:"Crushing hours, enormous pay. Your body will suffer."},
+  {tier:4,title:"Content creator (famous)",sal:6000,type:"creative",req:{creative:70,education:0},active:false,commute:0,desc:"Millions follow you. The pressure is constant. The income is real."}
+);
+
+// ── Job commute times (hours/week) based on job type ──
+function getJobCommuteHours(jobTitle){
+  const jd = JOBS.find(j=>j.title===jobTitle);
+  if(!jd) return 5;
+  // explicit commute field
+  if(jd.commute !== undefined) return jd.commute;
+  // work from home / remote
+  if(jd.type==="creative" && jd.tier>=3) return 1;
+  // active jobs often close to home
+  if(jd.type==="fitness") return 3;
+  // office jobs tend to be further
+  if(jd.type==="office" && jd.tier>=2) return 5;
+  // default
+  return 4;
+}
+
+// Override calcCommuteHours to use job-based commute
+(function(){
+  calcCommuteHours = function(){
+    if(getMobilityLevel()==="very_limited"||getMobilityLevel()==="immobile") return 0;
+    const baseCommute = getJobCommuteHours(G.job||"");
+    // Car/bike reduces transit commute time
+    const mode = getCommuteMode();
+    if(mode==="car") return Math.max(2, Math.round(baseCommute * 0.6));
+    if(mode==="bike") return Math.max(2, Math.round(baseCommute * 0.75));
+    return baseCommute;
+  };
+})();
+
+// ── Fix surrogacy — no regular commute, adaptive requirements ──
+(function(){
+  const _origSurrBegin = beginSurrogacy;
+  beginSurrogacy = function(fee){
+    G.surrogacyActive = true;
+    G.surrogacyWeek = 0;
+    G.surrogacyFee = fee;
+    // Generate adaptive parent requirements
+    G.surrogacyParents = {
+      name1: ["Emma","Lena","Sophie","Clara","Maria"][Math.floor(Math.random()*5)],
+      name2: ["James","Tom","Michael","David","Oliver"][Math.floor(Math.random()*5)],
+      requirements: Math.random()<0.5?"regular check-ins only":"weekly hospital visits",
+      checkInHoursPerWeek: Math.random()<0.6 ? 2 : 5,
+    };
+    storyEntry("Surrogacy arrangement",
+      `You'll be carrying for ${G.surrogacyParents.name1} and ${G.surrogacyParents.name2}. They require ${G.surrogacyParents.requirements}. This takes ${G.surrogacyParents.checkInHoursPerWeek}h/week of your time.`,
+      [{type:"stat",label:"€"+fee+" upon delivery"}]);
+    mainMenuActions();
+  };
+})();
+
+// ═══════════════════════════════════════════════════════
+//  IMPROVED CHARACTER DESCRIPTIONS
+// ═══════════════════════════════════════════════════════
+(function(){
+  const _origUpdateDesc = updateDesc;
+  updateDesc = function(){
+    const w=calcWeight(), bmi=calcBMI(), ws=calcWaist(), bs=calcBust(), hs=calcHips();
+    const name=G.name||"She"; const f=G.flags;
+    const mob = getMobilityLevel();
+
+    let paras=[];
+
+    // ── Overall build ──
+    let bodyDesc="";
+    if(bmi<16)      bodyDesc=`${name} is dangerously underweight — visible bones, hollow cheeks, a frame that looks like it might break. People notice.`;
+    else if(bmi<17.5) bodyDesc=`${name} is strikingly thin. The collarbones and hip bones are visible even through clothes. The limbs are almost fragile.`;
+    else if(bmi<19) bodyDesc=`${name} is lean — a light, slender frame that moves easily. Clothes hang rather than cling.`;
+    else if(bmi<22) bodyDesc=`${name} has a slim, toned figure. Not muscular, but capable-looking.`;
+    else if(bmi<24) bodyDesc=`${name} carries a healthy, natural shape — soft in the right places, nothing excessive.`;
+    else if(bmi<27) bodyDesc=`${name} is slightly fuller than average. A softness to the figure that clothes sit comfortably over.`;
+    else if(bmi<30) bodyDesc=`${name} is noticeably overweight — the extra weight shows in the face, belly, and arms.`;
+    else if(bmi<35) bodyDesc=`${name} is overweight to the point where movement is starting to become visibly slower. Breathing is heavier after any exertion.`;
+    else if(bmi<42) bodyDesc=`${name} is obese. Getting around requires real effort. The body shows the strain.`;
+    else if(bmi<55) bodyDesc=`${name} is severely obese — ${w.toFixed(0)}kg. Movement is laboured. Stairs are a challenge.`;
+    else if(bmi<80) bodyDesc=`${name} is morbidly obese — ${w.toFixed(0)}kg. Getting out of a chair requires effort. Daily life is shaped around the body's limitations.`;
+    else bodyDesc=`${name} is super-obese at ${w.toFixed(0)}kg — a body that strains under its own weight. Movement is minimal. Almost everything requires assistance.`;
+    paras.push(`<p>${bodyDesc}</p>`);
+
+    // ── Mobility flag ──
+    if(mob==="reduced")      paras.push(`<p><em>Movement costs more than it used to. The body is starting to work against itself.</em></p>`);
+    if(mob==="limited")      paras.push(`<p><em>Getting around is genuinely hard. Every step costs something.</em></p>`);
+    if(mob==="very_limited") paras.push(`<p><em>Public transport is no longer manageable. The world shrinks around a body this size.</em></p>`);
+    if(mob==="immobile")     paras.push(`<p><em><strong>Immobile.</strong> ${name} cannot move without assistance. A carer is necessary for basic daily life.</em></p>`);
+
+    // ── Waist/belly ──
+    if(ws<58) paras.push(`<p>The waist is narrow — almost startlingly so. A hand could nearly encircle it.</p>`);
+    else if(ws<70) paras.push(`<p>The belly is flat and defined. The waist has a clear, natural curve.</p>`);
+    else if(ws<90) paras.push(`<p>A gentle softness at the belly. Not prominent, just present.</p>`);
+    else if(ws<120) paras.push(`<p>A noticeable belly protrudes forward — round, soft. The waist has disappeared into the width. ${ws.toFixed(0)} cm around.</p>`);
+    else if(ws<170) paras.push(`<p>A large, heavy belly that strains against clothing. It moves independently when walking. Waist: ${ws.toFixed(0)} cm.</p>`);
+    else paras.push(`<p>The belly is enormous — cascading forward in dense, heavy folds. ${ws.toFixed(0)} cm around. It's the dominant feature of the body.</p>`);
+
+    // Belly shape
+    const bv=S.belly.variant;
+    if(bv==="Belly1"&&S.belly.stage>30) paras.push(`<p>The stomach is taut and distended — swollen rather than accumulated, like overindulgence made permanent.</p>`);
+    else if(bv==="Belly2"&&S.belly.stage>40) paras.push(`<p>The belly droops slightly at the front, heavy rather than firm.</p>`);
+    else if(bv==="Belly3"&&S.belly.stage>50) paras.push(`<p>A pendulous belly hangs forward, skin gathering in folds at the lowest point.</p>`);
+    else if(bv==="Belly4"&&S.belly.stage>50) paras.push(`<p>A heavy apron of fat hangs from the lower abdomen, pressing against the thighs.</p>`);
+
+    // ── Bust ──
+    const cupDiff=calcCupDiff();
+    const braStr=calcBraSize();
+    if(cupDiff<2.5)  paras.push(`<p>The chest is almost completely flat — barely any breast tissue.</p>`);
+    else if(cupDiff<5)  paras.push(`<p>A very small, neat bust. Easy to overlook.</p>`);
+    else if(cupDiff<10) paras.push(`<p>A modest bust — proportionate and undemanding.</p>`);
+    else if(cupDiff<20) paras.push(`<p>A full, rounded bust. ${braStr}. Clothes fit differently with this kind of figure.</p>`);
+    else if(cupDiff<50) paras.push(`<p>The breasts are large — ${braStr}. They shift the centre of gravity. Bra shopping is a dedicated expedition.</p>`);
+    else if(cupDiff<120) paras.push(`<p>Exceptionally large breasts — ${braStr}. Back pain is an ongoing fact of life. Movement is genuinely affected.</p>`);
+    else paras.push(`<p>The chest is extraordinary in size — ${braStr}. The sheer mass of it is its own physical reality. Everything around it accommodates the breasts, not the other way around.</p>`);
+
+    if(f.surgery_breast>0) paras.push(`<p><em>Faint surgical scars trace the undersides of each breast.</em></p>`);
+
+    // ── Hips/thighs ──
+    const thighStage = S.thighs.stage;
+    if(hs>200) paras.push(`<p>The hips are immense — ${hs.toFixed(0)} cm around. Getting through doorways sideways is a consideration. The thighs press together from the knee up.`);
+    else if(hs>140) paras.push(`<p>Wide hips and heavy thighs — ${hs.toFixed(0)} cm. The lower body carries significant weight. The thighs rub when walking.`);
+    else if(hs>110) paras.push(`<p>Full hips and a rounded rear. The kind of figure that commands space without trying.`);
+    if(thighStage > 150) paras.push(`<p><em>The thighs are very thick — they press together at the top and create friction. Skin there is irritated and raw.</em></p>`);
+
+    // ── Cosmetic flags ──
+    if(f.stretchMarks) paras.push(`<p><em>Silver-purple stretch marks trace the abdomen, hips, and thighs — the written record of rapid change.</em></p>`);
+    if(f.saggy) paras.push(`<p><em>Loose skin hangs where substantial weight has been lost. It won't bounce back. It's the body's memory of what was.</em></p>`);
+    if(f.acne) paras.push(`<p><em>Persistent acne covers the jawline and forehead. The skin is unhappy.</em></p>`);
+    if(f.yellowTeeth) paras.push(`<p><em>The teeth have yellowed from years of smoking. Visible at close range.</em></p>`);
+    if(f.chainSmoker) paras.push(`<p><em>There's a faint smell of cigarettes that follows. The fingers are slightly stained.</em></p>`);
+    if(f.liverSpots) paras.push(`<p><em>Small liver spots have appeared on the hands and forearms.</em></p>`);
+    if(f.screenAddiction) paras.push(`<p><em>Tired eyes — the kind that come from too many screens and not enough sleep.</em></p>`);
+
+    // ── Fitness ──
+    if(G.fitness>75) paras.push(`<p>The musculature is visible even through clothing — real, earned tone. The body moves with confidence.</p>`);
+    else if(G.fitness>55) paras.push(`<p>There's an underlying fitness to the body — a readiness that shows in posture and movement.</p>`);
+    else if(G.fitness<20) paras.push(`<p>The muscles are soft and underused. Even short distances leave ${name} breathing harder than expected.</p>`);
+
+    // ── Face/hair/glasses ──
+    const hairLen = S.hair.stage;
+    const hairLenLabel = hairLen<100?"very short":hairLen<200?"short":hairLen<350?"shoulder-length":hairLen<480?"mid-back length":"very long";
+    const hairStyle = S.hair.variant==="HairTied"?"tied back":"worn loose";
+    if(G.glasses) paras.push(`<p>${G.hairColor} hair (${hairLenLabel}, ${hairStyle}). Glasses sit on the nose — behind them, ${G.eyeColor.toLowerCase()} eyes.</p>`);
+    else paras.push(`<p>${G.hairColor} hair (${hairLenLabel}, ${hairStyle}), ${G.eyeColor.toLowerCase()} eyes.</p>`);
+
+    // ── Psychological ──
+    if(G.depressionScore>60) paras.push(`<p>There's a heaviness to the expression — a flatness that goes beyond tired.</p>`);
+    if(G.bingeTendency>70) paras.push(`<p>The relationship with food is complicated — cycling between restraint and excess.</p>`);
+    if(f.drinkingProblem) paras.push(`<p><em>The faint trace of last night's drinking is visible. A slight puffiness to the face.</em></p>`);
+
+    setEl('desc-content',`<div class="desc-block">${paras.join('')}</div>`);
+
+    // Flags badges
+    const negFlags=Object.entries(f).filter(([k,v])=>v===true).map(([k])=>`<span class="desc-flag flag-neg">${k.replace(/_/g,' ')}</span>`).join('');
+    const posFlags=(G.fitness>65?'<span class="desc-flag flag-pos">toned</span>':'')+(G.health>80?'<span class="desc-flag flag-pos">healthy</span>':'')+(G.conf>70?'<span class="desc-flag flag-pos">confident</span>':'');
+    const mobilityFlag=mob!=="normal"?`<span class="desc-flag flag-neg">mobility: ${mob.replace('_',' ')}</span>`:"";
+    setEl('desc-flags', negFlags+posFlags+mobilityFlag);
+    updateHabitsTab();
+  };
+})();
+
+// ── Update habits tab to show addictions ──
+(function(){
+  const _orig = updateHabitsTab;
+  updateHabitsTab = function(){
+    const lines=[
+      {name:"Smoking",val:G.cigarettesPerDay>0?`${G.cigarettesPerDay}/day`:"-",cls:G.cigarettesPerDay>=20?"habit-bad":G.cigarettesPerDay>0?"habit-warn":"habit-ok"},
+      {name:"Drinking",val:G.drinksPerWeek>0?`${G.drinksPerWeek} units/wk`:"-",cls:G.drinksPerWeek>21?"habit-bad":G.drinksPerWeek>14?"habit-warn":G.drinksPerWeek>0?"habit-warn":"habit-ok"},
+      {name:"Gambling",val:(G.gamblingWeeks||0)>4?"Problem":(G.gamblingWeeks||0)>0?"Occasional":"None",cls:(G.gamblingWeeks||0)>4?"habit-bad":"habit-ok"},
+      {name:"Screen time",val:`${G.screenHoursPerDay||0}h/day`,cls:(G.screenHoursPerDay||0)>8?"habit-bad":(G.screenHoursPerDay||0)>5?"habit-warn":"habit-ok"},
+      {name:"Exercise",val:G.gymVisitsPerWeek>0?`${G.gymVisitsPerWeek}×/wk`:"-",cls:G.gymVisitsPerWeek>=3?"habit-ok":G.gymVisitsPerWeek>0?"habit-warn":"habit-bad"},
+      {name:"Diet",val:dietQualityLabel(),cls:dietQualityCls()},
+      {name:"Sleep",val:`${G.sleepHoursPerNight||7}h/night`,cls:(G.sleepHoursPerNight||7)>=7?"habit-ok":(G.sleepHoursPerNight||7)>=6?"habit-warn":"habit-bad"},
+      {name:"Binge tendency",val:G.bingeTendency>60?"High":G.bingeTendency>30?"Moderate":"Low",cls:G.bingeTendency>60?"habit-bad":G.bingeTendency>30?"habit-warn":"habit-ok"},
+      {name:"Depression",val:G.depressionScore>60?"Severe":G.depressionScore>35?"Moderate":G.depressionScore>10?"Mild":"None",cls:G.depressionScore>60?"habit-bad":G.depressionScore>35?"habit-warn":"habit-ok"},
+      {name:"Weight",val:`${calcWeight().toFixed(0)} kg`,cls:calcBMI()<18.5?"habit-warn":calcBMI()>30?"habit-bad":"habit-ok"},
+      {name:"Mobility",val:getMobilityLevel().replace(/_/g,' '),cls:getMobilityLevel()==="normal"?"habit-ok":getMobilityLevel()==="immobile"?"habit-bad":"habit-warn"},
+    ];
+    setEl('habits-content',lines.map(l=>`<div class="habit-row"><span class="habit-name">${l.name}</span><span class="habit-val ${l.cls}">${l.val}</span></div>`).join(''));
+  };
+})();
+
+// ── Open settings from topbar ──
+// (expose openSettingsMenu globally — topbar button calls it)
+
 
 </script>
 </body>
