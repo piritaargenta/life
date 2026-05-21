@@ -286,27 +286,33 @@ button,select,input{font-family:'IBM Plex Sans',sans-serif;}
 
 /* ── WEEK PLANNER BAR ── */
 #week-planner-bar{
-  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
-  padding:7px 32px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:6px;flex-wrap:nowrap;
+  padding:7px 14px;border-bottom:1px solid var(--line);
   background:var(--bg2);font-size:.72rem;min-height:36px;
+  overflow:hidden;
 }
 .wplan-label{color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;font-size:.63rem;flex-shrink:0;}
+#wplan-pills{
+  display:flex;flex:1;gap:5px;flex-wrap:nowrap;
+  overflow-x:auto;scrollbar-width:none;min-width:0;
+}
+#wplan-pills::-webkit-scrollbar{display:none;}
 .wplan-pill{
   display:inline-flex;align-items:center;gap:3px;
   padding:2px 8px;background:var(--bg3);border:1px solid var(--line);
-  color:var(--ink2);font-size:.69rem;cursor:pointer;
-  transition:border-color .15s,color .15s;
+  color:var(--ink2);font-size:.69rem;cursor:pointer;white-space:nowrap;
+  transition:border-color .15s,color .15s;flex-shrink:0;
 }
 .wplan-pill:hover{border-color:var(--red);color:var(--red);}
 .wplan-commit{
-  margin-left:auto;padding:4px 14px;background:var(--acc);
+  flex-shrink:0;padding:4px 14px;background:var(--acc);
   border:none;color:#fff;font-size:.7rem;
   font-family:'IBM Plex Sans',sans-serif;cursor:pointer;
-  letter-spacing:.05em;transition:background .15s;flex-shrink:0;
+  letter-spacing:.05em;transition:background .15s;white-space:nowrap;
 }
 .wplan-commit:hover{background:var(--red);}
 .wplan-commit:disabled{background:var(--ink3);cursor:default;}
-.wplan-empty{color:var(--ink3);font-size:.68rem;font-style:italic;}
+.wplan-empty{color:var(--ink3);font-size:.68rem;font-style:italic;white-space:nowrap;}
 
 /* ── DISABLE ZOOM / TEXT SELECTION ON TOUCH ── */
 * {
@@ -448,10 +454,11 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   .mqbtn:active{background:var(--bg3);}
   .mqbtn span{display:block;font-size:.6rem;color:var(--ink3);}
 
-  /* Left tabs */
-  .ltabs{gap:0;}
-  .ltab{padding:12px 4px;font-size:.78rem;min-height:46px;}
-  .ltab-panel{max-height:220px;padding:12px 14px;overflow-y:auto;}
+  /* Left tabs — horizontal scroll on mobile too */
+  .ltabs{gap:0;overflow-x:auto;scrollbar-width:none;}
+  .ltabs::-webkit-scrollbar{display:none;}
+  .ltab{padding:11px 12px;font-size:.72rem;min-height:42px;flex:0 0 auto;}
+  .ltab-panel{max-height:200px;padding:12px 14px;overflow-y:auto;}
 
   /* Story */
   #col-mid{height:auto;}
@@ -513,17 +520,28 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
 }
 
 /* Left tabs */
+/* ─── Left-column tabs — scrollable row ─────────── */
 .ltabs{
-  display:flex;border-bottom:1px solid var(--line);
+  display:flex;
+  border-bottom:1px solid var(--line);
   flex-shrink:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:smooth;
 }
+.ltabs::-webkit-scrollbar{display:none;}
 .ltab{
-  flex:1;padding:8px 4px;font-size:.67rem;
-  letter-spacing:.08em;text-transform:uppercase;
+  flex:0 0 auto;          /* don't shrink — key fix for large fonts */
+  padding:9px 14px;
+  font-size:.67rem;
+  letter-spacing:.07em;text-transform:uppercase;
   color:var(--ink3);cursor:pointer;text-align:center;
   border-bottom:2px solid transparent;
-  transition:all .15s;background:transparent;border-top:none;
-  border-left:none;border-right:none;
+  transition:all .15s;background:transparent;
+  border-top:none;border-left:none;border-right:none;
+  white-space:nowrap;
 }
 .ltab.active{color:var(--ink);border-bottom-color:var(--acc);}
 .ltab:hover:not(.active){color:var(--ink2);}
@@ -595,45 +613,48 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
 }
 #story-scroll{
   flex:1;overflow-y:auto;
-  padding:28px 32px;
+  padding:24px 28px;
   display:flex;flex-direction:column;gap:0;
+  scroll-behavior:smooth;
 }
 
 .story-day-sep{
   display:flex;align-items:center;gap:10px;
-  margin:20px 0 16px;
+  margin:18px 0 14px;
 }
 .story-day-sep-line{flex:1;height:1px;background:var(--line);}
 .story-day-label{
   font-family:'IBM Plex Mono',monospace;
-  font-size:.65rem;letter-spacing:.1em;
+  font-size:.63rem;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ink3);white-space:nowrap;
 }
 
 .story-entry{
-  margin-bottom:18px;
-  animation:storyIn .35s ease;
+  margin-bottom:16px;padding-bottom:16px;
+  border-bottom:1px solid var(--line);
+  animation:storyIn .3s ease;
 }
+.story-entry:last-child{border-bottom:none;}
 @keyframes storyIn{
-  from{opacity:0;transform:translateY(8px);}
+  from{opacity:0;transform:translateY(6px);}
   to{opacity:1;transform:translateY(0);}
 }
 .story-entry h3{
-  font-family:'Lora',serif;font-size:1.05rem;font-weight:600;
-  color:var(--ink);margin-bottom:6px;line-height:1.3;
+  font-family:'Lora',serif;font-size:1rem;font-weight:600;
+  color:var(--ink);margin-bottom:5px;line-height:1.35;
 }
 .story-entry p{
-  font-size:.87rem;line-height:1.72;color:var(--ink2);
-  margin-bottom:5px;
+  font-size:.86rem;line-height:1.75;color:var(--ink2);
+  margin-bottom:4px;white-space:pre-line;
 }
 .story-entry p em{color:var(--ink3);}
 .story-entry p strong{color:var(--ink);font-weight:500;}
 
 .fx-tag{
   display:inline-flex;align-items:center;gap:3px;
-  font-size:.68rem;padding:1px 6px;border-radius:2px;
+  font-size:.67rem;padding:1px 7px;border-radius:2px;
   font-family:'IBM Plex Sans',sans-serif;font-weight:500;
-  margin:1px 2px;vertical-align:middle;
+  margin:2px 2px;vertical-align:middle;
 }
 .fx-gain{background:#3a1a08;color:#d4904a;}
 .fx-lose{background:#0a2a18;color:#5aaf7a;}
@@ -644,23 +665,23 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
 /* Action bar */
 #action-bar{
   border-top:1px solid var(--line);
-  padding:14px 32px 16px;
+  padding:12px 28px 14px;
   background:var(--panel);
   flex-shrink:0;
 }
 .abar-label{
   font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--ink3);margin-bottom:9px;
+  color:var(--ink3);margin-bottom:8px;transition:all .2s;
 }
-.abar-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.abar-grid{display:flex;flex-wrap:wrap;gap:6px;}
 .a-btn{
-  padding:7px 14px;border:1px solid var(--line);
+  padding:6px 13px;border:1px solid var(--line);
   background:var(--bg2);color:var(--ink2);
   font-size:.78rem;font-weight:400;cursor:pointer;
-  transition:all .15s;white-space:nowrap;
+  transition:all .12s;white-space:nowrap;
 }
 .a-btn:hover:not([disabled]){border-color:var(--ink2);color:var(--ink);background:var(--bg3);}
-.a-btn[disabled]{opacity:.35;cursor:default;}
+.a-btn[disabled]{opacity:.30;cursor:default;}
 .a-btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink);}
 .a-btn.pri:hover:not([disabled]){background:var(--ink2);}
 .a-btn.warn{border-color:var(--amber);color:var(--amber);}
@@ -1257,45 +1278,52 @@ function initState(preset,hairStyle,breastTend){
     name:"", age:18,
     hairColor:"Blonde", eyeColor:"Brown",
     glasses:false, traits:[],
+    hairLength:160, hairTied:false,
     // stats 0-100
     health:78, fitness:45, happy:65, energy:88,
     mood:60, libido:55, conf:55, appetite:55,
     // finance
     job:"Unemployed", jobTier:0, salary:0, savings:200,
     // bills & economics
-    utilities:80,          // monthly utilities (electric, water, internet)
-    foodBudget:150,        // estimated monthly food spend
-    transportCost:60,      // bus/metro/fuel
-    subscriptions:15,      // streaming, phone plan etc
-    debt:0,                // total personal debt (excl. mortgage)
-    debtRepayment:0,       // monthly debt repayment
-    creditScore:650,       // 300-850 range
-    overdraft:0,           // how far into overdraft they are
+    utilities:80,
+    foodBudget:150,
+    transportCost:60,
+    subscriptions:15,
+    debt:0,
+    debtRepayment:0,
+    creditScore:650,
+    overdraft:0,
     // housing
     housing:"Renting (shared flat)", rent:350,
     housingTier:0,
-    // car
-    car:"None", licence:false,
+    // transport
+    car:"None", licence:false, bike:false,
     // food / diet tracking (weekly intake scores)
     weeklyDairy:0, weeklyAlcohol:0, weeklyCarbs:0, weeklyMeat:0,
     weeklyJunk:0,  weeklyHealthy:0, weeklyCalories:0,
     // belly state
     baseBellyVariant:"Belly",
-    bloatWeeks:0,   // temp bloat counter
+    bloatWeeks:0,
     // habits / addictions
     cigarettesPerDay:0, smokingWeeks:0,
     drinksPerWeek:0, drinkingWeeks:0,
     gymVisitsPerWeek:0,
+    screenHoursPerDay:3,
+    sleepHoursPerNight:7,
+    sleepQuality:80,
     // psychology
-    bingeTendency:0,    // 0-100, rises with stress/depression
-    depressionScore:0,  // 0-100
+    bingeTendency:0,
+    depressionScore:0,
     eatingDisorder:null,
     // flags (permanent cosmetic / health)
     flags:{
       stretchMarks:false, saggy:false, acne:false,
-      yellowTeeth:false, liversPots:false, drinkingProblem:false,
-      smokingProblem:false, bodyDysmorphia:false,
-      pregnant:false, surgery_breast:0, surgery_bbl:0, surgery_lipo:0
+      yellowTeeth:false, liverSpots:false, drinkingProblem:false,
+      smokingProblem:false, chainSmoker:false, alcoholDependency:false,
+      bingeEating:false, gamblingProblem:false, screenAddiction:false,
+      bodyDysmorphia:false,
+      surgery_breast:0, surgery_bbl:0, surgery_lipo:0,
+      developedMyopia:false,
     },
     // relationships
     relationships:[],
@@ -1303,47 +1331,51 @@ function initState(preset,hairStyle,breastTend){
     // pregnancy
     pregnant:false, pregnancyWeek:0, pregnancyPartnerID:null,
     children:0, surrogacyActive:false, surrogacyWeek:0, surrogacyFee:0,
+    surrogacyParents:null,
     // grocery preference (weekly)
     groceryProfile:{junk:25,healthy:45,dairy:20,alcohol:0,highCarb:false,highMeat:false,cost:60,servings:14},
     grocerySet:false,
     groceryAlcohol:0,
     lastShopWeek:0,
-    pantry:{servings:7, profileKey:"mixed"},  // start with half a week stocked
+    pantry:{servings:7, key:"mixed"},
     // unlocked locations
     locations:["home","supermarket","street"],
     // career skills
-    skills:{office:0,manual:0,hospitality:0,driving:0,education:0,fitness:0},
-    // recent weight history (for detecting rapid change)
+    skills:{office:0,manual:0,hospitality:0,driving:0,education:0,fitness:0,creative:0},
+    // recent weight history
     weightHistory:[],
     // counters
     weeksEmployed:0,
-    // extra habits
-    screenHoursPerDay:3,  // 0-16
-    sleepHoursPerNight:7, // 4-10
-    gambling:false, gamblingDebt:0,
+    // gambling
+    gambling:false, gamblingDebt:0, gamblingWeeks:0,
     socialMediaHours:1,
-    exerciseStreak:0,    // consecutive weeks with gym
+    exerciseStreak:0,
     gymMembership:false,
     // social
-    friends:[], friendCount:0,
-    socialScore:50,
+    social:50,
     // relationship extras
-    relationshipDrama:0,   // 0-100 accumulated tension
-    // aging cosmetic flags
-    agingStage:0, // 0=young 1=some lines 2=visible age 3=elderly look
+    relationshipDrama:0,
+    bodyImageIdeal:22,
+    bodyImageScore:60,
+    // mobility
+    lastMobilityLevel:"normal",
+    needsCarer:false,
+    // aging
+    agingStage:0,
     // misc
-    breastTend:50, preset:"slim",
+    breastTend:50, preset:"average",
     // housemates
     housemates:[],
-    // weekly time budget (hours) — set fresh each end-week
+    // weekly time budget
     weeklyFreeHours:0,
     // city
     city:"berlin",
     // reputation (hidden)
     reputation:{ office:0, hospitality:0, manual:0, fitness:0, creative:0, social:0 },
     repHistory:[], quitCount:0, firedCount:0,
-    // achievements / milestones logged
+    // milestones & journal
     milestones:[],
+    journal:[],
   };
 }
 
@@ -1895,7 +1927,7 @@ function updateStats(){
   const psColor = ps==="empty"?"var(--red)":ps==="low"?"var(--amber)":"var(--green)";
   setEl('kv-pantry', `<span style="color:${psColor}">${G.pantry&&G.pantry.servings>0?G.pantry.servings+" meals":"Empty"}</span>`);
   setEl('kv-alc-stock', G.groceryAlcohol>0?`${G.groceryAlcohol} drinks`:"None");
-  const defShop = G.grocerySet && G.groceryProfile ? (FOOD_PROFILES[G.groceryProfile.profileKey]||{label:"Custom"}).label.replace(/[🥗🍞🥩🧀🍕🛒🍱]/u,"").trim() : "Not set";
+  const defShop = G.grocerySet && G.groceryProfile ? (FOOD_PROFILES[G.groceryProfile.key||G.groceryProfile.profileKey||"mixed"]||{label:"Custom"}).label.replace(/[🥗🍞🥩🧀🍕🛒🍱]/u,"").trim() : "Not set";
   setEl('kv-def-shop', defShop);
   renderRelationships();
   // Update mobile drawer if open
@@ -2076,8 +2108,7 @@ function passiveWeeklyEffects(){
       if(G.drinkingWeeks>52) G.flags.drinkingProblem=true;
     }
     if(G.drinksPerWeek>21&&!G.flags.liverSpots&&G.age>35){
-      G.flags.liverSpots=true;
-    }
+      G.flags.liverSpots=true;    }
   }
 
   // Junk food → acne if sustained
@@ -2233,7 +2264,7 @@ function passiveWeeklyEffects(){
   // ── Screen time effects ──
   if(G.screenHoursPerDay>6){
     G.mood=clamp(G.mood-2); G.fitness=clamp(G.fitness-0.5);
-    G.socialScore=clamp(G.socialScore-1);
+    G.social=clamp(G.social-1);
   }
 
   // ── Gambling ──
@@ -2301,6 +2332,14 @@ function storyEntry(title,body,fxList=[]){
   const area=document.getElementById('story-scroll');
   const dateStr=weekToDate(G.weekOfYear,G.year);
 
+  // Deduplicate: if the last entry has the same title, don't add again
+  // (prevents repeated "🗓 Plan your free time" etc.)
+  const lastEntry = area.querySelector('.story-entry:last-child');
+  if(lastEntry){
+    const lastTitle = lastEntry.querySelector('h3')?.textContent;
+    if(lastTitle === title) return; // skip exact same title in a row
+  }
+
   // Day separator every few entries
   if(storyCount%4===0){
     const sep=document.createElement('div');
@@ -2324,11 +2363,38 @@ function storyEntry(title,body,fxList=[]){
   el.innerHTML=`<h3>${title}</h3><p>${body}</p>${fxHTML?`<p>${fxHTML}</p>`:''}`;
   area.appendChild(el);
   el.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  // Auto-journal significant events
+  if(G && typeof G==='object'){
+    const significant=["birth","breakup","eviction","social services","homeless","fired","promoted","surgery","pregnant","new home","moving in","first","lasik","haircut","hospital","therapy","quitting","job","diagnosis","immobile","carer","eviction","arrest"];
+    const lc=(title+body).toLowerCase();
+    if(significant.some(kw=>lc.includes(kw))){
+      G.journal=G.journal||[];
+      G.journal.push({
+        week:G.week||0, year:G.year||2007,
+        date:dateStr, title,
+        body:typeof body==='string'?body.slice(0,200):'',
+        tags:[]
+      });
+      if(G.journal.length>200) G.journal.shift();
+      updateJournal();
+    }
+  }
+}
+
+// Context label for the action bar (replaces storyEntry for purely UI steps)
+function setActionContext(label){
+  const el = document.querySelector('#action-bar .abar-label');
+  if(el) el.textContent = label;
 }
 
 function setActions(acts){
   const grid=document.getElementById('abar-grid');
+  if(!grid) return;
   grid.innerHTML='';
+  // Reset context label
+  const lbl=document.querySelector('#action-bar .abar-label');
+  if(lbl && !lbl.textContent.startsWith('⏱')) lbl.textContent='Choose an action';
   acts.forEach(a=>{
     const btn=document.createElement('button');
     btn.className='a-btn'+(a.cls?' '+a.cls:'');
@@ -4057,12 +4123,15 @@ let _ewState = {};
 function openEndWeekChoices(){
   _endWeekAborted = false;
   const defaultSleep = G.sleepHoursPerNight || 7;
-  const defaultWorkH = calcWorkHoursPerWeek("normal");
+  const defaultWorkH = G.salary>0 ? calcWorkHoursPerWeek("normal") : 0;
+  const defaultFreeH = calcFreeHours(defaultWorkH, defaultSleep);
   _ewState = {
     workEffort: "normal",
     sleepH: defaultSleep,
-    freeH: calcFreeHours(defaultWorkH, defaultSleep),
-    remainingH: calcFreeHours(defaultWorkH, defaultSleep),
+    freeH: defaultFreeH,
+    remainingH: defaultFreeH,
+    freeTimeStoryShown: false,
+    workStoryShown: false,
   };
   renderTimeBudget();
 
@@ -4147,10 +4216,13 @@ function runEndWeekSteps(steps, idx){
   // After work step, recalculate free time
   const isWorkStep = step.title && step.title.startsWith("💼");
   if(isWorkStep){
-    storyEntry(step.title, step.body);
+    // Only write storyEntry ONCE for work step
+    if(!_ewState.workStoryShown){
+      _ewState.workStoryShown = true;
+      storyEntry(step.title, step.body);
+    }
     setActions(step.acts.map(a=>({...a, fn:()=>{
       a.fn();
-      // recalculate free time now that work effort is known
       const workH = calcWorkHoursPerWeek(_ewState.workEffort);
       const sleepH = _ewState.sleepH || G.sleepHoursPerNight || 7;
       _ewState.freeH = calcFreeHours(workH, sleepH);
@@ -4172,9 +4244,9 @@ function runEndWeekSteps(steps, idx){
   setActions(step.acts.map(a=>({...a, fn:()=>{ a.fn(); next(); }})));
 }
 
-// ── Free time step — uses HUD, no story spam per action ──────────────────────
+// ── Free time step — silent updates only, no story spam ──────────────────────
 function showFreeTimeStep(steps, idx){
-  // Make sure free time is calculated
+  // Ensure free time is calculated
   if(!_ewState.freeH){
     const workH = calcWorkHoursPerWeek(_ewState.workEffort||"normal");
     const sleepH = _ewState.sleepH || G.sleepHoursPerNight || 7;
@@ -4191,17 +4263,31 @@ function showFreeTimeStep(steps, idx){
   const canDoGym   = w < 300;
   const canDoRun   = w < 180 && fit > 10;
 
-  storyEntry(
-    "🗓 Plan your free time",
-    `${rem}h available this week. Add activities — see the time bar above. Tap ✕ on any pill to remove. Move on when you're done.`
-  );
+  // Only write to story on the FIRST time we enter this step
+  if(!_ewState.freeTimeStoryShown){
+    _ewState.freeTimeStoryShown = true;
+    storyEntry(
+      "🗓 Plan your free time",
+      `${_ewState.freeH}h free this week. Add activities below — they appear in the queue above. Tap ✕ on a pill to remove it and recover the hours.`
+    );
+  }
+
+  // Update the action-bar label to show remaining hours (not story scroll)
+  const abarLabel = document.querySelector('#action-bar .abar-label');
+  if(abarLabel) abarLabel.textContent = `⏱ ${rem}h remaining this week`;
+
   renderTimeBudget();
 
   const act = (emoji, label, hours, fn, cls, disabled, disabledReason)=>({
     label: `${emoji} ${label} — ${hours}h${disabled&&disabledReason?" ["+disabledReason+"]":""}`,
     cls: (disabled||hours>rem) ? "" : (cls||""),
     disabled: disabled || hours>rem,
-    fn:()=>{ if(addToWeekPlan(emoji, label, hours, fn)) showFreeTimeStep(steps, idx); }
+    fn:()=>{
+      // Silent — no storyEntry, just update HUD
+      if(addToWeekPlan(emoji, label, hours, fn)){
+        showFreeTimeStep(steps, idx); // refresh actions with updated rem
+      }
+    }
   });
 
   setActions([
@@ -4219,17 +4305,18 @@ function showFreeTimeStep(steps, idx){
     act("🧹","Clean flat",   3, ()=>{ G.mood=clamp(G.mood+6); G.happy=clamp(G.happy+4); (G.housemates||[]).forEach(h=>h.tension=Math.max(0,(h.tension||0)-0.5)); }, ""),
     act("🌳","Walk",         2, ()=>{ G.mood=clamp(G.mood+9); G.health=clamp(G.health+2); G.depressionScore=clamp(G.depressionScore-3); }, "good"),
     act("✈","Day trip",      8, ()=>{ G.mood=clamp(G.mood+15); G.happy=clamp(G.happy+10); G.savings-=80; }, ""),
-    act("💇","Haircut",      2, ()=>{ /* handled at end */ _ewState.doHaircut=true; }, ""),
-    {label:`✅ Done — ${rem}h remaining · continue`, cls:"pri",
+    act("💇","Haircut",      2, ()=>{ _ewState.doHaircut=true; }, ""),
+    {label:`✅ Done · ${rem}h remaining`, cls:"pri",
      fn:()=>{
-       // Process deferred activities that need menus
        if(_ewState.doGroceries){
          _ewState.doGroceries=false;
          if(G.grocerySet && G.groceryProfile){
-           processGroceryProfile(G.groceryProfile);
-           storyEntry("Weekly shop","You do the groceries. Fridge stocked.",[{type:"stat",label:"pantry restocked"}]);
+           const p = FOOD_PROFILES[G.groceryProfile.key||G.groceryProfile.profileKey||"mixed"] || FOOD_PROFILES.mixed;
+           G.savings -= effectiveFoodCost(p);
+           G.pantry = {servings: p.servings||14, key: p.key||"mixed"};
+           applyFoodProfile(p);
+           storyEntry("Weekly shop",`You pick up your usual: ${p.label}. Fridge stocked.`,[{type:"stat",label:"pantry restocked"},{type:"bad",label:`−€${effectiveFoodCost(p)}`}]);
          } else {
-           // Open grocery menu — player must pick profile; continue will resume from mainMenu
            openGroceryMenu(); return;
          }
        }
@@ -5418,7 +5505,7 @@ const HOBBIES=[
   {name:"cooking",emoji:"👨‍🍳",effect:()=>{G.weeklyHealthy+=20;G.happy=clamp(G.happy+6);}},
   {name:"gaming",emoji:"🎮",effect:()=>{G.mood=clamp(G.mood+5);G.screenHoursPerDay=clamp(G.screenHoursPerDay+1);}},
   {name:"music",emoji:"🎵",effect:()=>{G.mood=clamp(G.mood+9);G.depressionScore=clamp(G.depressionScore-4);}},
-  {name:"photography",emoji:"📷",effect:()=>{G.mood=clamp(G.mood+7);G.socialScore=clamp(G.socialScore+3);}},
+  {name:"photography",emoji:"📷",effect:()=>{G.mood=clamp(G.mood+7);G.social=clamp(G.social+3);}},
   {name:"hiking",emoji:"🥾",effect:()=>{loseFat(2);G.fitness=clamp(G.fitness+4);G.mood=clamp(G.mood+10);}},
 ];
 let activeHobby = null;
@@ -6427,6 +6514,7 @@ function journalAdd(title, body, tags=[]){
   updateJournal();
 }
 
+// Journal update function — called from storyEntry and journal tab
 function updateJournal(){
   const el = document.getElementById('journal-content');
   if(!el) return;
@@ -6437,29 +6525,12 @@ function updateJournal(){
   }
   el.innerHTML = entries.map(e=>`
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line);">
-      <div style="font-size:.63rem;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;">${e.date}</div>
-      <div style="font-weight:600;color:var(--ink);margin-bottom:4px;">${e.title}</div>
-      <div style="color:var(--ink2);">${e.body}</div>
-      ${e.tags.length?`<div style="margin-top:5px;">${e.tags.map(t=>`<span style="font-size:.6rem;padding:1px 6px;background:var(--bg3);color:var(--ink3);margin-right:4px;">${t}</span>`).join('')}</div>`:''}
+      <div style="font-size:.63rem;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;">${e.date||''}</div>
+      <div style="font-weight:600;color:var(--ink);margin-bottom:4px;">${e.title||''}</div>
+      <div style="color:var(--ink2);">${e.body||''}</div>
+      ${(e.tags||[]).length?`<div style="margin-top:5px;">${e.tags.map(t=>`<span style="font-size:.6rem;padding:1px 6px;background:var(--bg3);color:var(--ink3);margin-right:4px;">${t}</span>`).join('')}</div>`:''}
     </div>`).join('');
 }
-
-// Journal: intercept storyEntry to auto-log significant events
-// We do this by storing a reference AFTER the original is defined, using a wrapper.
-// Since function declarations hoist, we must use a variable assignment approach.
-const storyEntryOrig = storyEntry; // capture the real function (defined earlier)
-// Override via global assignment — works because we're in the same scope
-window._storyEntryWithJournal = function(title, body, fxArr){
-  storyEntryOrig(title, body, fxArr);
-  const significant=["birth","breakup","eviction","social services","homeless","fired","promoted","surgery","pregnant","new home","moving in","started","first","lasik","haircut","hospital","therapy","quitting","left without","job","diagnosis"];
-  const lc=(title+body).toLowerCase();
-  if(significant.some(kw=>lc.includes(kw))){
-    G.journal=G.journal||[];
-    G.journal.push({week:G.week,year:G.year,weekOfYear:G.weekOfYear,date:weekToDate(G.weekOfYear,G.year),title,body:typeof body==='string'?body.slice(0,160):'',tags:[]});
-    if(G.journal.length>200) G.journal.shift();
-    updateJournal();
-  }
-};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  FEATURE: SEASONAL EVENTS
