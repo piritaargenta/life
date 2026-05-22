@@ -1384,6 +1384,8 @@ function initState(preset,hairStyle,breastTend){
     weightHistory:[],
     // counters
     weeksEmployed:0,
+    // pending job application (set when player sends CVs during the week)
+    pendingJobApplication: null,
     // gambling
     gambling:false, gamblingDebt:0, gamblingWeeks:0,
     socialMediaHours:1,
@@ -3366,20 +3368,125 @@ function checkBecomePartner(person){
 }
 
 function openFriendsMenu(){
-  const friends = G.relationships.filter(r=>r.type==="friend");
-  if(!friends.length){ storyEntry("No close friends yet","You know people, but no one you'd call at 2am.",[]); mainMenuActions(); return; }
-  storyEntry("Friends","The people in your life.");
-  setActions(friends.slice(0,4).map(f=>({
-    label:`${f.name} (${f.type})`,
+  const friends = G.relationships.filter(r=>r.type==="friend"||r.type==="partner");
+  if(!friends.length){
+    storyEntry("No close friends yet","You know people, but no one you'd call at 2am. You could try going out more, or joining something.",[]);
+    mainMenuActions(); return;
+  }
+  storyEntry("People in your life","Who do you want to spend time with this week?");
+  setActions(friends.slice(0,5).map(f=>({
+    label:`${f.type==="partner"?"❤":"👤"} ${f.name} (closeness: ${f.closeness})`,
     fn:()=>hangWithFriend(f)
-  })).concat([{label:"Back",fn:()=>mainMenuActions()}]));
+  })).concat([{label:"← Back",fn:()=>mainMenuActions()}]));
 }
+
 function hangWithFriend(f){
-  f.closeness=clamp(f.closeness+10);
-  G.social=clamp((G.social||50)+8); G.happy=clamp(G.happy+8); G.mood=clamp(G.mood+6);
-  const activities=["You end up eating too much and talking about everything.","A walk that turns into a three-hour conversation.","A film, takeaway, comfortable silence.","Out for drinks — you stay out too late."];
-  storyEntry(`With ${f.name}`,activities[Math.floor(Math.random()*activities.length)],[{type:"stat",label:"+social"}]);
-  advanceWeeks(1); mainMenuActions();
+  // Rich activity selection with effects
+  const isPartner = f.type==="partner";
+  storyEntry(`Time with ${f.name}`, isPartner ? `What are you two doing this week?` : `What are you doing with ${f.name}?`);
+
+  const activities = [
+    {
+      label:"☕ Coffee and a long catch-up",
+      cost:15, hours:2,
+      fn:()=>{
+        f.closeness=clamp(f.closeness+12);
+        G.social=clamp((G.social||50)+8); G.mood=clamp(G.mood+8); G.happy=clamp(G.happy+6);
+        G.depressionScore=clamp(G.depressionScore-4);
+        const desc=["You talk for three hours. The coffee goes cold halfway through.","An afternoon that starts at 11 and ends at 3. Good talk, nothing wasted.","The kind of conversation that makes you feel less alone in your own life."];
+        storyEntry(`With ${f.name}`,desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+closeness"}]);
+      }
+    },
+    {
+      label:"🍻 Pub evening",
+      cost:40, hours:4,
+      fn:()=>{
+        f.closeness=clamp(f.closeness+10);
+        G.social=clamp((G.social||50)+12); G.mood=clamp(G.mood+12); G.happy=clamp(G.happy+9);
+        G.drinksPerWeek+=3; G.drinkingWeeks=Math.max(G.drinkingWeeks,1); G.weeklyAlcohol+=6;
+        G.energy=clamp(G.energy-10);
+        const desc=["Out for what was supposed to be one drink.","The pub, a corner table, a night that goes longer than planned.","A proper evening — you talk about everything and nothing."];
+        storyEntry(`With ${f.name}`,desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+closeness"},{type:"bad",label:"−energy"}]);
+      }
+    },
+    {
+      label:"🍽 Dinner out",
+      cost:55, hours:3,
+      fn:()=>{
+        f.closeness=clamp(f.closeness+14);
+        G.social=clamp((G.social||50)+8); G.mood=clamp(G.mood+12); G.happy=clamp(G.happy+10);
+        gainFat(1,"meat");
+        const desc=["A proper restaurant. Good food, long table, nowhere to be.","The kind of meal where you share everything.","You're last to leave. It was worth the bill."];
+        storyEntry(`Dinner with ${f.name}`,desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+closeness"}]);
+      }
+    },
+    {
+      label:"🏃 Active thing together",
+      cost:10, hours:3,
+      fn:()=>{
+        f.closeness=clamp(f.closeness+10);
+        G.fitness=clamp(G.fitness+3); G.mood=clamp(G.mood+10); G.health=clamp(G.health+2); loseFat(1);
+        const desc=["A run that becomes a walk that becomes a sit-down somewhere.","They push you harder than you'd push yourself.","You both pretend you're fitter than you are. It's fine."];
+        storyEntry(`Active with ${f.name}`,desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+closeness"},{type:"stat",label:"+fitness"}]);
+      }
+    },
+    {
+      label:"🎬 Film or event",
+      cost:25, hours:4,
+      fn:()=>{
+        f.closeness=clamp(f.closeness+9);
+        G.social=clamp((G.social||50)+8); G.mood=clamp(G.mood+10); G.happy=clamp(G.happy+7);
+        const desc=["A film, then forty minutes dissecting it afterwards.","Something you probably wouldn't have chosen alone. It's good.","A show or cinema trip — shared experience, easy conversation."];
+        storyEntry(`With ${f.name}`,desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+closeness"}]);
+      }
+    },
+    {
+      label:"🏠 Cook and stay in",
+      cost:20, hours:5,
+      fn:()=>{
+        f.closeness=clamp(f.closeness+15);
+        G.social=clamp((G.social||50)+10); G.mood=clamp(G.mood+12); G.happy=clamp(G.happy+10);
+        G.depressionScore=clamp(G.depressionScore-5);
+        const desc=["You cook, they wash up, neither of you goes home until late.","A low-key evening that ends up being one of the better ones.","Comfortable and easy — the kind of friendship where you don't need to perform."];
+        storyEntry(`With ${f.name}`,desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+closeness"}]);
+        gainFat(1,"balanced");
+      }
+    },
+    {
+      label:"📞 Call / voice note",
+      cost:0, hours:1,
+      fn:()=>{
+        f.closeness=clamp(f.closeness+6);
+        G.mood=clamp(G.mood+6); G.depressionScore=clamp(G.depressionScore-3);
+        const desc=["A long phone call that you needed without knowing it.","You talk for an hour. Nothing's resolved but you feel better.","A voice note chain that becomes a real conversation."];
+        storyEntry(`Talking to ${f.name}`,desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+closeness"}]);
+      }
+    },
+  ];
+
+  if(isPartner){
+    activities.push({
+      label:"🌹 Date night",
+      cost:70, hours:5,
+      fn:()=>{
+        f.closeness=clamp(f.closeness+18);
+        G.mood=clamp(G.mood+15); G.happy=clamp(G.happy+14); G.depressionScore=clamp(G.depressionScore-6);
+        storyEntry(`Date with ${f.name}`,"You make the effort. It pays off. This is a good relationship.",[{type:"stat",label:"+closeness"},{type:"stat",label:"+happiness"}]);
+      }
+    });
+  }
+
+  setActions([
+    ...activities.filter(a=>G.savings>=a.cost).map(a=>({
+      label:`${a.label}${a.cost?` — €${a.cost}`:" — free"}`,
+      fn:()=>{
+        if(a.cost) G.savings=Math.max(0,G.savings-a.cost);
+        a.fn();
+        mainMenuActions();
+      }
+    })),
+    {label:"← Back", fn:()=>openFriendsMenu()},
+  ]);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3521,21 +3628,22 @@ function getWeeklyJobPool(){
 function openJobMenu(){
   const currentJob = G.salary>0 ? JOBS.find(j=>j.title===G.job) : null;
   const pool = getWeeklyJobPool();
-  const upgrades = pool.filter(j=>j.sal>G.salary);
   const surrogacyAvail = !G.pregnant && !G.surrogacyActive && G.age>=21 && G.age<=42;
+  const hasPending = !!G.pendingJobApplication;
 
   storyEntry(
     G.salary>0 ? `Current job: ${G.job}` : "Job market",
     G.salary>0
-      ? `You earn €${G.salary.toLocaleString()}/mo. ${pool.length} new listing${pool.length!==1?"s":""} available this week. Check back next week for different postings.`
-      : `${pool.length} position${pool.length!==1?"s":""} available this week. New listings appear each week.`
+      ? `You earn €${G.salary.toLocaleString()}/mo. ${pool.length} new listing${pool.length!==1?"s":""} available this week.${hasPending ? `\n\n📨 You've already sent your CV for ${G.pendingJobApplication.title} — the interview comes at the end of the week.` : ""}`
+      : `${pool.length} position${pool.length!==1?"s":""} available this week. Spot something you like — then head to the week planner and use "Send CVs" to apply. The interview lands at the end of the week.`
   );
+
   setActions([
     ...(currentJob?[{label:`💼 ${currentJob.title} — current (€${currentJob.sal}/mo)`,cls:"pri",fn:()=>{ storyEntry("Your current role",`${currentJob.desc}`); mainMenuActions(); }}]:[]),
     ...pool.map(j=>({
-      label:`${j.active?"🏃":"💺"} ${j.title} — €${j.sal.toLocaleString()}/mo`,
-      cls:j.sal>G.salary?"good":undefined,
-      fn:()=>takeJob(j)
+      label:`${j.active?"🏃":"💺"} ${j.title} — €${j.sal.toLocaleString()}/mo · ${j.type}${j.tier>=2?" (interview required)":""}`,
+      cls: j.sal>G.salary?"good":undefined,
+      fn:()=>previewJob(j)
     })),
     surrogacyAvail?{label:"🤰 Surrogacy — €18k–30k compensation",fn:()=>openSurrogacyMenu()}:null,
     G.surrogacyActive?{label:"🤰 Surrogacy (active)",cls:"pri",fn:()=>openSurrogacyMenu()}:null,
@@ -3543,15 +3651,15 @@ function openJobMenu(){
     {label:"← Back",fn:()=>mainMenuActions()},
   ].filter(Boolean));
 }
-function takeJob(job){
-  // Application system: calculate base success chance from skills + qualifications
+
+function previewJob(job){
+  // Show job detail and let player queue an application — no immediate resolve
   const skillField = job.type || "office";
   const playerSkill = G.skills[skillField] || 0;
   const reqSkill = job.req && job.req[skillField] ? job.req[skillField] : 0;
   const skillGap = Math.max(0, reqSkill - playerSkill);
   const overqualified = playerSkill - reqSkill;
 
-  // Base chance: 40-90% depending on skills, reputation, experience
   let baseChance = 0.50;
   baseChance += (overqualified * 0.02);
   baseChance -= (skillGap * 0.04);
@@ -3560,27 +3668,35 @@ function takeJob(job){
   baseChance *= getRepHireChance(skillField);
   baseChance = Math.max(0.05, Math.min(0.90, baseChance));
 
-  // Higher tier jobs need a 3-question interview test
+  const skillNote = skillGap>0
+    ? `⚠ You're ${skillGap} points below the required ${skillField} skill — harder but possible.`
+    : overqualified>5
+      ? `✓ You're overqualified — strong application.`
+      : `✓ You meet the requirements.`;
+
   const needsTest = job.tier >= 2;
 
-  storyEntry(`Applying: ${job.title}`,
-    `€${job.sal.toLocaleString()}/mo · ${job.desc}\n\n${needsTest ? `This is a competitive role. You'll face a short interview test before the offer.` : `Entry-level position. Straightforward application process.`}\n\nYour ${skillField} skill: ${playerSkill}. Required: ${reqSkill}. ${skillGap>0?'You\'re below the requirement — it\'ll be harder.':overqualified>5?'You\'re overqualified — strong chance.':'You meet the requirements.'}`
+  storyEntry(`${job.title} — €${job.sal.toLocaleString()}/mo`,
+    `${job.desc}\n\nField: ${skillField} · Tier ${job.tier} · ${job.active?"Active (physical) role":"Desk role"}\n\n${skillNote}\n\n${needsTest
+      ? `This role requires a short interview (3 questions). You'll face it at the end of the week if you apply.`
+      : `Entry-level — straight application, no formal interview.`}\n\nTo apply: head to the Week Planner and select "📨 Send CVs". The interview result arrives at the end of the week.`
   );
 
-  if(needsTest){
-    setActions([
-      {label:"📝 Apply & take the interview test", cls:"good",
-       fn:()=>startJobInterview(job, baseChance)},
-      {label:"← Back", fn:()=>openJobMenu()},
-    ]);
-  } else {
-    // Direct application — roll the dice
-    setActions([
-      {label:`✉ Submit application (${Math.round(baseChance*100)}% est. success rate)`, cls:"good",
-       fn:()=>resolveJobApplication(job, baseChance, 0)},
-      {label:"← Back", fn:()=>openJobMenu()},
-    ]);
-  }
+  setActions([
+    {label:`📨 Queue application for this role`, cls:"good",
+      fn:()=>{
+        G.pendingJobApplication = { ...job, baseChance };
+        toast(`Application queued for ${job.title}. Go send those CVs this week.`);
+        openJobMenu();
+      }
+    },
+    {label:"← Back to listings", fn:()=>openJobMenu()},
+  ]);
+}
+
+// Legacy stub — kept for any other callers
+function takeJob(job){
+  previewJob(job);
 }
 
 // Job interview questions by field and tier
@@ -3618,24 +3734,21 @@ const JOB_QUESTIONS = {
   ],
 };
 
-function startJobInterview(job, baseChance){
+function startJobInterview(job, baseChance, onDone){
+  const _done = onDone || (()=>mainMenuActions());
   const field = job.type || "office";
   const tier = job.tier || 2;
   const fieldQs = (JOB_QUESTIONS[field]||JOB_QUESTIONS.office).filter(q=>q.tier<=tier);
-  // Pick 3 random questions
   const shuffled = [...fieldQs].sort(()=>Math.random()-0.5).slice(0,3);
   if(shuffled.length < 3){
-    // Not enough questions — fall back to skill-only check
-    resolveJobApplication(job, baseChance, 0);
+    resolveJobApplication(job, baseChance, 0, 0, 0, _done);
     return;
   }
-  // Run interview as sequential choices
   let correctCount = 0;
   const runQ = (idx)=>{
     if(idx >= shuffled.length){
-      // Done — resolve
-      const testBonus = correctCount/shuffled.length; // 0 to 1
-      resolveJobApplication(job, baseChance, testBonus, correctCount, shuffled.length);
+      const testBonus = correctCount/shuffled.length;
+      resolveJobApplication(job, baseChance, testBonus, correctCount, shuffled.length, _done);
       return;
     }
     const qData = shuffled[idx];
@@ -3654,8 +3767,8 @@ function startJobInterview(job, baseChance){
   setActions([{label:"→ Begin interview", cls:"pri", fn:()=>runQ(0)}]);
 }
 
-function resolveJobApplication(job, baseChance, testBonus, correct, total){
-  // testBonus: 0 (all wrong) to 1 (all right) — modifies final chance
+function resolveJobApplication(job, baseChance, testBonus, correct, total, onDone){
+  const _done = onDone || (()=>mainMenuActions());
   const finalChance = Math.max(0.03, Math.min(0.97,
     baseChance * (0.5 + testBonus * 0.5) + (testBonus > 0.6 ? 0.10 : 0)
   ));
@@ -3663,22 +3776,21 @@ function resolveJobApplication(job, baseChance, testBonus, correct, total){
   const scoreNote = total ? ` You answered ${correct}/${total} interview questions correctly.` : "";
 
   if(success){
-    // Handle existing job: quit without notice if lower tier, with notice if same
-    if(G.salary > 0 && job.sal < G.salary){
-      // Taking a step down? Warn
-    }
     if(G.salary > 0) recordJobLeave("quit_notice");
     G.job=job.title; G.salary=job.sal;
     G.skills[job.type]=(G.skills[job.type]||0)+5;
     G.weeksEmployed=0;
     G.happy=clamp(G.happy+8);G.conf=clamp(G.conf+5);
     changeRep(job.type, 5, "Hired");
-    storyEntry(`Offer received: ${job.title}`,`Starting salary €${job.sal.toLocaleString()}/mo.${scoreNote} ${job.desc} ${job.active?"An active job — your body will reflect that over time.":"A desk job — don't let the sedentary lifestyle catch up with you."}`,[{type:"stat",label:"employed"},{type:"stat",label:`€${job.sal}/mo`}]);
-    advanceWeeks(2);updateStats();mainMenuActions();
+    G.pendingJobApplication = null;
+    storyEntry(`Offer received: ${job.title}`,`Starting salary €${job.sal.toLocaleString()}/mo.${scoreNote} ${job.desc}\n\n${job.active?"Active role — your body will reflect that over time.":"Desk role — don't let the sedentary lifestyle catch up."}`,[{type:"stat",label:"employed"},{type:"stat",label:`€${job.sal}/mo`}]);
+    updateStats();
+    setActions([{label:"✅ Continue", cls:"pri", fn:()=>_done()}]);
   } else {
     G.conf=clamp(G.conf-5);
-    storyEntry(`Application unsuccessful`,`${job.title} — not this time.${scoreNote} ${testBonus<0.5?"Your interview answers weren't strong enough.":"Your experience didn't match what they were looking for."} You can try again when the role comes up again.`,[{type:"bad",label:"rejected"},{type:"bad",label:"−confidence"}]);
-    mainMenuActions();
+    G.pendingJobApplication = null;
+    storyEntry(`Unsuccessful — ${job.title}`,`Not this time.${scoreNote} ${testBonus<0.5?"Your interview answers weren't strong enough.":"Your experience didn't quite match."} The listing may come up again next week.`,[{type:"bad",label:"rejected"},{type:"bad",label:"−confidence"}]);
+    setActions([{label:"→ Continue", fn:()=>_done()}]);
   }
 }
 
@@ -4305,6 +4417,7 @@ function triggerBingeEvent(){
 //  RANDOM EVENTS
 // ═══════════════════════════════════════════════════════
 const RANDOM_EVENTS=[
+  // ── Financial ──────────────────────────────────────────
   ()=>{
     const bonus=500+Math.floor(Math.random()*2000);
     G.savings+=bonus;
@@ -4314,49 +4427,178 @@ const RANDOM_EVENTS=[
   ()=>{
     const cost=200+Math.floor(Math.random()*600);
     G.savings=Math.max(0,G.savings-cost);
-    storyEntry("Unexpected expense",`Your phone screen shatters. A parking fine. Something breaks. €${cost} you didn't need to spend.`,[{type:"bad",label:`−€${cost}`}]);
+    const reasons=["Your phone screen shatters against the pavement.","A parking fine arrives in the post — you forgot.","The boiler makes a sound. Then stops.","Your laptop fan dies. It won't wait.","A speeding camera you didn't notice.","Something in the bathroom starts leaking. Slowly, then urgently.","You lose your wallet on a night out. Cards cancelled, €${cost} in cash gone."];
+    storyEntry("Unexpected expense",reasons[Math.floor(Math.random()*reasons.length)].replace('${cost}',cost)+` €${cost} you didn't need to spend.`,[{type:"bad",label:`−€${cost}`}]);
     updateStats();
   },
   ()=>{
+    if(G.salary<=0) return;
+    const fine=Math.round(G.salary*0.04);
+    G.savings=Math.max(0,G.savings-fine);
+    storyEntry("Late tax payment","A letter from the revenue office. You owe a late-filing penalty. It's not catastrophic, but it stings.",[{type:"bad",label:`−€${fine}`}]);
+  },
+  ()=>{
+    if(G.savings<800) return;
+    const amount=Math.round(200+Math.random()*400);
+    G.savings-=amount;
+    storyEntry("Impulse purchase","You bought something you'd been eyeing for months. It arrived. It makes you unreasonably happy for exactly five days.",[{type:"bad",label:`−€${amount}`},{type:"stat",label:"+mood (temporary)"}]);
+    G.mood=clamp(G.mood+12);
+  },
+  ()=>{
+    const raise=G.salary>0 ? Math.round(G.salary*0.05+Math.random()*G.salary*0.05) : 0;
+    if(!raise) return;
+    G.salary+=raise;
+    storyEntry("Pay rise",`Your manager calls you in. €${raise}/mo more. You accept without negotiating, then spend the next hour wondering if you should have pushed harder.`,[{type:"stat",label:`+€${raise}/mo`}]);
+    updateStats();
+  },
+  ()=>{
+    if(G.salary<=0) return;
+    storyEntry("Redundancy threat","There's a restructure. Your name isn't on the list — this time. You spend a week distracted and slightly sick with it.",[{type:"bad",label:"−confidence"},{type:"bad",label:"−mood"}]);
+    G.conf=clamp(G.conf-8); G.mood=clamp(G.mood-10); G.depressionScore=clamp(G.depressionScore+5);
+  },
+  ()=>{
+    const cost=60+Math.floor(Math.random()*120);
+    G.savings=Math.max(0,G.savings-cost);
+    storyEntry("Dental bill","You've been putting off going. You go. There's a filling needed, and a lecture about flossing you half-listen to.",[{type:"bad",label:`−€${cost}`},{type:"stat",label:"health maintained"}]);
+    G.health=clamp(G.health+2);
+  },
+
+  // ── Health & Body ───────────────────────────────────────
+  ()=>{
     G.depressionScore=clamp(G.depressionScore+8);G.happy=clamp(G.happy-10);
-    storyEntry("A bad week","Nothing specific — everything just feels harder than it should. You're not sure why.",[]); 
+    const flavours=["Nothing specific — everything just feels harder than it should.","You wake up fine. By Tuesday afternoon something has shifted. By Thursday it's just grey.","The week has a flat quality to it. Like a film you've already seen.","You're functional. You just feel like you're watching yourself be functional from a slight distance."];
+    storyEntry("A bad week",flavours[Math.floor(Math.random()*flavours.length)]+"\n\nYou're not sure why.",[{type:"bad",label:"+low mood"}]);
   },
   ()=>{
-    G.happy=clamp(G.happy+15);G.mood=clamp(G.mood+12);
-    storyEntry("A genuinely good week","For no particular reason, everything clicks. You feel like yourself.",[]);
-  },
-  ()=>{
-    if(!G.relationships.length) return;
-    const r=G.relationships[0];
-    r.closeness=clamp(r.closeness-20);
-    if(r.closeness<20&&r.type==="partner"){
-      G.partnerID=null;r.type="ex";
-      G.depressionScore=clamp(G.depressionScore+20);
-      G.bingeTendency=clamp(G.bingeTendency+25);
-      G.happy=clamp(G.happy-25);
-      storyEntry("Breakup",`${r.name} ends things. You don't fight it — you could see it coming. But knowing doesn't make it easier.`,[{type:"bad",label:"−happiness"},{type:"bad",label:"+binge risk"}]);
-      renderCharacter();
-    } else {
-      storyEntry("Falling out",`A disagreement with ${r.name}. Things feel strained.`,[]);
-    }
-  },
-  ()=>{
-    gainFat(3,"balanced");G.happy=clamp(G.happy+6);
-    storyEntry("Work birthday cake","Someone brought in a massive cake. You had three slices.",[]); 
-    renderCharacter();
-  },
-  ()=>{
-    if(G.salary>0){
-      const raise=Math.round(G.salary*0.08);
-      G.salary+=raise;
-      storyEntry("Pay rise",`Your manager calls you in. €${raise}/mo more. You accept without negotiating.`,[{type:"stat",label:`+€${raise}/mo`}]);
-      updateStats();
-    }
+    G.happy=clamp(G.happy+15);G.mood=clamp(G.mood+12);G.depressionScore=clamp(G.depressionScore-5);
+    const flavours=["For no particular reason, everything clicks. You feel like yourself.","The week has a light to it. Small things go right. You notice.","You sleep well three nights in a row. It changes everything.","An ordinary week — but you feel present in it, and that makes it good."];
+    storyEntry("A genuinely good week",flavours[Math.floor(Math.random()*flavours.length)],[{type:"stat",label:"+mood"}]);
   },
   ()=>{
     loseFat(3);G.mood=clamp(G.mood+8);G.health=clamp(G.health+5);
-    storyEntry("Good health week","You sleep well, eat reasonably, and feel genuinely good in your body this week.",[]); 
+    const flavours=["You sleep well, eat reasonably, and feel genuinely good in your body this week.","Something about this week is just physically good — you move better, you feel lighter.","Your body cooperates with you this week in a way it doesn't always."];
+    storyEntry("Good health week",flavours[Math.floor(Math.random()*flavours.length)],[{type:"lose",label:"−fat"},{type:"stat",label:"+health"}]);
     renderCharacter();
+  },
+  ()=>{
+    G.health=clamp(G.health-8);G.energy=clamp(G.energy-20);G.mood=clamp(G.mood-10);
+    storyEntry("Illness","A proper one — not just tired. You're in bed for two days. You miss things. You eat nothing, then soup, then start to come back.",[{type:"bad",label:"−health"},{type:"bad",label:"−energy"}]);
+    advanceWeeks(1);
+  },
+  ()=>{
+    G.health=clamp(G.health-3);
+    storyEntry("Bad back","A week of it. You can't get comfortable. Ibuprofen and a heating pad. You're fine but you're not fine.",[{type:"bad",label:"−health"}]);
+  },
+  ()=>{
+    gainFat(3,"balanced");G.happy=clamp(G.happy+6);
+    const flavours=["Someone brought in a massive cake. You had three slices.","A leaving party for someone in accounts. Free food, free drink, three hours of standing by the snacks.","A team lunch that turns into an afternoon. You didn't plan to eat that much."];
+    storyEntry("Office feast",flavours[Math.floor(Math.random()*flavours.length)],[{type:"gain",label:"+fat"}]);
+    renderCharacter();
+  },
+  ()=>{
+    if(G.fitness > 50){
+      G.fitness=clamp(G.fitness+5);G.health=clamp(G.health+3);
+      storyEntry("Fitness breakthrough","Something clicks this week. Your body does something it couldn't last month. You notice.",[{type:"stat",label:"+fitness"}]);
+    }
+  },
+  ()=>{
+    G.health=clamp(G.health-4);G.mood=clamp(G.mood-6);
+    storyEntry("Migraine","Comes out of nowhere on Wednesday. You lose a day. The light is wrong. Everything is too much.",[{type:"bad",label:"−health"}]);
+  },
+
+  // ── Relationships ────────────────────────────────────────
+  ()=>{
+    if(!G.relationships.length) return;
+    const r=G.relationships[Math.floor(Math.random()*G.relationships.length)];
+    r.closeness=clamp(r.closeness-20);
+    if(r.closeness<20 && r.type==="partner"){
+      G.partnerID=null; r.type="ex";
+      G.depressionScore=clamp(G.depressionScore+20);
+      G.bingeTendency=clamp(G.bingeTendency+25);
+      G.happy=clamp(G.happy-25);
+      storyEntry("Breakup",`${r.name} ends things. You don't fight it — you could see it coming. But knowing doesn't make it easier. You sit with your phone for a while and then put it in a drawer.`,[{type:"bad",label:"−happiness"},{type:"bad",label:"+binge risk"}]);
+      renderCharacter();
+    } else {
+      const args=["A disagreement that starts small and doesn't stay small.","Something said that wasn't meant that way. Or maybe it was.","A cancelled plan that lands wrong. It's about more than the plan."];
+      storyEntry(`Tension with ${r.name}`,args[Math.floor(Math.random()*args.length)]+` Things feel strained.`,[{type:"bad",label:"−closeness"}]);
+    }
+  },
+  ()=>{
+    if(!G.relationships.length) return;
+    const r=G.relationships.find(r=>r.type==="partner"||r.type==="friend");
+    if(!r) return;
+    r.closeness=clamp(r.closeness+15);
+    const moments=["You end up talking for four hours about nothing particular. It's good.","A spontaneous thing — a drive, a walk, a meal you didn't plan. One of those evenings.","They say something you needed to hear. You don't tell them that.","You laugh properly, the kind you forget about until it happens again."];
+    storyEntry(`Good time with ${r.name}`,moments[Math.floor(Math.random()*moments.length)],[{type:"stat",label:"+closeness"}]);
+    G.happy=clamp(G.happy+10);G.mood=clamp(G.mood+8);
+  },
+  ()=>{
+    // Meet someone new
+    const names=["Kai","Priya","Luca","Saoirse","Tomás","Nadia","Ezra","Yuki","Marcus","Anah"];
+    const name=names[Math.floor(Math.random()*names.length)];
+    const contexts=["at a pub quiz you almost didn't go to","through a friend of a friend at a house party","at the gym — they spot you, you talk","on the bus, through some unlikely sequence of events","waiting at the same counter for the same thing","in a class you joined last month"];
+    const context=contexts[Math.floor(Math.random()*contexts.length)];
+    G.relationships.push({name,type:"friend",closeness:25,age:G.age-3+Math.round(Math.random()*8)});
+    G.social=clamp((G.social||50)+10);
+    storyEntry(`You meet ${name}`,`${context}. You swap numbers. It might become something.`,[{type:"stat",label:"new friend"}]);
+  },
+
+  // ── Work & Career ───────────────────────────────────────
+  ()=>{
+    if(G.salary<=0) return;
+    G.conf=clamp(G.conf+8);G.skills[G.job?.type||"office"]=(G.skills[G.job?.type||"office"]||0)+3;
+    storyEntry("Work wins","A week where things go right at work. You handle something difficult well. People notice.",[{type:"stat",label:"+confidence"},{type:"stat",label:"+skill"}]);
+  },
+  ()=>{
+    if(G.salary<=0) return;
+    G.depressionScore=clamp(G.depressionScore+5);G.energy=clamp(G.energy-12);G.mood=clamp(G.mood-8);
+    const flavours=["A difficult client.","A meeting that could have been an email. Seventeen of them.","Management changes something without telling you.","You're asked to redo work you already did.","A week of micromanagement that leaves you hollowed out by Friday."];
+    storyEntry("Awful week at work",flavours[Math.floor(Math.random()*flavours.length)]+" You come home with nothing left.",[{type:"bad",label:"−energy"},{type:"bad",label:"+stress"}]);
+  },
+  ()=>{
+    if(G.salary<=0) return;
+    const bonus=Math.round(G.salary*0.12+Math.random()*G.salary*0.08);
+    G.savings+=bonus;
+    storyEntry("Performance bonus",`It lands in your account without warning. €${bonus}. You check it twice.`,[{type:"stat",label:`+€${bonus}`}]);
+    G.happy=clamp(G.happy+10);
+  },
+
+  // ── City & World ────────────────────────────────────────
+  ()=>{
+    G.mood=clamp(G.mood+10);G.depressionScore=clamp(G.depressionScore-4);
+    const events=["The city smells different when the weather finally turns.","You walk home a different way. It takes longer. It's better.","A street market appears where there wasn't one. You buy something small.","A band playing outside a pub — you stop for three songs and it does something to you.","The city is full of people enjoying the sun. It's contagious."];
+    storyEntry("City moment",events[Math.floor(Math.random()*events.length)],[{type:"stat",label:"+mood"}]);
+  },
+  ()=>{
+    G.energy=clamp(G.energy-8);G.mood=clamp(G.mood-6);
+    const annoyances=["Engineering works on the line. Thirty extra minutes, standing.","Your upstairs neighbour discovers new depths of inconsideration.","Roadworks outside your building run until 11pm.","A car alarm goes off at 3am and then again at 4am.","The heating in your building decides to stop for five days."];
+    storyEntry("City grind",annoyances[Math.floor(Math.random()*annoyances.length)],[{type:"bad",label:"−energy"}]);
+  },
+  ()=>{
+    G.happy=clamp(G.happy+12);G.mood=clamp(G.mood+10);G.savings=Math.max(0,G.savings-35);
+    storyEntry("Good evening out","It comes together unexpectedly — the right people, the right place, the right energy. You're home late and it was worth it.",[{type:"stat",label:"+happy"},{type:"bad",label:"−€35"}]);
+  },
+  ()=>{
+    // Neighbourhood event
+    const events=["A pop-up you didn't expect.","A free outdoor cinema in the park.","A farmers market worth wandering.","A local art show in someone's garden — you go on a whim."];
+    G.mood=clamp(G.mood+8);G.happy=clamp(G.happy+6);
+    storyEntry("Something local",events[Math.floor(Math.random()*events.length)]+" A small, good thing.",[{type:"stat",label:"+mood"}]);
+  },
+
+  // ── Mental & Emotional ──────────────────────────────────
+  ()=>{
+    G.depressionScore=clamp(G.depressionScore-8);G.mood=clamp(G.mood+8);
+    const moments=["Something shifts. You're not sure what — just that the weight is lighter.","You read something that puts words to a thing you've been carrying. It helps.","A conversation that makes you feel less alone with your own thoughts.","You have a rare, unscheduled afternoon and use it to do exactly nothing. You come back from it."];
+    storyEntry("Good headspace",moments[Math.floor(Math.random()*moments.length)],[{type:"stat",label:"−stress"}]);
+  },
+  ()=>{
+    G.depressionScore=clamp(G.depressionScore+10);G.mood=clamp(G.mood-12);
+    const dips=["A low that comes without warning. You're not depressed, you're just not okay this week.","Doomscrolling until 1am doesn't help. You do it anyway.","Something from years ago resurfaces for no reason and stays for a week.","You cancel three things and feel both relieved and guilty."];
+    storyEntry("Emotional dip",dips[Math.floor(Math.random()*dips.length)]+"\n\nIt will pass.",[{type:"bad",label:"+low mood"}]);
+  },
+  ()=>{
+    G.conf=clamp(G.conf+10);G.happy=clamp(G.happy+8);
+    storyEntry("Moment of clarity","You make a decision you've been avoiding. It's not the hard part — the hard part is what comes after. But you made it.",[{type:"stat",label:"+confidence"}]);
   },
 ];
 
@@ -4608,6 +4850,46 @@ function openEndWeekChoices(){
   const evt = pickWeeklySocialEvent();
   if(evt) steps.push(evt);
 
+  // ── 6b: Job interview (if player sent CVs this week) ──
+  if(G.pendingJobApplication && _ewState.didSendCVs){
+    const pendingJob = G.pendingJobApplication;
+    const needsTest = pendingJob.tier >= 2;
+    const interviewStepIdx = steps.length; // capture index at push time
+    steps.push({
+      title:`📨 Interview — ${pendingJob.title}`,
+      body:`Your CV got through. You've been called in for ${needsTest ? "a formal interview" : "an informal chat"}.\n\n${pendingJob.desc}\n\nSalary: €${pendingJob.sal.toLocaleString()}/mo.`,
+      acts:[
+        {label: needsTest ? "→ Begin interview" : `✉ Accept the offer`, cls:"good",
+         fn:()=>{
+           const onDone = ()=>runEndWeekSteps(steps, interviewStepIdx + 1);
+           G.pendingJobApplication = null;
+           if(needsTest){
+             startJobInterview(pendingJob, pendingJob.baseChance, onDone);
+           } else {
+             resolveJobApplication(pendingJob, pendingJob.baseChance, 0, 0, 0, onDone);
+           }
+         }
+        },
+        {label:"❌ Pull out — cancel the application",
+         fn:()=>{
+           G.pendingJobApplication = null;
+           G.conf = clamp(G.conf - 2);
+           storyEntry("Pulled out", "You cancel the interview. Maybe next time.", [{type:"bad",label:"withdrew"}]);
+         }
+        },
+      ]
+    });
+  } else if(G.pendingJobApplication && !_ewState.didSendCVs){
+    steps.push({
+      title:`📭 Application stalled — ${G.pendingJobApplication.title}`,
+      body:`You queued an application for ${G.pendingJobApplication.title} but didn't spend time actually sending your CV this week. No interview this time — do you want to keep it queued or drop it?`,
+      acts:[
+        {label:"📨 Keep it queued — I'll send CVs next week", fn:()=>{ /* keep pending */ }},
+        {label:"🗑 Drop the application", fn:()=>{ G.pendingJobApplication = null; }},
+      ]
+    });
+  }
+
   // ── 7: Free will desire ──
   const desire = generateFreeWillDesire();
   if(desire){
@@ -4741,6 +5023,112 @@ function showFreeTimeStep(steps, idx){
     act("🌳","Walk",         2, ()=>{ G.mood=clamp(G.mood+9); G.health=clamp(G.health+2); G.depressionScore=clamp(G.depressionScore-3); }, "good"),
     act("✈","Day trip",      8, ()=>{ G.mood=clamp(G.mood+15); G.happy=clamp(G.happy+10); G.savings-=80; }, ""),
     act("💇","Haircut",      2, ()=>{ _ewState.doHaircut=true; }, ""),
+    // ── New activities ──────────────────────────────────────────────────────
+    act("🧗","Climbing",     4, ()=>{
+      G.fitness=clamp(G.fitness+5); G.health=clamp(G.health+3); loseFat(1);
+      G.mood=clamp(G.mood+10); G.conf=clamp(G.conf+3);
+      const desc=["You make it up a route you couldn't last month. Your forearms are wrecked.","A new V4. You fall off it four times before you don't.","An hour of problem-solving with your body. Deeply satisfying."];
+      G.savings=Math.max(0,G.savings-15);
+      storyEntry("Climbing",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+fitness"},{type:"lose",label:"−fat"}]);
+    }, "good"),
+    act("🚴","Cycling",      3, ()=>{
+      G.fitness=clamp(G.fitness+4); G.health=clamp(G.health+3); loseFat(2);
+      G.mood=clamp(G.mood+8); G.depressionScore=clamp(G.depressionScore-3);
+      const desc=["Out and back, a route you know.","Through the park and further than you planned. A good kind of tired.","Legs burning on the last hill. You push through it."];
+      storyEntry("Cycling",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+fitness"},{type:"lose",label:"−fat"}]);
+    }, "good"),
+    act("🏊","Swimming",     3, ()=>{
+      G.fitness=clamp(G.fitness+4); G.health=clamp(G.health+4); loseFat(2);
+      G.mood=clamp(G.mood+7); G.depressionScore=clamp(G.depressionScore-4);
+      G.savings=Math.max(0,G.savings-8);
+      const desc=["Lengths until your shoulders are properly spent.","The water drowns out everything else. Forty minutes of nothing but breath and movement.","Early morning session. You feel clear-headed for the rest of the day."];
+      storyEntry("Swimming",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+health"},{type:"lose",label:"−fat"}]);
+    }, "good"),
+    act("📖","Read",         2, ()=>{
+      G.depressionScore=clamp(G.depressionScore-4); G.mood=clamp(G.mood+7);
+      G.happy=clamp(G.happy+5);
+      const desc=["Deep into something good. The hours disappear.","A book you've been meaning to start for months. You don't put it down until midnight.","You read until the light fades and forget to turn the lamp on."];
+      storyEntry("Reading",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+mood"},{type:"stat",label:"−stress"}]);
+    }, ""),
+    act("🧘","Meditate",     1, ()=>{
+      G.depressionScore=clamp(G.depressionScore-5); G.mood=clamp(G.mood+6); G.energy=clamp(G.energy+5);
+      const desc=["Twenty minutes. You spend the first ten thinking about something else. Then it settles.","Guided, this time. You're sceptical. Your shoulders come down from your ears.","Sitting with your thoughts instead of running from them. Harder than it sounds. Worth it."];
+      storyEntry("Meditation",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"−stress"},{type:"stat",label:"+energy"}]);
+    }, "good"),
+    act("🌿","Garden / park",2, ()=>{
+      G.depressionScore=clamp(G.depressionScore-5); G.mood=clamp(G.mood+8); G.health=clamp(G.health+2);
+      const desc=["An afternoon in the park. You bring nothing to do and manage to do it.","Some time in the garden. Slow, physical, quietly good for you.","The park when it's not busy. You sit with a coffee and let the time go."];
+      storyEntry("Time outside",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+mood"}]);
+    }, "good"),
+    act("🎵","Live music",   4, ()=>{
+      G.mood=clamp(G.mood+15); G.happy=clamp(G.happy+12); G.social=clamp((G.social||50)+8);
+      G.savings=Math.max(0,G.savings-35);
+      const desc=["A show you almost didn't book. You're glad you did.","Loud and dark and exactly what you needed.","The support act surprises you. The main act delivers."];
+      storyEntry("Live music",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+mood"},{type:"bad",label:"−€35"}]);
+    }, ""),
+    act("🍻","Night out",    5, ()=>{
+      G.mood=clamp(G.mood+12); G.social=clamp((G.social||50)+15);
+      G.drinksPerWeek+=4; G.drinkingWeeks=Math.max(G.drinkingWeeks,1); G.weeklyAlcohol+=8;
+      G.energy=clamp(G.energy-18); G.sleepHoursPerNight=Math.max(5,G.sleepHoursPerNight-1);
+      G.savings=Math.max(0,G.savings-60); gainFat(1,"alcohol");
+      const desc=["A proper one. You're out until 2am and the night has a shape to it.","Starts as one drink. Ends as six. You regret nothing until morning.","Exactly the chaos you needed. You get home with your shoes still on."];
+      storyEntry("Night out",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+social"},{type:"bad",label:"−energy"},{type:"bad",label:"−€60"}]);
+    }, ""),
+    act("☕","Café & journal",2, ()=>{
+      G.depressionScore=clamp(G.depressionScore-4); G.mood=clamp(G.mood+7); G.conf=clamp(G.conf+2);
+      G.savings=Math.max(0,G.savings-12);
+      const desc=["A corner table. A coffee. You write things down that you didn't know you needed to write.","An hour with your thoughts and a notebook. You leave having made a decision.","You write for longer than you meant to. The coffee goes cold."];
+      storyEntry("Café & journaling",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"−stress"}]);
+    }, ""),
+    act("🎲","Board games / pub quiz",3, ()=>{
+      G.mood=clamp(G.mood+12); G.social=clamp((G.social||50)+12); G.happy=clamp(G.happy+8);
+      G.savings=Math.max(0,G.savings-20);
+      const desc=["You lose spectacularly. You don't care.","The quiz — you're more competitive than you thought.","A long game around someone's table. The kind of evening that actually charges you."];
+      storyEntry("Social games",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+social"},{type:"stat",label:"+mood"}]);
+    }, ""),
+    act("🎬","Cinema",       3, ()=>{
+      G.mood=clamp(G.mood+9); G.happy=clamp(G.happy+6);
+      G.savings=Math.max(0,G.savings-18);
+      const desc=["A film in the dark. Whatever it is, two hours of being somewhere else.","The big screen, overpriced popcorn, someone's phone lighting up twice.","You pick something you didn't know you needed to see."];
+      storyEntry("Cinema",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+mood"}]);
+    }, ""),
+    act("🏠","Declutter",    3, ()=>{
+      G.mood=clamp(G.mood+10); G.happy=clamp(G.happy+8); G.depressionScore=clamp(G.depressionScore-4);
+      const desc=["Three bin bags. You feel lighter.","You find things you'd forgotten you owned, and get rid of things you'd been keeping for no reason.","A drawer that has bothered you for months. Done."];
+      storyEntry("Decluttering",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+mood"},{type:"stat",label:"−stress"}]);
+    }, ""),
+    act("💆","Massage / spa", 3, ()=>{
+      G.mood=clamp(G.mood+14); G.energy=clamp(G.energy+12); G.health=clamp(G.health+2);
+      G.depressionScore=clamp(G.depressionScore-5); G.savings=Math.max(0,G.savings-60);
+      storyEntry("Massage","An hour where someone else takes care of you for once. Your neck unknots. You lie still and don't think about anything.",[{type:"stat",label:"+energy"},{type:"bad",label:"−€60"}]);
+    }, ""),
+    act("🌍","Weekend away",  16, ()=>{
+      G.mood=clamp(G.mood+20); G.happy=clamp(G.happy+18); G.depressionScore=clamp(G.depressionScore-8);
+      G.savings=Math.max(0,G.savings-200);
+      const desc=["Two nights somewhere different. It resets something.","A city you've been meaning to visit. You pack light. You do too much. You loved it.","A last-minute trip — train, hostel, wandering. The best kind of impulsive."];
+      storyEntry("Weekend away",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+happiness"},{type:"bad",label:"−€200"}]);
+    }, ""),
+    act("🛍","Shopping",     3, ()=>{
+      G.mood=clamp(G.mood+6); G.happy=clamp(G.happy+5);
+      const cost=30+Math.round(Math.random()*80);
+      G.savings=Math.max(0,G.savings-cost);
+      storyEntry("Shopping","Nothing you needed. A few things you wanted. That's the point.",[{type:"bad",label:`−€${cost}`}]);
+    }, ""),
+    act("🤝","Volunteer",    4, ()=>{
+      G.mood=clamp(G.mood+10); G.happy=clamp(G.happy+12); G.depressionScore=clamp(G.depressionScore-6);
+      G.conf=clamp(G.conf+4); G.social=clamp((G.social||50)+8);
+      const desc=["Serving food at a shelter. Hard to stay in your own head when you're busy with someone else's.","A community garden session. Physical, purposeful, surprisingly good.","Helping at a local event. You meet people you wouldn't otherwise. You feel useful."];
+      storyEntry("Volunteering",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+happiness"},{type:"stat",label:"+confidence"}]);
+    }, "good"),
+    act("💻","Side project",  5, ()=>{
+      G.skills.office=clamp((G.skills.office||0)+2); G.conf=clamp(G.conf+3);
+      G.mood=clamp(G.mood+6); G.happy=clamp(G.happy+5);
+      const desc=["Hours into something you're building for yourself. No deadline, no manager, no brief.","You make real progress. The kind that makes you want to come back to it.","A side project that might become something. Or might just be yours."];
+      storyEntry("Side project",desc[Math.floor(Math.random()*desc.length)],[{type:"stat",label:"+skill"},{type:"stat",label:"+confidence"}]);
+    }, ""),
+    G.pendingJobApplication
+      ? act("📨","Send CVs",    3, ()=>{ _ewState.didSendCVs=true; }, "good")
+      : act("📨","Browse jobs", 2, ()=>{ _ewState.doBrowseJobs=true; }, ""),
     {label:`✅ Done · ${rem}h remaining`, cls:"pri",
      fn:()=>{
        if(_ewState.doGroceries){
@@ -4761,6 +5149,7 @@ function showFreeTimeStep(steps, idx){
        if(_ewState.doHobby){ _ewState.doHobby=false; openHobbyMenu(); return; }
        if(_ewState.doSocial){ _ewState.doSocial=false; openFriendsMenu(); return; }
        if(_ewState.doHaircut){ _ewState.doHaircut=false; openHairMenu(); return; }
+       if(_ewState.doBrowseJobs){ _ewState.doBrowseJobs=false; openJobMenu(); return; }
        runEndWeekSteps(steps, idx+1);
      }
     },
