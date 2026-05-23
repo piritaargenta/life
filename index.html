@@ -481,25 +481,29 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   }
   #mob-quick-strip::-webkit-scrollbar{display:none;}
   .mqbtn{
-    flex:0 0 auto;padding:10px 14px;
-    border-right:1px solid var(--line);border:none;border-right:1px solid var(--line);
-    background:var(--panel);color:var(--ink2);font-size:.78rem;
+    flex:0 0 auto;padding:8px 12px;
+    border-right:1px solid var(--line);
+    background:var(--panel);color:var(--ink2);font-size:.8rem;
     cursor:pointer;white-space:nowrap;touch-action:manipulation;
+    display:flex;flex-direction:column;align-items:center;gap:1px;
+    min-width:72px;border:none;border-right:1px solid var(--line);
   }
   .mqbtn:active{background:var(--bg3);}
-  .mqbtn span{display:block;font-size:.6rem;color:var(--ink3);}
+  .mqsub{display:block;font-size:.62rem;color:var(--ink3);font-family:"IBM Plex Mono",monospace;}
 
   /* Left tabs — horizontal scroll on mobile too */
   .ltabs{gap:0;overflow-x:auto;scrollbar-width:none;}
   .ltabs::-webkit-scrollbar{display:none;}
   .ltab{padding:11px 12px;font-size:.72rem;min-height:42px;flex:0 0 auto;}
-  .ltab-panel{max-height:200px;padding:12px 14px;overflow-y:auto;}
+  .ltab-panel{max-height:220px;padding:10px 12px;overflow-y:auto;}
 
   /* Story */
   #col-mid{height:auto;}
-  #story-scroll{height:auto;min-height:200px;max-height:42vh;padding:16px 16px;}
-  .story-entry h3{font-size:1.1rem;margin-bottom:6px;}
-  .story-entry p{font-size:.94rem;line-height:1.78;}
+  #story-scroll{height:auto;min-height:180px;max-height:45vh;padding:14px 16px 10px;}
+  .story-entry{margin-bottom:12px;padding-bottom:12px;}
+  .story-entry h3{font-size:1.05rem;margin-bottom:5px;}
+  .story-entry p{font-size:.92rem;line-height:1.75;}
+  .fx-tag{font-size:.65rem;padding:2px 8px;margin:2px 2px;}
 
   /* Week planner */
   #week-planner-bar{padding:8px 12px;min-height:50px;gap:6px;flex-wrap:nowrap;}
@@ -511,27 +515,48 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
   /* Action bar: sticky bottom, larger tap targets */
   #action-bar{
     position:sticky;bottom:0;z-index:40;
-    padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
-    background:var(--panel);border-top:2px solid var(--line);
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
+    background:var(--panel);border-top:2px solid var(--line2);
+    box-shadow:0 -4px 20px var(--shadow);
   }
-  .abar-label{font-size:.75rem;margin-bottom:10px;}
-  .abar-grid{gap:8px;}
-  .a-btn{padding:13px 14px;font-size:.92rem;min-height:50px;line-height:1.3;}
+  .abar-label{font-size:.72rem;margin-bottom:8px;letter-spacing:.06em;}
+  .abar-grid{gap:6px;}
+  .a-btn{
+    padding:12px 14px;font-size:.9rem;min-height:48px;line-height:1.3;
+    border-radius:2px;
+  }
+  .a-btn.pri{font-size:.95rem;min-height:52px;font-weight:500;}
 
-  /* Category buttons: 3-column grid */
-  .abar-cats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;}
-  .acat-btn{font-size:.78rem;padding:9px 4px;text-align:center;line-height:1.3;}
+  /* Category buttons: 3-column grid, pill style */
+  .abar-cats{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px;}
+  .acat-btn{
+    font-size:.76rem;padding:10px 4px;text-align:center;line-height:1.3;
+    border-radius:2px;min-height:44px;
+  }
+  .acat-btn.open{background:var(--acc)!important;color:#fff!important;border-color:var(--acc)!important;}
 
-  /* Dropdowns: fixed bottom sheet on mobile */
+  /* Dropdowns: fixed bottom sheet on mobile with handle */
   .acat-drop{
     position:fixed!important;bottom:0!important;left:0!important;right:0!important;
     top:auto!important;width:100%!important;max-width:100%!important;
-    max-height:62vh;overflow-y:auto;
-    border:none!important;border-top:2px solid var(--line)!important;
+    max-height:70vh;overflow-y:auto;
+    border:none!important;border-top:3px solid var(--acc)!important;
     padding-bottom:env(safe-area-inset-bottom,16px);
     border-radius:0!important;
+    box-shadow:0 -8px 40px var(--shadow2)!important;
   }
-  .acat-drop button{padding:15px 18px;font-size:.97rem;min-height:54px;}
+  .acat-drop::before{
+    content:'';display:block;width:36px;height:3px;
+    background:var(--line2);border-radius:2px;
+    margin:10px auto 6px;
+  }
+  .acat-drop button{
+    padding:14px 18px;font-size:.95rem;min-height:52px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .acat-drop button.good{background:rgba(74,158,106,.06);}
+  .acat-drop button.warn{background:rgba(212,149,10,.06);}
+  .acat-drop button.bad{background:rgba(224,80,80,.06);}
 
   /* Right column hidden on mobile */
   #col-right{display:none;}
@@ -1056,12 +1081,12 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
 
       <!-- MOBILE QUICK-ACTION STRIP (hidden on desktop via CSS) -->
       <div id="mob-quick-strip" style="display:none">
-        <button class="mqbtn" onclick="openJobMenu()">💼 <span id="mqs-job">Work</span></button>
-        <button class="mqbtn" onclick="openGroceryMenu()">🛒 <span id="mqs-pantry">Food</span></button>
-        <button class="mqbtn" onclick="openHousingMenu()">🏠 <span id="mqs-rent">Home</span></button>
-        <button class="mqbtn" onclick="openBudgetMenu()">💰 <span id="mqs-savings">Budget</span></button>
-        <button class="mqbtn" onclick="openRelationshipsMenu()">💌 <span>Relations</span></button>
-        <button class="mqbtn" onclick="openHobbyMenu()">🎨 <span>Hobby</span></button>
+        <button class="mqbtn" onclick="openJobMenu()"><span id="mqs-job">💼 Work</span><span class="mqsub" id="mqs-job-sub">—</span></button>
+        <button class="mqbtn" onclick="openGroceryMenu()"><span id="mqs-pantry">🛒 Food</span><span class="mqsub" id="mqs-pantry-sub">—</span></button>
+        <button class="mqbtn" onclick="openHousingMenu()"><span id="mqs-rent">🏠 Home</span><span class="mqsub" id="mqs-rent-sub">—</span></button>
+        <button class="mqbtn" onclick="openBudgetMenu()"><span id="mqs-savings">💰 Savings</span><span class="mqsub" id="mqs-savings-sub">—</span></button>
+        <button class="mqbtn" onclick="openRelationshipsMenu()"><span>💌 Social</span><span class="mqsub" id="mqs-social-sub">—</span></button>
+        <button class="mqbtn" onclick="openFreeWillMenu()"><span>✦ Free Will</span><span class="mqsub">this week</span></button>
       </div>
 
       <div class="ltabs">
@@ -1094,8 +1119,16 @@ button, .cc-pill, .cc-trait, .cc-color, .ltab, .a-btn, .wk-btn, .wplan-pill, .wp
           <span class="meas-val" id="m-hips">—<span class="meas-sub">cm</span></span>
         </div>
         <div class="meas-row">
+          <span class="meas-lbl">Thighs</span>
+          <span class="meas-val" id="m-thighs">—<span class="meas-sub">cm</span></span>
+        </div>
+        <div class="meas-row">
           <span class="meas-lbl">Height</span>
-          <span class="meas-val">160<span class="meas-sub">cm</span></span>
+          <span class="meas-val" id="m-height">160<span class="meas-sub">cm</span></span>
+        </div>
+        <div class="meas-row">
+          <span class="meas-lbl">Mobility</span>
+          <span class="meas-val" id="m-mobility" style="font-size:.72rem">Normal</span>
         </div>
         <div class="meas-row">
           <span class="meas-lbl">Bra size</span>
@@ -1237,7 +1270,7 @@ const DEFAULT_POS = {
   body:{x:0,y:0},belly:{x:173,y:84},arm:{x:163,y:76},
   butt:{x:44,y:110},thighs:{x:115,y:159},breast:{x:184,y:90},hair:{x:143,y:39}
 };
-const STAGE_MAX = {body:1,belly:251,arm:240,butt:351,thighs:228,breast:301,hair:600};
+const STAGE_MAX = {body:1,belly:251,arm:240,butt:351,thighs:320,breast:301,hair:600};
 const WEIGHT_PARTS = ["belly","arm","butt","thighs","breast"];
 
 const PRESETS = {
@@ -1624,6 +1657,15 @@ function checkMobilityEffects(){
   if(level==="very_limited") G.energy=clamp(G.energy-15);
   if(level==="immobile")     G.energy=clamp(G.energy-25);
 
+  // Immobility → passive weight gain (sedentary)
+  if(level==="immobile"||level==="very_limited") gainFat(1,"balanced");
+
+  // Depression from immobility
+  if(level==="immobile"||level==="very_limited"){
+    G.depressionScore = clamp(G.depressionScore + 2);
+    G.social = clamp((G.social||50) - 1);
+  }
+
   if(prev==="normal"&&level==="reduced")
     storyEntry("Movement harder",`At ${w.toFixed(0)}kg, everyday tasks cost noticeably more. Stairs, the bus, carrying bags.`,[{type:"bad",label:"−energy/week"}]);
   else if(prev==="reduced"&&level==="limited")
@@ -1632,13 +1674,121 @@ function checkMobilityEffects(){
     storyEntry("Unable to use public transport",`${w.toFixed(0)}kg. Standard seats don't fit. Public transport is no longer an option.`,[{type:"bad",label:"no public transport"}]);
     if(!G.car||G.car==="None") storyEntry("Transport crisis","Without a car, getting anywhere is a serious problem.",[{type:"bad",label:"stranded"}]);
   } else if(prev==="very_limited"&&level==="immobile"){
-    storyEntry("Immobile — carer needed",`${w.toFixed(0)}kg. You cannot move unassisted. Basic daily life is impossible alone.`,[{type:"bad",label:"IMMOBILE"},{type:"bad",label:"carer needed"}]);
+    storyEntry("Immobile",
+      `${w.toFixed(0)}kg. You cannot move unassisted. The bed, the chair, the short distance between them — that is your world now. Getting up requires help. Bathing requires help. Everything requires help.`,
+      [{type:"bad",label:"IMMOBILE"},{type:"bad",label:"carer needed"},{type:"bad",label:"−independence"}]);
     G.needsCarer=true;
+    G.flags.immobileOnset = G.week;
+    G.flags.immobileDepression = 0;
     if(G.salary>0&&G.job){ const jd=JOBS.find(j=>j.title===G.job); if(jd&&jd.active){ G.salary=0; G.job=""; storyEntry("Job lost","You can no longer physically attend work.",[{type:"bad",label:"unemployed"}]); } }
   }
-  if(G.needsCarer&&G.weekOfYear%4===0){
-    G.savings-=800;
-    if(w<280){ G.needsCarer=false; storyEntry("Regained independence","You're able to manage more on your own.",[{type:"stat",label:"independence"}]); }
+
+  // Ongoing immobility effects
+  if(level==="immobile"){
+    G.flags.immobileDepression = (G.flags.immobileDepression||0) + 1;
+
+    // Carer costs
+    if(G.needsCarer && G.weekOfYear%4===0){
+      const carerCost = G.flags.hasCarer ? 600 : 1000;
+      G.savings -= carerCost;
+      if(!G.flags.hasCarer){
+        storyEntry("Professional carer",
+          `You need someone. Social services arranges a professional carer — €${carerCost}/mo. The first visit is strange. Someone in your home, doing things for you. You feel a specific kind of shame about it.`,
+          [{type:"bad",label:`−€${carerCost}/mo`}]);
+        G.flags.hasCarer = true;
+      }
+    }
+
+    // Partner carrying the weight
+    if(G.partnerID && G.weekOfYear%8===0){
+      const partner = G.relationships.find(r=>r.id===G.partnerID);
+      if(partner){
+        if(partner.personality && partner.personality.type==="encouraging"){
+          partner.closeness = clamp(partner.closeness - 5);
+          storyEntry(`${partner.name} is struggling`,
+            `They're doing everything — shopping, cooking, helping you move, working, managing the bills. You can see the exhaustion in them. They don't say anything. That somehow makes it worse.`,
+            [{type:"bad",label:"partner strain"}]);
+        } else if(partner.prefsBig){
+          G.libido = clamp(G.libido + 5);
+          storyEntry(`${partner.name}`,
+            `They seem... comfortable with the situation. More than comfortable. You've noticed the way they look at you. It's reassuring and unsettling in equal measure.`,
+            []);
+        } else {
+          G.relationshipDrama = clamp(G.relationshipDrama + 10);
+          storyEntry(`Relationship strain`,
+            `The situation is taking its toll on both of you. The things left unsaid accumulate. The closeness that used to come easily now requires navigation.`,
+            [{type:"bad",label:"drama +"}]);
+        }
+      }
+    }
+
+    // Isolation → depression escalation
+    if((G.flags.immobileDepression||0)>8 && !G.flags.immobileDepressionEvent){
+      G.flags.immobileDepressionEvent = true;
+      G.depressionScore = clamp(G.depressionScore + 15);
+      storyEntry("Isolation",
+        `Days blur into each other. The ceiling. The window. The same four walls. People come less — they don't know what to say, or they're busy, or they assume someone else is coming. You haven't been outside in weeks. The depression settles in like weather.`,
+        [{type:"bad",label:"severe isolation"},{type:"bad",label:"+depression"}]);
+      setActions([
+        {label:"Ask for help — call someone",fn:()=>{
+          G.depressionScore = clamp(G.depressionScore-10);
+          G.mood = clamp(G.mood+8);
+          const rel = G.relationships.find(r=>r.type==="friend"||r.type==="partner");
+          if(rel) rel.closeness = clamp(rel.closeness+10);
+          storyEntry("You call","The phone rings for a long time. Then they pick up. You talk for an hour. Not about anything specific. Just talking.",[{type:"stat",label:"−isolation"}]);
+          mainMenuActions();
+        }},
+        {label:"Don't reach out — what's the point",fn:()=>{
+          G.depressionScore = clamp(G.depressionScore+8);
+          G.mood = clamp(G.mood-10);
+          storyEntry("Silence","The phone sits there. You don't pick it up. The ceiling again.",[{type:"bad",label:"deeper isolation"}]);
+          mainMenuActions();
+        }},
+      ]);
+      return; // Don't continue normal mobility processing this tick
+    }
+
+    // Feeder / shady character event
+    if(!G.flags.feederEncounter && (G.flags.immobileDepression||0)>4 && Math.random()<0.25){
+      G.flags.feederEncounter = true;
+      const fName = ["Marcus","Tyler","Ryan","Alex","Devon"][Math.floor(Math.random()*5)];
+      storyEntry("Someone new",
+        `${fName} adds you online. They found your profile somewhere — you're not entirely sure where. They're attentive in a way nobody else has been lately. They send food. They say things that make you feel seen. Something in the back of your mind notices that they seem particularly interested in your size.`,
+        [{type:"neu",label:"new contact"},{type:"warn",label:"intentions unclear"}]);
+      G.relationships.push({
+        name:fName, type:"stranger", closeness:20, age:G.age-5+Math.floor(Math.random()*15),
+        personality:{type:"fetishist"}, prefsBig:true, attracted:75,
+        metAt:G.week, dates:0,
+        desc:"Met online. Attentive. Possibly too interested in your weight.",
+        isFeeder:true,
+      });
+      setActions([
+        {label:"Respond — the attention is welcome",fn:()=>{
+          G.happy = clamp(G.happy+10);
+          G.mood  = clamp(G.mood+8);
+          const f = G.relationships.find(r=>r.name===fName);
+          if(f){ f.closeness+=15; f.type="acquaintance"; }
+          storyEntry("You respond",
+            `You write back. They reply immediately. The conversation goes late into the night. It's been a while since someone paid this much attention. You try not to think too hard about why.`,
+            [{type:"stat",label:"+connection"},{type:"warn",label:"watch your step"}]);
+          mainMenuActions();
+        }},
+        {label:"Ignore it — something feels off",fn:()=>{
+          G.relationships.pop();
+          storyEntry("Ignored","You close the message. Your instinct is telling you something. You listen to it.",[{type:"stat",label:"+self-awareness"}]);
+          mainMenuActions();
+        }},
+      ]);
+      return;
+    }
+
+    // Recovery path check
+    if(w<280){ G.needsCarer=false; G.flags.hasCarer=false; storyEntry("Regained some independence","Moving is still hard — but you're moving.",[{type:"stat",label:"recovering"}]); }
+  }
+
+  if(G.needsCarer&&level!=="immobile"&&w<280){
+    G.needsCarer=false; G.flags.hasCarer=false;
+    storyEntry("Regained independence","You're able to manage more on your own.",[{type:"stat",label:"independence"}]);
   }
 }
 
@@ -1798,14 +1948,24 @@ function calcBraSize(){
   return `${bandSize}${cups[cupIdx]}`;
 }
 
+function calcThighCirc(){
+  // Thigh circumference driven by thighs stage
+  return Math.round(40 + 120 * Math.pow(S.thighs.stage / 320, 0.85));
+}
 function updateMeasurements(){
   const w=calcWeight(), bmi=calcBMI(), cat=bmiCat(bmi);
+  const mob=getMobilityLevel?getMobilityLevel():"normal";
+  const mobLabel={normal:"Normal",reduced:"Reduced ⚠",limited:"Limited ⚠",very_limited:"Very limited ⛔",immobile:"IMMOBILE ⛔"};
+  const mobColor={normal:"var(--green)",reduced:"var(--amber)",limited:"var(--amber)",very_limited:"var(--red)",immobile:"var(--red)"};
   setEl('m-weight', `${w.toFixed(1)}<span class="meas-sub">kg</span>`);
   setEl('m-bmi',    `${bmi.toFixed(1)}<span class="bmi-tag ${cat.c}">${cat.l}</span>`);
   setEl('m-waist',  `${calcWaist().toFixed(0)}<span class="meas-sub">cm</span>`);
   setEl('m-bust',   `${calcBust().toFixed(0)}<span class="meas-sub">cm</span>`);
   setEl('m-hips',   `${calcHips().toFixed(0)}<span class="meas-sub">cm</span>`);
+  setEl('m-thighs', `${calcThighCirc()}<span class="meas-sub">cm each</span>`);
   setEl('m-bra',    calcBraSize());
+  const mobEl=document.getElementById('m-mobility');
+  if(mobEl){mobEl.textContent=mobLabel[mob]||mob;mobEl.style.color=mobColor[mob]||'';}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1888,8 +2048,12 @@ function updateDesc(){
   else            paras.push(`<p>The hips and thighs are immense — ${hs.toFixed(0)} cm in circumference. They spread substantially when sitting, and walking requires a wide, rolling gait to accommodate the mass.</p>`);
 
   const thStage=S.thighs.stage;
-  if(thStage>140) paras.push(`<p><em>The inner thighs rub with every step. The skin there is irritated, red-raw, worn.</em></p>`);
-  else if(thStage>80) paras.push(`<p><em>The thighs are thick and heavy — they press together from the top down.</em></p>`);
+  const thCirc=calcThighCirc?calcThighCirc():0;
+  if(thStage>220)       paras.push(`<p><em>The thighs are massive — ${thCirc}cm each. They require a rolling gait to accommodate. The inner surfaces are constantly in contact, raw where they rub together continuously.</em></p>`);
+  else if(thStage>160)  paras.push(`<p><em>Heavy thighs — ${thCirc}cm — that rub persistently. The skin between them is permanently irritated. Every step manages the friction.</em></p>`);
+  else if(thStage>110)  paras.push(`<p><em>The thighs press firmly together, thigh to knee. The skin has adjusted to the constant contact; there's redness at the worst points.</em></p>`);
+  else if(thStage>70)   paras.push(`<p><em>The inner thighs make contact — a soft, constant press that wasn't there before. It's noticed without being unbearable.</em></p>`);
+  else if(thStage<20)   paras.push(`<p><em>The thighs are very lean — a visible gap between them even standing straight.</em></p>`);
 
   if(f.surgery_bbl>0) paras.push(`<p><em>The shape of the buttocks has been surgically enhanced — rounded and lifted beyond what nature provided.</em></p>`);
 
@@ -2046,6 +2210,7 @@ function updateStats(){
   const defShop = G.grocerySet && G.groceryProfile ? (FOOD_PROFILES[G.groceryProfile.key||G.groceryProfile.profileKey||"mixed"]||{label:"Custom"}).label.replace(/[🥗🍞🥩🧀🍕🛒🍱]/u,"").trim() : "Not set";
   setEl('kv-def-shop', defShop);
   renderRelationships();
+  updateHabitsTab();
   // Update mobile drawer if open
   if(document.getElementById('mob-drawer')&&document.getElementById('mob-drawer').classList.contains('open')){
     updateMobDrawer();
@@ -2054,20 +2219,78 @@ function updateStats(){
   updateMobQuickStrip();
 }
 
+function updateHabitsTab(){
+  const el = document.getElementById('habits-content');
+  if(!el) return;
+  const mob = getMobilityLevel ? getMobilityLevel() : 'normal';
+  const mobLabels = {normal:'Normal',reduced:'Reduced',limited:'Limited',very_limited:'Very limited',immobile:'IMMOBILE'};
+  const mobColor  = {normal:'var(--green)',reduced:'var(--amber)',limited:'var(--amber)',very_limited:'var(--red)',immobile:'var(--red)'};
+
+  const rows = [
+    ['Smoking',    G.cigarettesPerDay>0 ? `${G.cigarettesPerDay} cigs/day` : 'Non-smoker',       G.cigarettesPerDay>15?'var(--red)':G.cigarettesPerDay>0?'var(--amber)':'var(--green)'],
+    ['Drinking',   G.drinksPerWeek>0    ? `${G.drinksPerWeek} drinks/wk`  : 'None',              G.drinksPerWeek>21?'var(--red)':G.drinksPerWeek>7?'var(--amber)':'var(--green)'],
+    ['Binge risk', G.bingeTendency>70   ? 'High' : G.bingeTendency>40 ? 'Moderate' : 'Low',      G.bingeTendency>70?'var(--red)':G.bingeTendency>40?'var(--amber)':'var(--green)'],
+    ['Mobility',   mobLabels[mob]||mob,                                                            mobColor[mob]||'var(--ink2)'],
+    ['Exercise',   G.gymVisitsPerWeek>0 ? `Gym ${G.gymVisitsPerWeek}×/wk` : G.fitness>60 ? 'Active' : 'Sedentary', G.fitness>60?'var(--green)':G.fitness>30?'var(--amber)':'var(--red)'],
+    ['Sleep',      `${G.sleepHoursPerNight||7}h/night`,                                           (G.sleepHoursPerNight||7)>=7?'var(--green)':(G.sleepHoursPerNight||7)>=6?'var(--amber)':'var(--red)'],
+    ['Depression', G.depressionScore>70 ? 'Severe' : G.depressionScore>45 ? 'Moderate' : G.depressionScore>20 ? 'Mild' : 'None', G.depressionScore>45?'var(--red)':G.depressionScore>20?'var(--amber)':'var(--green)'],
+    ['Weight',     `${calcWeight().toFixed(1)}kg (BMI ${calcBMI().toFixed(1)})`,                  calcBMI()>35?'var(--red)':calcBMI()>25?'var(--amber)':'var(--green)'],
+  ];
+  // Flags
+  const flags = [];
+  if(G.flags.stretchMarks) flags.push('Stretch marks');
+  if(G.flags.cellulite)    flags.push('Cellulite');
+  if(G.flags.saggy)        flags.push('Loose skin');
+  if(G.flags.acne)         flags.push('Acne');
+  if(G.flags.yellowTeeth)  flags.push('Yellow teeth');
+  if(G.flags.bingeEating)  flags.push('Binge eating');
+  if(G.flags.drinkingProblem) flags.push('Drinking problem');
+  if(G.flags.smokingProblem)  flags.push('Nicotine dependency');
+  if(G.flags.surgery_breast)  flags.push('Breast surgery');
+  if(G.flags.surgery_bbl)     flags.push('BBL');
+  if(G.flags.surgery_lipo)    flags.push('Liposuction');
+  if(G.children>0)            flags.push(`${G.children} child${G.children>1?'ren':''}`);
+  if(G.pregnant)              flags.push(`Pregnant (wk ${G.pregnancyWeek})`);
+
+  el.innerHTML = rows.map(([k,v,c])=>`
+    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:.74rem;">
+      <span style="color:var(--ink2)">${k}</span>
+      <span style="color:${c};font-family:'IBM Plex Mono',monospace;font-size:.72rem">${v}</span>
+    </div>`).join('')
+  + (flags.length ? `<div style="margin-top:8px;font-size:.67rem;color:var(--ink3);line-height:1.8">${flags.map(f=>`<span style="display:inline-block;margin:1px 3px 1px 0;padding:1px 6px;background:var(--bg3);border:1px solid var(--line)">${f}</span>`).join('')}</div>` : '');
+}
+
 function updateMobQuickStrip(){
   const strip = document.getElementById('mob-quick-strip');
   if(!strip) return;
   const isMobile = window.innerWidth <= 700;
   strip.style.display = isMobile ? 'flex' : 'none';
-  // Update dynamic labels
+  // Job
   const jobEl = document.getElementById('mqs-job');
-  if(jobEl) jobEl.textContent = G.salary>0 ? `€${G.salary}/mo` : 'Find work';
+  const jobSubEl = document.getElementById('mqs-job-sub');
+  if(jobEl) jobEl.textContent = G.salary>0 ? '💼 '+G.job.split(' ').slice(0,2).join(' ') : '💼 Unemployed';
+  if(jobSubEl) jobSubEl.textContent = G.salary>0 ? `€${G.salary}/mo` : 'find work';
+  // Pantry
   const pantryEl = document.getElementById('mqs-pantry');
-  if(pantryEl) pantryEl.textContent = G.pantry&&G.pantry.servings>0 ? `${G.pantry.servings} meals` : 'Empty!';
+  const pantrySubEl = document.getElementById('mqs-pantry-sub');
+  const ps = pantryStatus();
+  if(pantryEl){ pantryEl.style.color = ps==='empty'?'var(--red)':ps==='low'?'var(--amber)':''; pantryEl.textContent='🛒 Food'; }
+  if(pantrySubEl) pantrySubEl.textContent = G.pantry&&G.pantry.servings>0 ? `${G.pantry.servings} meals` : 'EMPTY';
+  // Housing
   const rentEl = document.getElementById('mqs-rent');
-  if(rentEl) rentEl.textContent = `€${G.rent}/mo`;
+  const rentSubEl = document.getElementById('mqs-rent-sub');
+  if(rentEl) rentEl.textContent = '🏠 '+G.housing.split(' ').slice(0,1).join('');
+  if(rentSubEl) rentSubEl.textContent = `€${G.rent}/mo`;
+  // Savings
   const savEl = document.getElementById('mqs-savings');
-  if(savEl) savEl.textContent = `€${Math.round(G.savings).toLocaleString()}`;
+  const savSubEl = document.getElementById('mqs-savings-sub');
+  if(savEl){ savEl.style.color = G.savings<0?'var(--red)':G.savings<100?'var(--amber)':''; savEl.textContent='💰 Savings'; }
+  if(savSubEl) savSubEl.textContent = `€${Math.round(G.savings).toLocaleString()}`;
+  // Social
+  const socSubEl = document.getElementById('mqs-social-sub');
+  const partner = G.partnerID ? G.relationships.find(r=>r.id===G.partnerID) : null;
+  const friendCount = G.relationships.filter(r=>r.type==='friend').length;
+  if(socSubEl) socSubEl.textContent = partner ? partner.name : friendCount ? `${friendCount} friends` : 'none';
 }
 
 function renderRelationships(){
@@ -2121,12 +2344,12 @@ const _fatAcc = {belly:0, arm:0, butt:0, thighs:0, breast:0};
 function gainFat(amt, profile="balanced"){
   // Distribution fractions by profile
   const dist={
-    balanced:{belly:.30,arm:.15,butt:.25,thighs:.18,breast:.12},
-    dairy:   {belly:.10,arm:.08,butt:.35,thighs:.35,breast:.12},
+    balanced:{belly:.30,arm:.13,butt:.25,thighs:.20,breast:.12},
+    dairy:   {belly:.10,arm:.07,butt:.35,thighs:.36,breast:.12},
     alcohol: {belly:.65,arm:.10,butt:.10,thighs:.10,breast:.05},
     carb:    {belly:.45,arm:.15,butt:.20,thighs:.15,breast:.05},
     meat:    {belly:.40,arm:.20,butt:.20,thighs:.15,breast:.05},
-    overall: {belly:.25,arm:.18,butt:.28,thighs:.18,breast:.11},
+    overall: {belly:.25,arm:.16,butt:.28,thighs:.20,breast:.11},
   };
   const d = dist[profile] || dist.balanced;
   for(const [p, r] of Object.entries(d)){
@@ -4370,15 +4593,225 @@ function buyCar(name,price){
 //  PLASTIC SURGERY
 // ═══════════════════════════════════════════════════════
 function openSurgeryMenu(){
-  storyEntry("Surgery consultation","You walk into a private clinic.");
+  const bra = calcBraSize();
+  const bustStage = S.breast.stage;
+  const buttStage = S.butt.stage;
+  const age = G.age || 21;
+
+  // Size guards
+  const augAvailable  = bustStage < 180; // Not already enormous
+  const bblAvailable  = buttStage < 250; // Not already huge
+  const liftAvailable = bustStage > 80 || age > 35;
+  const faceliftAge   = age >= 38;
+  const skinTuckAvail = G.flags.saggy || (calcBMI() > 28 && age > 30);
+
+  storyEntry("Surgery consultation",
+    `You sit across from the consultant. They go through the options methodically. Everything is possible. The question is what you actually want — and what your body can handle.
+
+Current: ${bra} bust · ${calcHips().toFixed(0)}cm hips · ${calcWeight().toFixed(0)}kg`
+  );
+
   setActions([
-    {label:"Breast augmentation (€8,000)",disabled:G.savings<8000,fn:()=>doSurgery("breast",50,8000,"breast_aug")},
-    {label:"Breast reduction (€6,000)",disabled:G.savings<6000||S.breast.stage<100,fn:()=>doSurgery("breast",-60,6000,"breast_red")},
-    {label:"BBL — Brazilian butt lift (€10,000)",disabled:G.savings<10000,fn:()=>doSurgery("butt",50,10000,"bbl")},
-    {label:"Liposuction — belly (€6,000)",disabled:G.savings<6000,fn:()=>doSurgeryLipo(6000)},
-    {label:"Back",fn:()=>mainMenuActions()},
+    {label:"🫁 Breast augmentation →",          disabled:!augAvailable, fn:()=>openBreastAugMenu(), title:augAvailable?"":"Already at maximum recommended size"},
+    {label:"📉 Breast reduction →",              disabled:bustStage<60,  fn:()=>openBreastRedMenu()},
+    {label:"🍑 BBL — Brazilian butt lift →",     disabled:!bblAvailable, fn:()=>openBBLMenu()},
+    {label:"🧴 Liposuction →",                   fn:()=>openLipoMenu()},
+    liftAvailable?{label:"⬆ Breast lift (mastopexy) →",   fn:()=>openBreastLiftMenu()}:null,
+    skinTuckAvail?{label:"✂ Skin/tummy tuck →",           fn:()=>openSkinTuckMenu()}:null,
+    faceliftAge?  {label:"👄 Facial procedures →",         fn:()=>openFacialProceduresMenu()}:null,
+    {label:"← Back",fn:()=>mainMenuActions()},
+  ].filter(Boolean));
+}
+
+// ── Breast Augmentation ──────────────────────────────────────────────────────
+function openBreastAugMenu(){
+  storyEntry("Breast augmentation","The consultant explains the options. Implant size, placement, recovery time. You look at the before/afters.");
+  setActions([
+    {label:"Small (+1 cup size) — €6,500",   disabled:G.savings<6500,  fn:()=>doBreastAug(25,6500,"small")},
+    {label:"Medium (+2 cup sizes) — €9,000", disabled:G.savings<9000,  fn:()=>doBreastAug(45,9000,"medium")},
+    {label:"Large (+3 cup sizes) — €14,000", disabled:G.savings<14000, fn:()=>doBreastAug(75,14000,"large")},
+    {label:"← Back", fn:()=>openSurgeryMenu()},
   ]);
 }
+function doBreastAug(delta, cost, scale){
+  G.savings -= cost;
+  changePart("breast", delta);
+  G.flags.surgery_breast = (G.flags.surgery_breast||0) + 1;
+  G.flags.surgery_breast_scale = scale;
+  G.happy = clamp(G.happy + (scale==="large"?18:scale==="medium"?14:10));
+  G.conf  = clamp(G.conf  + (scale==="large"?12:scale==="medium"?8:5));
+  G.health = clamp(G.health - 3);
+  storyEntry("Breast augmentation — "+scale,
+    `Six weeks of recovery. The first few days are hard — the tightness, the limited movement, the careful sleeping. Then gradually the swelling settles and you see the result. ${scale==="large"?"Dramatic. Undeniably dramatic.":scale==="medium"?"Noticeably fuller. It suits you.":"A subtle change, natural-looking."} The scar sits along the underside of each breast — faint, and fading.`,
+    [{type:"gain",label:"+cup size"},{type:"bad",label:`−€${cost.toLocaleString()}`}]);
+  advanceWeeks(6); renderCharacter(); mainMenuActions();
+}
+
+// ── Breast Reduction ─────────────────────────────────────────────────────────
+function openBreastRedMenu(){
+  storyEntry("Breast reduction","Covered partly by insurance in some cases. The consultant explains the relief it can bring — back pain, posture, movement.");
+  setActions([
+    {label:"Moderate reduction (−2 cup sizes) — €5,500", disabled:G.savings<5500||S.breast.stage<80,  fn:()=>doBreastRed(-40,5500)},
+    {label:"Significant reduction (−4 cup sizes) — €7,500",disabled:G.savings<7500||S.breast.stage<140, fn:()=>doBreastRed(-80,7500)},
+    {label:"← Back", fn:()=>openSurgeryMenu()},
+  ]);
+}
+function doBreastRed(delta, cost){
+  G.savings -= cost;
+  changePart("breast", delta);
+  G.flags.surgery_breast_red = true;
+  G.happy  = clamp(G.happy + 10);
+  G.health = clamp(G.health + 6); // back pain relief
+  G.fitness= clamp(G.fitness + 4);
+  storyEntry("Breast reduction",
+    `The relief is almost immediate after the swelling subsides. Standing feels different. Running feels possible again. Your back doesn't ache by evening. The consultant says the results should be permanent. You believe them.`,
+    [{type:"lose",label:"−cup size"},{type:"stat",label:"+health"},{type:"bad",label:`−€${cost.toLocaleString()}`}]);
+  advanceWeeks(6); renderCharacter(); mainMenuActions();
+}
+
+// ── BBL ───────────────────────────────────────────────────────────────────────
+function openBBLMenu(){
+  storyEntry("Brazilian butt lift","Fat transfer from areas of excess to the buttocks. The consultant explains the process, the recovery, the risks.");
+  setActions([
+    {label:"Subtle enhancement — €8,000",    disabled:G.savings<8000,  fn:()=>doBBL(30,8000,"subtle")},
+    {label:"Noticeable lift — €12,000",      disabled:G.savings<12000, fn:()=>doBBL(60,12000,"noticeable")},
+    {label:"Dramatic transformation — €18,000",disabled:G.savings<18000,fn:()=>doBBL(100,18000,"dramatic")},
+    {label:"← Back", fn:()=>openSurgeryMenu()},
+  ]);
+}
+function doBBL(delta, cost, scale){
+  G.savings -= cost;
+  changePart("butt", delta);
+  // Fat transfer: small local reduction in belly/thighs (donor sites)
+  changePart("belly", -Math.round(delta*0.3));
+  changePart("thighs",-Math.round(delta*0.2));
+  G.flags.surgery_bbl = (G.flags.surgery_bbl||0) + 1;
+  G.happy = clamp(G.happy + (scale==="dramatic"?20:scale==="noticeable"?15:8));
+  G.conf  = clamp(G.conf  + (scale==="dramatic"?15:scale==="noticeable"?10:6));
+  G.health = clamp(G.health - 4);
+  storyEntry("BBL — "+scale,
+    `The recovery is longer than you expected — you can't sit flat for weeks, you sleep on your front, you walk carefully. But the result is ${scale==="dramatic"?"extraordinary. A silhouette you barely recognise as your own.":scale==="noticeable"?"clearly visible. A rounder, lifted shape that changes how clothes fit.":"subtle but real. A slight lift, a little more shape."}`,
+    [{type:"gain",label:"+shape"},{type:"bad",label:`−€${cost.toLocaleString()}`}]);
+  advanceWeeks(8); renderCharacter(); mainMenuActions();
+}
+
+// ── Liposuction ───────────────────────────────────────────────────────────────
+function openLipoMenu(){
+  storyEntry("Liposuction","Localised fat removal. The consultant marks out areas on your body with a marker. It's oddly clinical.");
+  setActions([
+    {label:"Belly lipo — €5,500",        disabled:G.savings<5500,  fn:()=>doLipo("belly",  40, 5500)},
+    {label:"Thighs lipo — €5,000",       disabled:G.savings<5000,  fn:()=>doLipo("thighs", 35, 5000)},
+    {label:"Arms lipo — €4,500",         disabled:G.savings<4500,  fn:()=>doLipo("arm",    30, 4500)},
+    {label:"Full lower body — €14,000",  disabled:G.savings<14000, fn:()=>doLipoFull(14000)},
+    {label:"← Back", fn:()=>openSurgeryMenu()},
+  ]);
+}
+function doLipo(part, delta, cost){
+  G.savings -= cost;
+  changePart(part, -delta);
+  G.flags.surgery_lipo = (G.flags.surgery_lipo||0) + 1;
+  if(!G.flags.saggy) G.flags.saggy = true;
+  G.happy  = clamp(G.happy + 8);
+  G.health = clamp(G.health - 2);
+  const partNames = {belly:"belly", thighs:"thighs", arm:"arms"};
+  storyEntry(`${partNames[part]||part} liposuction`,
+    `The recovery is surprisingly brutal — bruising, swelling, compression garments for six weeks. But the fat in that area is gone. The skin takes time to settle. There's some loose skin where the volume was — the consultant warned you about this.`,
+    [{type:"lose",label:`−fat (${partNames[part]||part})`},{type:"bad",label:`−€${cost.toLocaleString()}`}]);
+  advanceWeeks(6); renderCharacter(); mainMenuActions();
+}
+function doLipoFull(cost){
+  G.savings -= cost;
+  changePart("belly",  -50);
+  changePart("thighs", -45);
+  changePart("arm",    -35);
+  changePart("butt",   -20);
+  G.flags.surgery_lipo = (G.flags.surgery_lipo||0) + 3;
+  G.flags.saggy = true;
+  G.happy  = clamp(G.happy + 15);
+  G.health = clamp(G.health - 5);
+  storyEntry("Full lower body liposuction",
+    `Six weeks of compression garments. Sleeping on your side. Not being able to sit comfortably. The bruising is spectacular and then it fades and you see what's underneath. Significant reduction — belly, thighs, arms all notably smaller. The skin hasn't quite caught up. The consultant says it will. Mostly.`,
+    [{type:"lose",label:"−fat (lower body)"},{type:"bad",label:`−€${cost.toLocaleString()}`}]);
+  advanceWeeks(8); renderCharacter(); mainMenuActions();
+}
+
+// ── Breast Lift ───────────────────────────────────────────────────────────────
+function openBreastLiftMenu(){
+  storyEntry("Breast lift (mastopexy)","Lifts and reshapes without significantly changing size. Good after weight loss or post-pregnancy.");
+  setActions([
+    {label:"Standard lift — €5,000",  disabled:G.savings<5000, fn:()=>doBreastLift(5000,"standard")},
+    {label:"Lift + small aug — €9,500",disabled:G.savings<9500&&S.breast.stage<180, fn:()=>doBreastLift(9500,"augmented")},
+    {label:"← Back", fn:()=>openSurgeryMenu()},
+  ]);
+}
+function doBreastLift(cost, type){
+  G.savings -= cost;
+  if(type==="augmented") changePart("breast", 20);
+  G.flags.surgery_lift = true;
+  G.happy = clamp(G.happy + 12);
+  G.conf  = clamp(G.conf + 8);
+  storyEntry("Breast lift",
+    `The change isn't in size — it's in position, in shape, in how clothes sit. The consultant says the results are most visible in what you can no longer feel pulling at your shoulders and back. You agree.`,
+    [{type:"stat",label:"lifted & reshaped"},{type:"bad",label:`−€${cost.toLocaleString()}`}]);
+  advanceWeeks(5); renderCharacter(); mainMenuActions();
+}
+
+// ── Skin / Tummy Tuck ─────────────────────────────────────────────────────────
+function openSkinTuckMenu(){
+  storyEntry("Skin removal / tummy tuck","For excess skin after weight loss or pregnancy. The consultant examines the areas you've pointed to.");
+  setActions([
+    {label:"Tummy tuck — €7,500",        disabled:G.savings<7500,  fn:()=>doSkinTuck("belly",  7500)},
+    {label:"Inner thigh lift — €6,000",  disabled:G.savings<6000,  fn:()=>doSkinTuck("thighs", 6000)},
+    {label:"Arm lift (brachioplasty) — €5,000",disabled:G.savings<5000, fn:()=>doSkinTuck("arm",5000)},
+    {label:"← Back", fn:()=>openSurgeryMenu()},
+  ]);
+}
+function doSkinTuck(part, cost){
+  G.savings -= cost;
+  if(part==="belly") { changePart("belly", -15); G.flags.saggy = false; }
+  G.flags["surgery_tuck_"+part] = true;
+  G.happy  = clamp(G.happy + 14);
+  G.conf   = clamp(G.conf + 10);
+  G.health = clamp(G.health - 2);
+  const names={belly:"tummy tuck",thighs:"inner thigh lift",arm:"arm lift"};
+  storyEntry(names[part]||"Skin surgery",
+    `The excess skin is gone. The scar runs along the natural crease — visible, permanent, but neat. You put on clothes that didn't fit right before and they sit differently now. Better. Like they're supposed to.`,
+    [{type:"stat",label:"skin removed"},{type:"bad",label:`−€${cost.toLocaleString()}`}]);
+  G.flags.saggy = false;
+  advanceWeeks(6); renderCharacter(); mainMenuActions();
+}
+
+// ── Facial Procedures ─────────────────────────────────────────────────────────
+function openFacialProceduresMenu(){
+  const age = G.age||21;
+  storyEntry("Facial procedures","The clinic offers a range. The consultant asks what you're hoping to achieve.");
+  setActions([
+    {label:"💉 Lip fillers — €600",          disabled:G.savings<600,  fn:()=>doFacialProc("lips",600)},
+    {label:"💉 Botox (forehead) — €800",     disabled:G.savings<800,  fn:()=>doFacialProc("botox",800)},
+    age>=40?{label:"🔪 Full facelift — €15,000", disabled:G.savings<15000, fn:()=>doFacialProc("facelift",15000)}:null,
+    {label:"💊 Chemical peel — €1,200",      disabled:G.savings<1200, fn:()=>doFacialProc("peel",1200)},
+    {label:"👃 Rhinoplasty — €8,000",        disabled:G.savings<8000, fn:()=>doFacialProc("nose",8000)},
+    {label:"← Back", fn:()=>openSurgeryMenu()},
+  ].filter(Boolean));
+}
+function doFacialProc(type, cost){
+  G.savings -= cost;
+  const stories={
+    lips:"Slightly fuller, symmetrical. You keep running your tongue over them for the first week. The effect lasts six to nine months.",
+    botox:"The lines soften over the following days. You look rested rather than frozen — you were careful about how much you asked for.",
+    facelift:"Six weeks of recovery. Bruising, swelling, keeping your head elevated. Then the swelling subsides and you see it — the jowls are gone, the jawline is back, the neck is tighter. A decade, maybe more, erased.",
+    peel:"Three days of raw, angry skin. Then it peels, and underneath is something noticeably smoother and more even.",
+    nose:"The cast comes off after two weeks. The full result takes a year to settle. But the change is already visible — the shape you always wanted.",
+  };
+  G.flags["surgery_face_"+type] = true;
+  G.happy = clamp(G.happy + (type==="facelift"?20:type==="nose"?16:10));
+  G.conf  = clamp(G.conf  + (type==="facelift"?15:type==="nose"?12:8));
+  storyEntry("Facial procedure — "+type, stories[type]||"The procedure is complete. Recovery takes a few weeks.",
+    [{type:"stat",label:"changed"},{type:"bad",label:`−€${cost.toLocaleString()}`}]);
+  advanceWeeks(type==="facelift"?8:type==="nose"?4:1);
+  renderCharacter(); mainMenuActions();
+}
+
 function doSurgery(part,delta,cost,flag){
   G.savings-=cost;changePart(part,delta);
   G.flags["surgery_"+flag.split("_")[0]]=true;
@@ -4389,7 +4822,6 @@ function doSurgery(part,delta,cost,flag){
 function doSurgeryLipo(cost){
   G.savings-=cost;loseFat(50);
   G.flags.surgery_lipo=true;
-  // Check for saggy aftermath
   if(!G.flags.saggy){G.flags.saggy=true;}
   storyEntry("Liposuction","The procedure removes significant fat deposits. The recovery is hard. Your skin hasn't quite caught up.",[]); 
   advanceWeeks(8);renderCharacter();mainMenuActions();
@@ -4399,17 +4831,51 @@ function doSurgeryLipo(cost){
 //  BINGE EVENT
 // ═══════════════════════════════════════════════════════
 function triggerBingeEvent(){
-  const trigger=G.depressionScore>50?"depression":G.stress?"stress":"impulse";
+  const trigger=G.depressionScore>60?"crushing depression":G.depressionScore>40?"low mood":G.bingeTendency>70?"habit":"impulse";
   const foods=[
-    {label:"Entire pizza",gain:6,profile:"carb",desc:"a whole pizza, straight from the box, standing at the kitchen counter."},
-    {label:"Ice cream binge",gain:5,profile:"dairy",desc:"two tubs of ice cream and a bag of sweets, alone on the sofa."},
-    {label:"Fast food run",gain:7,profile:"carb",desc:"three burgers and a large fries at 1am."},
-    {label:"Everything in the fridge",gain:9,profile:"balanced",desc:"methodically working through every edible thing in the flat."},
+    {gain:6,profile:"carb",before:"It starts with one slice. You eat the whole pizza, cold, standing at the counter.",after:"You sit on the floor of the kitchen after. Not sure how you got there."},
+    {gain:5,profile:"dairy",before:"Two tubs from the freezer. You don't even taste the second one.",after:"The empty tubs sit on the coffee table like an accusation."},
+    {gain:8,profile:"carb",before:"You drive at midnight. Three burgers, large fries, a milkshake. You eat in the car before going inside.",after:"The wrappers are still on the passenger seat in the morning."},
+    {gain:9,profile:"balanced",before:"You go through the fridge methodically. Leftovers, cheese, whatever was in the back of the cupboard. It takes forty minutes.",after:"You don't remember most of it. Your body does."},
+    {gain:4,profile:"carb",before:"Crisps, mostly. A bag and a half, then crackers, then bread with butter.",after:"Not the worst. But you weren't hungry and now you're not nothing."},
+    {gain:11,profile:"balanced",before:"A full delivery order — starter, main, dessert. Then whatever was in the kitchen. It spirals.",after:"You feel sick and ashamed in the specific way that's become familiar."},
+    {gain:7,profile:"dairy",before:"Ice cream, cheese, yoghurt — anything cold and smooth. The texture is what you needed.",after:"You cry briefly, then feel strangely calm."},
   ];
   const f=foods[Math.floor(Math.random()*foods.length)];
   gainFat(f.gain,f.profile);
-  G.happy=clamp(G.happy-5);G.depressionScore=clamp(G.depressionScore+5);
-  storyEntry("Binge",`The ${trigger} gets the better of you. You eat ${f.desc} Afterwards comes the shame — quiet, familiar, heavy.`,[{type:"gain",label:"+weight"},{type:"bad",label:"−mood"}]);
+  G.happy=clamp(G.happy-6);
+  G.depressionScore=clamp(G.depressionScore+6);
+  G.bingeTendency=clamp(G.bingeTendency+4);
+
+  const intensity=f.gain>8?"bad":"warn";
+  storyEntry("Binge",
+    `The ${trigger} gets there first. ${f.before}
+
+${f.after}`,
+    [{type:"gain",label:`+${f.gain} fat`},{type:intensity,label:"−mood"}]);
+
+  // Aftermath choice if severe
+  if(f.gain>=8||G.depressionScore>55){
+    setActions([
+      {label:"Be kind to yourself",fn:()=>{
+        G.depressionScore=clamp(G.depressionScore-4);
+        storyEntry("After","You don't punish yourself. You drink water. You go to bed. Tomorrow is separate from tonight.",[{type:"stat",label:"self-compassion"}]);
+        renderCharacter(); mainMenuActions();
+      }},
+      {label:"Try to compensate — skip tomorrow's meals",cls:"warn",fn:()=>{
+        G.health=clamp(G.health-5); G.bingeTendency=clamp(G.bingeTendency+8); G.energy=clamp(G.energy-10);
+        storyEntry("Restriction","You decide not to eat tomorrow. The cycle continues.",[{type:"bad",label:"restriction→binge cycle"}]);
+        renderCharacter(); mainMenuActions();
+      }},
+      {label:"Ring someone",fn:()=>{
+        const rel=G.relationships.find(r=>r.closeness>50);
+        if(rel){G.depressionScore=clamp(G.depressionScore-6);storyEntry(`Called ${rel.name}`,"You talk around it at first, then say what actually happened. They don't judge. The shame gets a little smaller.",[{type:"stat",label:"supported"}]);}
+        else{storyEntry("No one to call","You hold the phone for a while.",[{type:"bad",label:"alone with it"}]);}
+        renderCharacter(); mainMenuActions();
+      }},
+    ]);
+    return;
+  }
   renderCharacter();
 }
 
@@ -5436,6 +5902,18 @@ function generateFreeWillDesire(){
   });
 
   // Trait-specific desires
+  // Mobility-aware
+  if(getMobilityLevel&&(getMobilityLevel()==="reduced"||getMobilityLevel()==="limited")){
+    pool.push({
+      title:"do chair exercises all week",
+      impulse:"You found a programme online specifically for people with mobility issues. It looks manageable. You want to try.",
+      actionLabel:"Commit to the programme",
+      resultText:"Every morning for a week. It's modest. It's something. Your body remembers what it can do.",
+      isPositive:true,
+      doFn:()=>{ G.fitness=clamp(G.fitness+3); G.health=clamp(G.health+3); G.depressionScore=clamp(G.depressionScore-5); G.conf=clamp(G.conf+4); }
+    });
+  }
+
   if(isFoodie){
     pool.push({
       title:"cook an elaborate meal",
@@ -5596,8 +6074,169 @@ function generateFreeWillDesire(){
     });
   }
 
+  // Health-aware additions
+  if(G.flags.sleepApnea && G.flags.hasCPAP){
+    pool.push({
+      title:"sleep without the CPAP tonight",
+      impulse:"The mask is uncomfortable and you've had a good week. Surely one night won't hurt.",
+      actionLabel:"Skip it",
+      resultText:"You sleep without it. You wake up feeling like you've been hit by something. You won't do that again.",
+      isPositive:false,
+      doFn:()=>{ G.energy=clamp(G.energy-20); G.health=clamp(G.health-3); }
+    });
+  }
+
+  if(G.bingeTendency>50){
+    pool.push({
+      title:"order the biggest takeaway you can",
+      impulse:"Something in you has decided. Not hunger exactly — something else. The phone is in your hand before you've made the decision consciously.",
+      actionLabel:"Order everything",
+      resultText:"It arrives in three bags. You eat most of it. The satisfaction is real and short-lived.",
+      isPositive:false,
+      doFn:()=>{ gainFat(8,"carb"); G.weeklyJunk+=60; G.depressionScore=clamp(G.depressionScore+5); G.happy=clamp(G.happy+5); }
+    });
+  }
+
+  if(G.flags.drinkingProblem){
+    pool.push({
+      title:"drink alone tonight",
+      impulse:"Not socially. Not to celebrate. Just the bottle and the sofa and the quiet that alcohol makes.",
+      actionLabel:"Open the bottle",
+      resultText:"It's not good but it's familiar. Familiar is something.",
+      isPositive:false,
+      doFn:()=>{ G.drinksPerWeek+=5; G.drinkingWeeks++; gainFat(2,"alcohol"); G.mood=clamp(G.mood+5); G.health=clamp(G.health-3); }
+    });
+  }
+
+  if(G.depressionScore>40){
+    pool.push({
+      title:"do absolutely nothing all weekend",
+      impulse:"Not rest — nothing. Curtains closed, phone face-down, no plans, no productivity. Just absence.",
+      actionLabel:"Disappear for the weekend",
+      resultText:"You lose the weekend. You resurface Sunday evening feeling both worse and strangely settled.",
+      isPositive:false,
+      doFn:()=>{ G.depressionScore=clamp(G.depressionScore+4); G.energy=clamp(G.energy+8); G.mood=clamp(G.mood-5); }
+    });
+  }
+
+  if(G.conf>60&&G.partnerID==null){
+    pool.push({
+      title:"ask someone out — cold",
+      impulse:"Someone you've seen before. Not a friend of a friend — just a person whose face you know from a coffee shop or the gym. A small act of belief in yourself.",
+      actionLabel:"Go for it",
+      resultText: Math.random()<0.5 ? "They say yes. The next hour is some kind of electricity." : "They decline, kindly. You walk away with your dignity intact, which is not nothing.",
+      isPositive:true,
+      doFn:()=>{ G.conf=clamp(G.conf+5); if(Math.random()<0.45){const p=generatePerson();p.attracted=70;p.type='acquaintance';G.relationships.push(p);G.happy=clamp(G.happy+12);} }
+    });
+  }
+
+  if(G.fitness>55&&!isSmoker){
+    pool.push({
+      title:"run further than you've ever run",
+      impulse:"You've been building slowly. But today you want to see what the edge feels like.",
+      actionLabel:"Push to your limit",
+      resultText:"You go further than you planned. Your legs ache for three days. It was worth it.",
+      isPositive:true,
+      doFn:()=>{ loseFat(3); G.fitness=clamp(G.fitness+5); G.health=clamp(G.health+4); G.conf=clamp(G.conf+6); G.energy=clamp(G.energy-15); }
+    });
+  }
+
   if(!pool.length) return null;
   return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function openMobilityMenu(){
+  const mob=getMobilityLevel();
+  const w=calcWeight();
+  const partner=G.partnerID?G.relationships.find(r=>r.id===G.partnerID):null;
+  storyEntry("Mobility & Accessibility",
+    `You are ${({normal:"fully mobile",reduced:"experiencing reduced mobility",limited:"significantly mobility-limited",very_limited:"severely mobility-limited — most activities require adaptation",immobile:"immobile — you cannot move without assistance"})[mob]||mob}. Weight: ${w.toFixed(0)}kg.`
+  );
+  const acts=[];
+
+  if(mob==="immobile"||mob==="very_limited"){
+    acts.push({label:"📞 Call for delivery / remote services",fn:()=>{
+      G.savings-=30; G.mood=clamp(G.mood+5);
+      storyEntry("Managing remotely","You handle what you can by phone and online. It costs more but it works.",[{type:"bad",label:"−€30"}]);
+      mainMenuActions();
+    }});
+    if(G.needsCarer){
+      acts.push({label:"💬 Talk to your carer",fn:()=>openCarerMenu()});
+    }
+    if(!G.needsCarer&&!partner){
+      acts.push({label:"📲 Ask for help — reach out",fn:()=>{
+        const rel=G.relationships.find(r=>r.type==="friend"||r.type==="partner");
+        if(rel){
+          rel.closeness=clamp(rel.closeness+10);
+          G.mood=clamp(G.mood+8);
+          storyEntry(`${rel.name} comes over`,`You ask. They come. There's something in being able to ask.`,[{type:"stat",label:"+support"}]);
+        } else {
+          storyEntry("No one to call","The contact list is short. This is its own kind of pain.",[{type:"bad",label:"isolated"}]);
+        }
+        mainMenuActions();
+      }});
+    }
+    acts.push({label:"📱 Online therapy / support group",fn:()=>{
+      G.savings-=40; G.depressionScore=clamp(G.depressionScore-8);
+      storyEntry("Online support","You join a forum, a video group. People who know exactly what this feels like.",[{type:"stat",label:"−isolation"},{type:"bad",label:"−€40"}]);
+      mainMenuActions();
+    }});
+  }
+
+  if(mob!=="normal"){
+    acts.push({label:"🏥 Medical assessment",fn:()=>{
+      G.savings-=150; G.health=clamp(G.health+5);
+      storyEntry("Assessment","The doctor goes through everything — mobility aids, pain management, dietary advice. Some of it useful, some of it you already know.",[{type:"stat",label:"+health info"},{type:"bad",label:"−€150"}]);
+      mainMenuActions();
+    }});
+  }
+
+  if(mob==="reduced"||mob==="limited"){
+    acts.push({label:"🚶 Gentle movement programme",cls:"good",fn:()=>{
+      loseFat(1); G.fitness=clamp(G.fitness+2); G.health=clamp(G.health+2);
+      G.energy=clamp(G.energy+3);
+      storyEntry("Gentle movement","Small efforts. A walk around the flat. Stretching. The body remembers what it can do.",[{type:"lose",label:"−small fat"},{type:"stat",label:"+health"}]);
+      renderCharacter(); mainMenuActions();
+    }});
+    acts.push({label:"🏊 Pool therapy — low impact",disabled:G.savings<25,fn:()=>{
+      G.savings-=25; loseFat(2); G.fitness=clamp(G.fitness+4); G.health=clamp(G.health+4);
+      G.mood=clamp(G.mood+8);
+      storyEntry("Pool therapy","Buoyancy takes the weight off joints that have been under pressure for months. You move in ways you forgot you could.",[{type:"lose",label:"−fat"},{type:"stat",label:"+health +mood"},{type:"bad",label:"−€25"}]);
+      renderCharacter(); mainMenuActions();
+    }});
+  }
+
+  acts.push({label:"← Back",fn:()=>mainMenuActions()});
+  setActions(acts.filter(Boolean));
+}
+
+function openCarerMenu(){
+  const carers=[
+    {name:"Maria",personality:"professional",note:"Efficient, kind, doesn't say much."},
+    {name:"James",personality:"chatty",note:"Talks constantly but means well."},
+    {name:"Agnes",personality:"firm",note:"No-nonsense. You respect her."},
+  ];
+  G.flags.carerName=G.flags.carerName||(carers[Math.floor(Math.random()*carers.length)].name);
+  const carerNote=carers.find(c=>c.name===G.flags.carerName)||carers[0];
+  storyEntry(`Your carer: ${G.flags.carerName}`,
+    `${carerNote.note} They come in twice a day. The intimacy of it — being seen in this way, needing help with things you used to do automatically — is something you're still adjusting to.`);
+  setActions([
+    {label:"Just talk for a while",fn:()=>{
+      G.depressionScore=clamp(G.depressionScore-5); G.mood=clamp(G.mood+6);
+      storyEntry("Conversation",`You talk. Not about anything in particular. ${G.flags.carerName} has a life outside of this room. Somehow that's reassuring.`,[{type:"stat",label:"−isolation"}]);
+      mainMenuActions();
+    }},
+    {label:"Ask about medical options",fn:()=>{
+      G.health=clamp(G.health+2);
+      storyEntry(`${G.flags.carerName}'s advice`,"They mention a bariatric specialist. A support group. A name of a doctor who's good with complex cases. You write it down.",[{type:"stat",label:"information"}]);
+      mainMenuActions();
+    }},
+    {label:"Tell them you need more privacy",fn:()=>{
+      G.depressionScore=clamp(G.depressionScore+3); G.mood=clamp(G.mood+4);
+      storyEntry("Boundaries","You ask for certain moments to yourself. They nod. They understand. The next visit feels slightly different.",[{type:"neu",label:"boundary set"}]);
+      mainMenuActions();
+    }},
+  ]);
 }
 
 function finaliseEndWeek(){
@@ -5745,7 +6384,8 @@ function mainMenuActions(){
       {label:"📱 Social media",               fn:()=>openSocialMediaMenu()},
       {label:"🎲 Gambling",                   fn:()=>openGamblingMenu()},
       {label:"✈ Travel · 8h",                fn:()=>queueActivity("✈","travel", ()=>openTravelMenu(), 30)},
-    ]},
+      getMobilityLevel()!=="normal"?{label:"♿ Mobility & accessibility",fn:()=>openMobilityMenu()}:null,
+    ].filter(Boolean)},
     {emoji:"💼", label:"Career", acts:[
       {label: hasJob?"💼 My job":"💼 Find work",  fn:()=>openJobMenu()},
       {label:"📚 Study · 8h",                fn:()=>queueActivity("📚","study", ()=>openStudyMenu(), 20)},
@@ -5826,7 +6466,7 @@ function mainMenuActions(){
     btn.style.gridColumn='1/-1';
     btn.style.borderColor='var(--acc2)';
     btn.style.color='var(--acc2)';
-    btn.textContent = '✦ Free Will this week';
+    btn.textContent = '✦ Free Will (3 actions)';
     btn.onclick = ()=>openFreeWillMenu();
     wg.prepend(btn);
   }
@@ -7429,18 +8069,15 @@ function getWeeklyFreeWillChoices(){
   const eligible = FREE_WILL_POOL.filter(fw => {
     try { return fw.cond(); } catch(e){ return false; }
   });
-  // Sort: higher weight = more likely to appear. Shuffle within weight tiers.
   eligible.sort((a,b)=> (b.weight - a.weight) + (Math.random()-0.5)*2);
-  // Always show up to 6 choices, but at most one per category to ensure variety
   const seen = {};
   const picks = [];
   for(const fw of eligible){
-    if(picks.length>=6) break;
-    if(seen[fw.cat] && Math.random()<0.6) continue; // allow some repeats
+    if(picks.length>=3) break; // HARD CAP: only 3 free will actions per week
+    if(seen[fw.cat] && Math.random()<0.6) continue;
     seen[fw.cat]=true;
     picks.push(fw);
   }
-  // Pad to at least 3 if pool is thin
   if(picks.length<3){
     for(const fw of eligible){
       if(!picks.includes(fw)) picks.push(fw);
@@ -7452,14 +8089,57 @@ function getWeeklyFreeWillChoices(){
 
 function openFreeWillMenu(){
   const choices = getWeeklyFreeWillChoices();
-  storyEntry("Free Will","These are things you could do on your own initiative this week — driven by your own desires and choices, not external push. Not everything is always available.");
-  setActions([
-    ...choices.map(fw=>({
-      label: fw.emoji+" "+fw.label,
+  const bingePulse = G.bingeTendency > 60;
+  const smokePulse = G.cigarettesPerDay > 0 && G.flags.tryingToQuit;
+
+  storyEntry("Free Will this week",
+    `Three choices available. These won't advance time — they're things you might do on your own initiative, driven by habit, impulse, or desire. ${bingePulse?"⚠ Your urge to binge is strong right now.":""}${smokePulse?" ⚠ The craving to smoke is difficult to ignore.":""}`
+  );
+
+  const acts = choices.map(fw=>{
+    // Add visual urgency to "bad" high-urge options
+    const isBingeAction = fw.cat==="food" && G.bingeTendency>60;
+    const isSmokeAction = fw.cat==="lifestyle" && fw.id && fw.id.startsWith("fw_smoke") && G.cigarettesPerDay>0 && G.flags.tryingToQuit;
+    let labelPrefix = "";
+    if(isBingeAction) labelPrefix = "⚡ ";
+    if(isSmokeAction) labelPrefix = "🔥 ";
+    return {
+      label: labelPrefix + fw.emoji + " " + fw.label,
+      cls: (isBingeAction||isSmokeAction) ? "warn" : "",
       fn: fw.fn,
-    })),
-    {label:"← Back",fn:()=>mainMenuActions()},
-  ]);
+    };
+  });
+
+  // If binge urge is very high and resist button shown, add note about it
+  if(bingePulse){
+    acts.push({
+      label:"🚫 Resist the urge to binge — hold it together",
+      cls:"good",
+      fn:()=>{
+        const success = Math.random() < 0.5 + (G.fitness-50)*0.003;
+        if(success){
+          G.bingeTendency = clamp(G.bingeTendency - 8);
+          G.mood = clamp(G.mood - 6);
+          G.conf = clamp(G.conf + 5);
+          storyEntry("Held it together",
+            "You feel the pull all evening. You don't give in. It doesn't feel good — but you did it.",
+            [{type:"stat",label:"+willpower"},{type:"bad",label:"−mood (temporary)"}]);
+        } else {
+          G.bingeTendency = clamp(G.bingeTendency + 5);
+          G.mood = clamp(G.mood - 8);
+          gainFat(4,"balanced");
+          storyEntry("Couldn't resist",
+            "You hold out until 10pm. Then you order everything on the menu. The guilt is immediate and heavy.",
+            [{type:"bad",label:"+weight"},{type:"bad",label:"−mood"}]);
+          renderCharacter();
+        }
+        mainMenuActions();
+      }
+    });
+  }
+
+  acts.push({label:"← Back", fn:()=>mainMenuActions()});
+  setActions(acts);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -8377,6 +9057,7 @@ function resolveCompatTopic(partner, topic, yourView, partnerView){
     applySleepQualityEffect();
     commutePassiveEffect();
     if(Math.random()<0.08) checkBodyImageEvent();
+    checkAutonomousActions();
   };
 })();
 
@@ -8483,13 +9164,76 @@ function checkHabitEscalation(){
   }
 }
 
+// ═══════════════════════════════════════════════════════
+//  AUTONOMOUS CHARACTER ACTIONS
+//  Based on habits/flags/mood — the character does things
+//  on their own without player input (passive narrative)
+// ═══════════════════════════════════════════════════════
+function checkAutonomousActions(){
+  // Smoker quitting → craving → might binge instead
+  if(G.flags.tryingToQuit && G.cigarettesPerDay===0 && Math.random()<0.30){
+    const bingeInstead = Math.random()<0.45;
+    if(bingeInstead){
+      gainFat(3,"carb");
+      G.bingeTendency = clamp(G.bingeTendency+8);
+      storyEntry("Craving displaced",
+        "You've been off cigarettes for a week. You're not smoking. But your hands keep going to the kitchen. You eat a bag of crisps and then a chocolate bar and then something salty. The mouth wants what it wants.",
+        [{type:"bad",label:"+binge"},{type:"gain",label:"+calories"}]);
+      renderCharacter();
+    } else {
+      G.mood = clamp(G.mood-5);
+      storyEntry("Withdrawal",
+        "The cravings come in waves. You're irritable, short with people, unable to sit still. You don't smoke. But it costs something.",
+        [{type:"bad",label:"−mood"}]);
+    }
+  }
+
+  // Binge eater — autonomous episode if high tendency and stressed
+  if(G.flags.bingeEating && G.bingeTendency>70 && G.depressionScore>45 && Math.random()<0.35){
+    gainFat(Math.round(3+Math.random()*5), "balanced");
+    G.depressionScore = clamp(G.depressionScore+3);
+    G.bingeTendency   = clamp(G.bingeTendency+5);
+    const foods=["a large bag of crisps, then another, then ice cream straight from the tub",
+      "everything in the cupboard, working through it methodically and without enjoyment",
+      "a family-sized pizza and a bag of sweets and whatever was in the freezer",
+      "takeaway — two portions, maybe three — standing at the kitchen counter"];
+    storyEntry("Autonomous binge",
+      `You don't remember deciding to do it. One moment you're on the sofa, the next you're eating ${foods[Math.floor(Math.random()*foods.length)]}. The shame comes later.`,
+      [{type:"bad",label:"−mood"},{type:"gain",label:"+weight"}]);
+    renderCharacter();
+  }
+
+  // Heavy drinker — might drink automatically
+  if(G.flags.alcoholDependency && Math.random()<0.25){
+    G.drinksPerWeek = clamp(G.drinksPerWeek+3, 0, 80);
+    gainFat(1,"alcohol");
+    G.depressionScore = clamp(G.depressionScore+2);
+    storyEntry("Drinking by default",
+      "You're not sure when you started, only that at some point the bottle was open and now it's empty. This wasn't a decision, exactly. Just what happens now.",
+      [{type:"bad",label:"−control"}]);
+  }
+
+  // Very sedentary + immobile → passive weight gain
+  if(getMobilityLevel()==="immobile" || getMobilityLevel()==="very_limited"){
+    gainFat(2,"balanced");
+  }
+
+  // Gambler with debt — might gamble to try to cover it
+  if((G.gamblingDebt||0)>2000 && G.savings>100 && Math.random()<0.2){
+    const bet = Math.min(G.savings, Math.round(100+Math.random()*500));
+    if(Math.random()<0.3){ G.savings+=bet*2; storyEntry("Lucky bet","You gambled to cover the debt. It worked this time.",[{type:"stat",label:"+€"+(bet*2)}]); }
+    else { G.savings=Math.max(0,G.savings-bet); G.gamblingDebt+=bet; storyEntry("Dug deeper","You tried to gamble your way out. The hole got bigger.",[{type:"bad",label:"−€"+bet}]); }
+    updateStats();
+  }
+}
+
 // Smoking/drinking reduction (player-initiated)
 function tryQuitSmoking(){
   storyEntry("Quitting smoking","You decide to try. Everyone says it's the hardest thing they've done.");
   setActions([
     {label:"Cold turkey",fn:()=>{
       const success = Math.random() < (G.cigarettesPerDay<10?0.5:0.2);
-      if(success){ G.cigarettesPerDay=0; G.flags.chainSmoker=false; storyEntry("You quit","It's brutal for two weeks. Then it gets easier. You genuinely did it.",[{type:"stat",label:"non-smoker"}]); }
+      if(success){ G.cigarettesPerDay=0; G.flags.chainSmoker=false; G.flags.tryingToQuit=false; storyEntry("You quit","It's brutal for two weeks. Then it gets easier. You genuinely did it.",[{type:"stat",label:"non-smoker"}]); }
       else { storyEntry("Relapsed","Three days in. The craving was too much. You'll try again.",[{type:"bad",label:"relapsed"}]); }
       mainMenuActions();
     }},
@@ -9067,6 +9811,483 @@ const WEIGHT_EVENTS = [
 
 // Merge weight events into FLAG_EVENTS at runtime
 if(typeof FLAG_EVENTS !== 'undefined') FLAG_EVENTS.push(...WEIGHT_EVENTS);
+
+// ═══════════════════════════════════════════════════════
+//  EXTENDED RANDOM EVENTS — added for variety pass
+// ═══════════════════════════════════════════════════════
+const EXTENDED_EVENTS = [
+
+  // ── HEALTH & BODY ───────────────────────────────────────────────────────────
+  ()=>{
+    if(calcWeight()<80) return;
+    storyEntry("Doctor's appointment",
+      "Your GP has been flagging the weight for a few visits now. Today they're more direct about it. They print a referral to a nutritionist. It sits on your kitchen table for a week.");
+    setActions([
+      {label:"Follow through — see the nutritionist",cls:"good",fn:()=>{
+        G.flags.hasNutritionist=true;
+        G.savings-=120;
+        G.bingeTendency=clamp(G.bingeTendency-10);
+        G.flags.nutritionistWeeks=0;
+        storyEntry("Nutritionist","She's practical and non-judgmental. A plan. Small changes. You feel, oddly, like someone is in your corner.",[{type:"stat",label:"+guidance"},{type:"bad",label:"−€120"}]);
+        mainMenuActions();
+      }},
+      {label:"File it away — maybe later",fn:()=>{
+        G.depressionScore=clamp(G.depressionScore+3);
+        G.health=clamp(G.health-2);
+        storyEntry("Filed away","The referral goes in a drawer. You think about it sometimes.",[{type:"bad",label:"missed opportunity"}]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  ()=>{
+    if(G.flags.hasNutritionist && !G.flags.nutritionistDone){
+      G.flags.nutritionistWeeks=(G.flags.nutritionistWeeks||0)+1;
+      if(G.flags.nutritionistWeeks>=8){
+        G.flags.nutritionistDone=true;
+        loseFat(6); G.health=clamp(G.health+6); G.bingeTendency=clamp(G.bingeTendency-8);
+        storyEntry("Eight weeks in",
+          "The nutritionist signs you off for now. You've lost some weight — slowly, sustainably. More importantly you understand what you're actually eating. The reflexive reaching has slowed.",
+          [{type:"lose",label:"−weight"},{type:"stat",label:"+nutrition literacy"}]);
+        renderCharacter(); mainMenuActions(); return;
+      }
+      loseFat(1); G.health=clamp(G.health+1);
+      storyEntry("Nutritionist check-in","A weigh-in and a chat. You're on track. Slowly, but on track.",[{type:"lose",label:"small progress"}]);
+      mainMenuActions();
+    }
+  },
+
+  ()=>{
+    // PCOS/hormonal event (weight-related)
+    if(calcBMI()<22||G.flags.hormoneCheck||G.age<20) return;
+    if(Math.random()>0.04) return;
+    G.flags.hormoneCheck=true;
+    storyEntry("Something's off",
+      "You've been putting on weight even when you're trying not to. You mention it to your GP. She orders blood tests — thyroid, hormones, blood sugar. The results come back mixed.");
+    setActions([
+      {label:"Follow the treatment plan",cls:"good",fn:()=>{
+        G.flags.hormoneTreatment=true;
+        G.savings-=200; G.health=clamp(G.health+5);
+        storyEntry("Treatment","Monthly prescriptions, adjustments, patience. The weight isn't going to fall off overnight. But at least you know what you're dealing with.",[{type:"stat",label:"diagnosis"},{type:"bad",label:"−€200"}]);
+        mainMenuActions();
+      }},
+      {label:"Second opinion — go private",fn:()=>{
+        G.savings-=600; G.health=clamp(G.health+8);
+        storyEntry("Private specialist","Better tests, faster answers, a slightly different treatment plan. Worth the money, probably.",[{type:"stat",label:"fuller picture"},{type:"bad",label:"−€600"}]);
+        mainMenuActions();
+      }},
+      {label:"Ignore it — you're fine",fn:()=>{
+        G.health=clamp(G.health-4); gainFat(3,"balanced");
+        storyEntry("Ignored","You leave the letter in the car. The issue doesn't leave.",[{type:"bad",label:"untreated"}]);
+        renderCharacter(); mainMenuActions();
+      }},
+    ]);
+  },
+
+  ()=>{
+    // Back pain event — high weight or heavy work
+    if(calcWeight()<90&&!G.flags.backPain) return;
+    if(G.flags.backPainRecent) return;
+    G.flags.backPainRecent=true;
+    const severe = calcWeight()>140;
+    G.health=clamp(G.health-(severe?10:5));
+    G.energy=clamp(G.energy-(severe?15:8));
+    storyEntry(severe?"Severe back pain":"Back pain",
+      severe?"You wake up and can barely stand. The pain is sharp and constant. Every movement requires planning. You spend three days mostly horizontal, heat pad, painkillers, frustration."
+            :"A nagging pain in the lower back that's been building for weeks. It flares badly today. Ibuprofen and a physio referral.",
+      [{type:"bad",label:"−health"},{type:"bad",label:"−energy"}]);
+    setActions([
+      {label:`See a physio (~€${severe?200:80})`,fn:()=>{
+        const cost=severe?200:80;
+        G.savings-=cost; G.health=clamp(G.health+(severe?6:4));
+        storyEntry("Physiotherapy","Exercises, posture corrections, a foam roller. Slow improvement.",[{type:"stat",label:"+health"},{type:"bad",label:`−€${cost}`}]);
+        mainMenuActions();
+      }},
+      {label:"Manage it yourself",fn:()=>{
+        G.health=clamp(G.health-3);
+        storyEntry("Managing alone","Heat pad, rest, over-the-counter painkillers. It eases eventually. It'll come back.",[{type:"bad",label:"chronic risk"}]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  ()=>{
+    // Sleep apnoea event — high weight
+    if(calcWeight()<130||G.flags.sleepApnea) return;
+    if(Math.random()>0.05) return;
+    G.flags.sleepApnea=true;
+    G.energy=clamp(G.energy-15); G.health=clamp(G.health-8);
+    G.mood=clamp(G.mood-10);
+    storyEntry("Sleep apnoea",
+      "You've been waking up exhausted despite sleeping. Someone who stayed over says you were stopping breathing in the night. Your GP refers you for a sleep study. The results confirm it: sleep apnoea. Related to your weight.",
+      [{type:"bad",label:"diagnosis"},{type:"bad",label:"−energy −health"}]);
+    setActions([
+      {label:"Get a CPAP machine (~€900)",disabled:G.savings<900,fn:()=>{
+        G.savings-=900; G.energy=clamp(G.energy+20); G.health=clamp(G.health+10);
+        G.flags.hasCPAP=true;
+        storyEntry("CPAP machine","You wear a mask at night. Uncomfortable for the first few weeks. Then your sleep transforms. You wake up rested for the first time in months.",[{type:"stat",label:"sleep restored"},{type:"bad",label:"−€900"}]);
+        mainMenuActions();
+      }},
+      {label:"Manage with lifestyle changes",fn:()=>{
+        G.energy=clamp(G.energy+5);
+        storyEntry("Lifestyle management","Sleep on your side. Cut back alcohol. It helps a little.",[{type:"neu",label:"partial help"}]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  // ── EMOTIONAL & MENTAL HEALTH ──────────────────────────────────────────────
+  ()=>{
+    if(G.depressionScore<50||G.flags.therapyOffered) return;
+    G.flags.therapyOffered=true;
+    storyEntry("Someone notices",
+      `${G.partnerID?G.relationships.find(r=>r.id===G.partnerID)?.name||'Your partner':'A friend'} says something. Not accusatory — careful. They've noticed the patterns. The isolation, the low mood, the cycles of eating and guilt. They suggest talking to someone.`);
+    setActions([
+      {label:"Try therapy — weekly sessions (~€60/mo)",fn:()=>{
+        G.savings-=60; G.subscriptions=(G.subscriptions||15)+60;
+        G.flags.inTherapy=true; G.flags.therapyWeeks=0;
+        storyEntry("Therapy",
+          "The first session you cry for most of it. The second is worse. By the fifth something starts to shift — not fixed, not solved, but named. Having words for things makes them smaller.",
+          [{type:"stat",label:"support system"},{type:"bad",label:"−€60/mo"}]);
+        mainMenuActions();
+      }},
+      {label:"Free counselling — waitlist",fn:()=>{
+        G.flags.therapyWaitlist=true;
+        G.flags.therapyWaitWeeks=0;
+        storyEntry("Waitlist","Six to eight weeks, they say. You put your name down. It's something.",[{type:"neu",label:"waiting"}]);
+        mainMenuActions();
+      }},
+      {label:"I'm fine",fn:()=>{
+        G.depressionScore=clamp(G.depressionScore+5);
+        storyEntry("Deflected","You say you're fine. They don't quite believe you. You don't quite believe you.",[{type:"bad",label:"avoided"}]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  ()=>{
+    // Therapy progression
+    if(!G.flags.inTherapy) return;
+    G.flags.therapyWeeks=(G.flags.therapyWeeks||0)+1;
+    G.savings-=60;
+    if(G.flags.therapyWeeks===4){
+      G.depressionScore=clamp(G.depressionScore-12);
+      G.bingeTendency=clamp(G.bingeTendency-8);
+      G.conf=clamp(G.conf+6);
+      storyEntry("One month of therapy",
+        "A month in. You've started recognising the triggers — the anxious eating, the deflection, the self-sabotage. You can't always stop them. But you see them now.",
+        [{type:"stat",label:"−depression"},{type:"stat",label:"self-awareness"}]);
+      mainMenuActions(); return;
+    }
+    if(G.flags.therapyWeeks===12){
+      G.flags.inTherapy=false;
+      G.depressionScore=clamp(G.depressionScore-20);
+      G.bingeTendency=clamp(G.bingeTendency-15);
+      G.conf=clamp(G.conf+12); G.happy=clamp(G.happy+10);
+      storyEntry("Three months",
+        "You've been going for three months. The therapist says you could space out sessions now if you want. You think you might. The work isn't done but the worst of it is quieter.",
+        [{type:"stat",label:"major improvement"},{type:"stat",label:"+confidence"}]);
+      mainMenuActions(); return;
+    }
+    G.depressionScore=clamp(G.depressionScore-2);
+  },
+
+  ()=>{
+    // Anxiety attack
+    if(G.depressionScore<35&&G.bingeTendency<50) return;
+    if(Math.random()>0.06) return;
+    storyEntry("Panic attack",
+      "It comes from nowhere. Heart racing, chest tight, convinced something terrible is about to happen. You sit on the bathroom floor until it passes. Twenty minutes. It felt like an hour.");
+    setActions([
+      {label:"Call someone",fn:()=>{
+        const rel=G.relationships.find(r=>r.type==='friend'||r.type==='partner');
+        G.depressionScore=clamp(G.depressionScore-5); G.mood=clamp(G.mood+5);
+        if(rel) rel.closeness=clamp(rel.closeness+8);
+        storyEntry("Called","They stay on the phone until you're calm. The relief of not being alone with it.",[{type:"stat",label:"supported"}]);
+        mainMenuActions();
+      }},
+      {label:"Ride it out alone",fn:()=>{
+        G.depressionScore=clamp(G.depressionScore+4); G.energy=clamp(G.energy-10);
+        storyEntry("Alone with it","You breathe through it. It passes. You're shaken for the rest of the day.",[{type:"bad",label:"−energy"}]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  // ── RELATIONSHIPS & SOCIAL ─────────────────────────────────────────────────
+  ()=>{
+    if(G.partnerID) return;
+    if(Math.random()>0.08) return;
+    const names=['Camila','Ines','Yara','Sasha','Dani','Priyanka','Nour','Eva','Leila'];
+    const name=names[Math.floor(Math.random()*names.length)];
+    const app=Math.random()<0.5;
+    storyEntry(app?"Dating app match":"You meet someone",
+      app?`${name} matches with you. Her profile is funny. The conversation doesn't die after three messages, which is more than most.`
+        :`You meet ${name} at ${['a gallery opening','the laundromat','a mutual friends dinner','a work event'][Math.floor(Math.random()*4)]}. Something clicks immediately.`);
+    const p=generatePerson(); p.name=name; p.metAt=G.week; p.type="acquaintance";
+    p.attracted=assessAttraction(p)+10; p.dates=0;
+    setActions([
+      {label:`Ask ${name} out`,cls:"good",fn:()=>{
+        G.relationships.push(p);
+        G.happy=clamp(G.happy+10); G.conf=clamp(G.conf+5);
+        storyEntry(`Date with ${name}`,"You meet for coffee. It runs to two hours. You're already thinking about the next one.",[{type:"stat",label:"new connection"}]);
+        mainMenuActions();
+      }},
+      {label:"Leave it — not the right time",fn:()=>{
+        G.mood=clamp(G.mood-3);
+        storyEntry("Let it pass","You don't follow up. The moment goes.",[]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  ()=>{
+    // Partner pregnancy pressure
+    if(!G.partnerID||G.pregnant||G.age<26||G.age>42) return;
+    if(G.flags.pregnancyConversation||Math.random()>0.05) return;
+    G.flags.pregnancyConversation=true;
+    const p=G.relationships.find(r=>r.id===G.partnerID);
+    if(!p) return;
+    storyEntry(`${p.name} brings it up`,
+      `You've been together long enough that it was going to come up eventually. Children. They want to know where you stand. The conversation is careful and loaded at the same time.`);
+    setActions([
+      {label:"You want children",fn:()=>{
+        p.closeness=clamp(p.closeness+15);
+        storyEntry("Aligned","You're on the same page. The conversation shifts from whether to when.",[{type:"stat",label:"+closeness"}]);
+        mainMenuActions();
+      }},
+      {label:"Not sure yet",fn:()=>{
+        storyEntry("Uncertain","You say you're not sure. They seem to accept it, but the subject doesn't quite go away.",[]);
+        mainMenuActions();
+      }},
+      {label:"You don't want children",fn:()=>{
+        const deal=!Math.random()<0.4;
+        if(deal){G.partnerID=null;p.type='ex';G.depressionScore=clamp(G.depressionScore+15);G.happy=clamp(G.happy-20);storyEntry("A dealbreaker","They need someone who wants the same things. You understand. Understanding doesn't make it easier.",[{type:"bad",label:"breakup"}]);}
+        else{p.closeness=clamp(p.closeness+5);storyEntry("Accepted","They say they can live with that. You hope they mean it.",[{type:"neu",label:"tension remains"}]);}
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  ()=>{
+    // Friendship fallout
+    const friends=G.relationships.filter(r=>r.type==='friend'&&r.closeness>40);
+    if(!friends.length||Math.random()>0.04) return;
+    const f=friends[Math.floor(Math.random()*friends.length)];
+    storyEntry(`Falling out with ${f.name}`,
+      `Something happened. A comment they made, a thing you did, or just a slow accumulation of small frictions. ${f.name} sends a long message. It isn't kind.`);
+    setActions([
+      {label:"Respond honestly",fn:()=>{
+        const resolve=Math.random()<0.6;
+        f.closeness=clamp(f.closeness+(resolve?5:-20));
+        if(!resolve)f.type='acquaintance';
+        storyEntry(resolve?`Resolved with ${f.name}`:`Distance from ${f.name}`,
+          resolve?"A difficult conversation. But honest. You come out the other side with something intact.":"You say your piece. They say theirs. It doesn't fully heal.",[]);
+        mainMenuActions();
+      }},
+      {label:"Apologise — keep the peace",fn:()=>{
+        f.closeness=clamp(f.closeness+8);
+        G.conf=clamp(G.conf-3);
+        storyEntry("Apology","You apologise whether or not you think you were wrong. The peace is fragile but real.",[{type:"neu",label:"peace kept"}]);
+        mainMenuActions();
+      }},
+      {label:"Cut them off",fn:()=>{
+        G.relationships=G.relationships.filter(r=>r.id!==f.id);
+        G.depressionScore=clamp(G.depressionScore+5); G.social=clamp((G.social||50)-8);
+        storyEntry("Cut off","You block them. The relief and the grief arrive at the same time.",[{type:"bad",label:"−friendship"}]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  // ── FINANCES & CAREER ──────────────────────────────────────────────────────
+  ()=>{
+    // Side hustle opportunity
+    if(G.salary<800||G.salary>3500) return;
+    if(G.flags.sideHustle||Math.random()>0.04) return;
+    G.flags.sideHustle=true;
+    const hustles=[
+      {name:"Selling things online",desc:"A few hours listing old stuff and curating other people's finds. Low effort, decent side income.",earn:80,hours:3},
+      {name:"Tutoring",desc:"You know enough about one subject to teach it. One student turns into three.",earn:200,hours:5},
+      {name:"Freelance design work",desc:"A contact asks if you do logos. You say yes and figure it out.",earn:350,hours:8,req:'creative'},
+      {name:"Delivery driving evenings",desc:"Two or three nights a week. Boring but honest.",earn:250,hours:12,req:'licence'},
+    ];
+    const eligible=hustles.filter(h=>(!h.req||(h.req==='creative'&&G.traits?.includes('creative'))||(h.req==='licence'&&G.licence)));
+    if(!eligible.length) return;
+    const h=eligible[Math.floor(Math.random()*eligible.length)];
+    storyEntry("Side hustle opportunity",`${h.name}. ${h.desc} About ${h.hours}h/week, roughly €${h.earn}/mo extra.`);
+    setActions([
+      {label:`Take it on — €${h.earn}/mo`,cls:"good",fn:()=>{
+        G.sideHustleIncome=(G.sideHustleIncome||0)+h.earn;
+        G.savings+=h.earn;
+        G.energy=clamp(G.energy-8);
+        storyEntry("Side hustle","You fit it in around work. The extra money makes a real difference.",[{type:"stat",label:`+€${h.earn}/mo`}]);
+        mainMenuActions();
+      }},
+      {label:"Not right now",fn:()=>{
+        storyEntry("Passed","The right opportunity at the wrong time.",[]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  ()=>{
+    // Inheritance / windfall
+    if(G.flags.inheritance||G.age<25||Math.random()>0.02) return;
+    G.flags.inheritance=true;
+    const amt=2000+Math.round(Math.random()*18000);
+    storyEntry("Inheritance",
+      `A distant relative you barely knew has left you something. A solicitor's letter, then a bank transfer. €${amt.toLocaleString()}. It feels strange to be glad about it.`);
+    setActions([
+      {label:"Save it",fn:()=>{
+        G.savings+=amt;
+        storyEntry("Saved","It sits in the account. You check the balance more than usual.",[{type:"stat",label:`+€${amt.toLocaleString()}`}]);
+        mainMenuActions();
+      }},
+      {label:"Invest it (ISA/savings account)",fn:()=>{
+        G.savings+=amt; G.flags.savingsAccount=true;
+        storyEntry("Invested","You put it somewhere sensible. It earns interest. Boring, good.",[{type:"stat",label:"savings account active"}]);
+        mainMenuActions();
+      }},
+      {label:"Treat yourself — big purchase",fn:()=>{
+        const spend=Math.round(amt*0.7);
+        G.savings+=amt-spend;
+        G.happy=clamp(G.happy+15); G.mood=clamp(G.mood+10);
+        storyEntry("Spent it","You buy the thing you've been circling for months. It makes you genuinely, unreasonably happy.",[{type:"stat",label:`+€${amt-spend} saved`}]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  ()=>{
+    // Job offer from competitor
+    if(!G.salary||G.salary<1500) return;
+    if(Math.random()>0.04) return;
+    const newSal=Math.round(G.salary*(1.2+Math.random()*0.3));
+    storyEntry("Unexpected job offer",
+      `A recruiter contacts you out of nowhere. They've heard good things. The role is similar to what you do now but pays €${newSal.toLocaleString()}/mo — ${Math.round((newSal-G.salary)/G.salary*100)}% more.`);
+    setActions([
+      {label:"Accept — take the jump",cls:"good",fn:()=>{
+        const oldJob=G.job; const oldSal=G.salary;
+        G.salary=newSal;
+        G.job=G.job+' (new co.)';
+        G.conf=clamp(G.conf+10);
+        G.energy=clamp(G.energy-8);
+        storyEntry("New job","You hand in your notice. The first week is disorienting. The payslip isn't.",[{type:"stat",label:`+€${newSal-oldSal}/mo`}]);
+        advanceWeeks(2); mainMenuActions();
+      }},
+      {label:"Use it to negotiate a raise",fn:()=>{
+        const success=Math.random()<0.55;
+        if(success){
+          const raise=Math.round(G.salary*0.12);
+          G.salary+=raise;
+          storyEntry("Counter-offer accepted",`Your current employer matches most of it. €${raise}/mo more, and you didn't have to move.`,[{type:"stat",label:`+€${raise}/mo`}]);
+        } else {
+          storyEntry("Turned down","They say they can't match it. You have a decision to make.",[{type:"neu",label:"unchanged"}]);
+        }
+        mainMenuActions();
+      }},
+      {label:"Decline — you like where you are",fn:()=>{
+        G.conf=clamp(G.conf+3);
+        storyEntry("Declined","You thank them and say no. There's a certain satisfaction in turning something down.",[{type:"stat",label:"+certainty"}]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  // ── BODY IMAGE & APPEARANCE ────────────────────────────────────────────────
+  ()=>{
+    // Social media body comparison
+    if(G.socialMediaHours<2||Math.random()>0.08) return;
+    const bmi=calcBMI();
+    storyEntry("The feed",
+      `You're scrolling and it becomes algorithmic therapy — or the opposite. Filtered bodies, before-and-afters, transformation reels. ${bmi>28?"Your body is everywhere in there, held up as the 'before'.":"Bodies nothing like yours, presented as the baseline."}`);
+    setActions([
+      {label:"Close the app — enough",fn:()=>{
+        G.socialMediaHours=clamp(G.socialMediaHours-1);
+        G.mood=clamp(G.mood+5);
+        storyEntry("You close it","Not for the first time. But this time you stay off it for a few hours and feel the difference.",[{type:"stat",label:"+mood"}]);
+        mainMenuActions();
+      }},
+      {label:"Spiral — compare and despair",fn:()=>{
+        G.depressionScore=clamp(G.depressionScore+8);
+        G.bingeTendency=clamp(G.bingeTendency+6);
+        G.conf=clamp(G.conf-5);
+        storyEntry("Down the hole","An hour later. You've looked at everyone who isn't you.",[{type:"bad",label:"−mood −confidence"}]);
+        mainMenuActions();
+      }},
+      {label:"Post something — reclaim the space",fn:()=>{
+        G.conf=clamp(G.conf+5); G.social=clamp((G.social||50)+6);
+        storyEntry("You post","A real photo. No filter. The likes don't matter — the act does.",[{type:"stat",label:"+confidence"}]);
+        mainMenuActions();
+      }},
+    ]);
+  },
+
+  ()=>{
+    // Clothing milestone — positive
+    if(G.weightHistory.length<4) return;
+    const trend=G.weightHistory[0]-G.weightHistory[G.weightHistory.length-1];
+    if(trend<-6||trend>6) return; // not rapid change — steady state
+    if(Math.random()>0.05) return;
+    const bmi=calcBMI();
+    storyEntry("Getting dressed",
+      bmi<22?"You pull on something and it fits well. Really well. You stand in front of the mirror for a moment longer than usual. You look good."
+      :bmi<28?"You find a combination that works — the right cut, the right colour. Today the mirror is not the enemy."
+             :"You've learned what cuts suit you, what works with your shape as it actually is rather than as you wish it were. You put together an outfit. It's good.");
+    G.conf=clamp(G.conf+6); G.happy=clamp(G.happy+5);
+    setActions([{label:"Good day",fn:()=>mainMenuActions()}]);
+  },
+
+  // ── SEASONAL & CONTEXTUAL ──────────────────────────────────────────────────
+  ()=>{
+    // Winter slump
+    if(getSeason&&getSeason()!=='winter') return;
+    if(Math.random()>0.05) return;
+    G.energy=clamp(G.energy-8); G.mood=clamp(G.mood-6);
+    gainFat(2,"carb");
+    storyEntry("Winter eating",
+      "Dark by four. Cold. The instinct is carbohydrate — pasta, bread, warmth. You eat more than summer-you would. You don't entirely mind. The sofa and the heavy foods are a form of armour.",
+      [{type:"gain",label:"+winter weight"},{type:"bad",label:"−energy"}]);
+    renderCharacter(); mainMenuActions();
+  },
+
+  ()=>{
+    // Summer body pressure
+    if(getSeason&&getSeason()!=='spring') return;
+    if(G.flags.summerPressureEvent||Math.random()>0.07) return;
+    G.flags.summerPressureEvent=true;
+    const bmi=calcBMI();
+    storyEntry("Summer approaching",
+      `The temperature is rising and so is the conversation. Someone mentions a holiday. Swimwear comes up. ${bmi>27?"The specific dread of taking your clothes off in a public place settles in.":"You think about what you want to feel like by July."}`);
+    setActions([
+      {label:"Start exercising more",cls:"good",fn:()=>{
+        G.fitness=clamp(G.fitness+5); loseFat(2);
+        G.depressionScore=clamp(G.depressionScore-3);
+        storyEntry("Motivated","You start going for morning walks. Something is shifting.",[{type:"stat",label:"+motivation"},{type:"lose",label:"−fat"}]);
+        renderCharacter(); mainMenuActions();
+      }},
+      {label:"Accept yourself as you are",fn:()=>{
+        G.conf=clamp(G.conf+5); G.depressionScore=clamp(G.depressionScore-5);
+        storyEntry("Acceptance","You decide the summer is for living in, not for performing a body transformation. You go on the holiday. You get in the water.",[{type:"stat",label:"+self-acceptance"}]);
+        mainMenuActions();
+      }},
+      {label:"Crash diet — fast results",cls:"warn",fn:()=>{
+        loseFat(8); G.health=clamp(G.health-8); G.energy=clamp(G.energy-15);
+        G.bingeTendency=clamp(G.bingeTendency+12);
+        G.flags.saggy=calcWeight()>70?true:G.flags.saggy;
+        storyEntry("Crash diet",
+          "You lose the weight. Fast. Everyone notices. You feel terrible. The rebound, when it comes, is worse than if you'd done nothing.",
+          [{type:"lose",label:"−weight (fast)"},{type:"bad",label:"−health −energy"},{type:"bad",label:"binge risk ↑"}]);
+        renderCharacter(); mainMenuActions();
+      }},
+    ]);
+  },
+
+];
+
+// Push extended events into the random pool
+if(typeof RANDOM_EVENTS !== 'undefined') RANDOM_EVENTS.push(...EXTENDED_EVENTS);
 
 // Hook clothing events into passiveWeeklyEffects via advanceWeeks override
 (function(){
