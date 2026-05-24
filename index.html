@@ -2079,13 +2079,16 @@ function initState(preset,hairStyle,breastTend){
     milestones:[],
     journal:[],
     // week pressure tracking
-    weeksIdle: 0,          // weeks with no planned activities and no events
-    missedRentMonths: 0,   // consecutive months rent not paid
-    missedBillsMonths: 0,  // consecutive months bills not paid
-    utilsCutOff: false,    // utilities shut off
-    lastWeekSummary: null, // stored summary for display
-    weekStartSavings: 200, // savings at start of each week (for summary)
+    weeksIdle: 0,
+    missedRentMonths: 0,
+    missedBillsMonths: 0,
+    utilsCutOff: false,
+    lastWeekSummary: null,
+    weekStartSavings: 200,
   };
+  // Ensure pressure flags exist (safe for old saves)
+  if(!G.flags) G.flags = {};
+  G.flags.cardFrozen = G.flags.cardFrozen || false;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2228,6 +2231,16 @@ function loadGame(){
     const data = JSON.parse(raw);
     G = data.G;
     S = data.S;
+    // Migrate old saves: ensure new fields exist
+    G.weeksIdle        = G.weeksIdle        ?? 0;
+    G.missedRentMonths = G.missedRentMonths ?? 0;
+    G.missedBillsMonths= G.missedBillsMonths?? 0;
+    G.utilsCutOff      = G.utilsCutOff      ?? false;
+    G.weeksUnemployed  = G.weeksUnemployed  ?? 0;
+    G.lastWeekSummary  = G.lastWeekSummary  ?? null;
+    G.weekStartSavings = G.weekStartSavings ?? G.savings ?? 0;
+    if(!G.flags) G.flags = {};
+    G.flags.cardFrozen = G.flags.cardFrozen ?? false;
     activeHobby = data.activeHobby||null;
     hobbyXP     = data.hobbyXP||0;
     storyCount  = data.storyCount||0;
@@ -2853,46 +2866,6 @@ function updateStats(){
   updateMobQuickStrip();
 }
 
-function updateHabitsTab(){
-  const el = document.getElementById('habits-content');
-  if(!el) return;
-  const mob = getMobilityLevel ? getMobilityLevel() : 'normal';
-  const mobLabels = {normal:'Normal',reduced:'Reduced',limited:'Limited',very_limited:'Very limited',immobile:'IMMOBILE'};
-  const mobColor  = {normal:'var(--green)',reduced:'var(--amber)',limited:'var(--amber)',very_limited:'var(--red)',immobile:'var(--red)'};
-
-  const rows = [
-    ['Smoking',    G.cigarettesPerDay>0 ? `${G.cigarettesPerDay} cigs/day` : 'Non-smoker',       G.cigarettesPerDay>15?'var(--red)':G.cigarettesPerDay>0?'var(--amber)':'var(--green)'],
-    ['Drinking',   G.drinksPerWeek>0    ? `${G.drinksPerWeek} drinks/wk`  : 'None',              G.drinksPerWeek>21?'var(--red)':G.drinksPerWeek>7?'var(--amber)':'var(--green)'],
-    ['Binge risk', G.bingeTendency>70   ? 'High' : G.bingeTendency>40 ? 'Moderate' : 'Low',      G.bingeTendency>70?'var(--red)':G.bingeTendency>40?'var(--amber)':'var(--green)'],
-    ['Mobility',   mobLabels[mob]||mob,                                                            mobColor[mob]||'var(--ink2)'],
-    ['Exercise',   G.gymVisitsPerWeek>0 ? `Gym ${G.gymVisitsPerWeek}×/wk` : G.fitness>60 ? 'Active' : 'Sedentary', G.fitness>60?'var(--green)':G.fitness>30?'var(--amber)':'var(--red)'],
-    ['Sleep',      `${G.sleepHoursPerNight||7}h/night`,                                           (G.sleepHoursPerNight||7)>=7?'var(--green)':(G.sleepHoursPerNight||7)>=6?'var(--amber)':'var(--red)'],
-    ['Depression', G.depressionScore>70 ? 'Severe' : G.depressionScore>45 ? 'Moderate' : G.depressionScore>20 ? 'Mild' : 'None', G.depressionScore>45?'var(--red)':G.depressionScore>20?'var(--amber)':'var(--green)'],
-    ['Weight',     `${calcWeight().toFixed(1)}kg (BMI ${calcBMI().toFixed(1)})`,                  calcBMI()>35?'var(--red)':calcBMI()>25?'var(--amber)':'var(--green)'],
-  ];
-  // Flags
-  const flags = [];
-  if(G.flags.stretchMarks) flags.push('Stretch marks');
-  if(G.flags.cellulite)    flags.push('Cellulite');
-  if(G.flags.saggy)        flags.push('Loose skin');
-  if(G.flags.acne)         flags.push('Acne');
-  if(G.flags.yellowTeeth)  flags.push('Yellow teeth');
-  if(G.flags.bingeEating)  flags.push('Binge eating');
-  if(G.flags.drinkingProblem) flags.push('Drinking problem');
-  if(G.flags.smokingProblem)  flags.push('Nicotine dependency');
-  if(G.flags.surgery_breast)  flags.push('Breast surgery');
-  if(G.flags.surgery_bbl)     flags.push('BBL');
-  if(G.flags.surgery_lipo)    flags.push('Liposuction');
-  if(G.children>0)            flags.push(`${G.children} child${G.children>1?'ren':''}`);
-  if(G.pregnant)              flags.push(`Pregnant (wk ${G.pregnancyWeek})`);
-
-  el.innerHTML = rows.map(([k,v,c])=>`
-    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:.74rem;">
-      <span style="color:var(--ink2)">${k}</span>
-      <span style="color:${c};font-family:'IBM Plex Mono',monospace;font-size:.72rem">${v}</span>
-    </div>`).join('')
-  + (flags.length ? `<div style="margin-top:8px;font-size:.67rem;color:var(--ink3);line-height:1.8">${flags.map(f=>`<span style="display:inline-block;margin:1px 3px 1px 0;padding:1px 6px;background:var(--bg3);border:1px solid var(--line)">${f}</span>`).join('')}</div>` : '');
-}
 
 function updateMobQuickStrip(){
   const strip = document.getElementById('mob-quick-strip');
@@ -5824,6 +5797,7 @@ function doOneTimeEvent(key, fn){
 //  TIME MANAGEMENT ENGINE
 // ═══════════════════════════════════════════════════════
 function calcWorkHoursPerWeek(effort){
+  if(!G.salary) return 0; // unemployed — no work hours
   const contract = G.salary<1200?20 : G.salary<2000?37 : 40;
   if(effort==="overtime") return contract+10;
   if(effort==="minimal")  return Math.round(contract*0.8);
@@ -5848,24 +5822,8 @@ const ACTIVITY_HOURS = {
 //  WEEK TIME BUDGET HUD (updates in-place, no story spam)
 // ═══════════════════════════════════════════════════════
 function renderTimeBudget(){
-  const workH = calcWorkHoursPerWeek(_ewState.workEffort || "normal");
-  const sleepH = _ewState.sleepH || G.sleepHoursPerNight || 7;
-  const freeH  = _ewState.freeH || calcFreeHours(workH, sleepH);
-  const rem    = (_ewState.remainingH !== undefined) ? _ewState.remainingH : freeH;
-  const used   = freeH - rem;
-
-  const bar = document.getElementById('time-budget-bar');
-  if(!bar) return;
-  const pct = freeH > 0 ? Math.min(100, (used/freeH)*100) : 0;
-  const col = rem > freeH*0.5 ? 'var(--green)' : rem > freeH*0.2 ? 'var(--amber)' : 'var(--red)';
-  bar.innerHTML = `
-    <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--ink3);margin-bottom:3px;">
-      <span>⏱ <strong style="color:${col}">${Math.max(0,rem)}h free</strong> of ${freeH}h</span>
-      <span>💼${Math.round(workH*5/7)}h · 😴${sleepH*7}h · 🚌${calcCommuteHours()}h/wk</span>
-    </div>
-    <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;">
-      <div style="height:100%;width:${pct}%;background:${col};border-radius:2px;transition:width .3s;"></div>
-    </div>`;
+  // time-budget-bar is hidden; just refresh the planner bar instead
+  renderWeekQueue();
 }
 
 function addToWeekPlan(emoji, label, hours, fn){
@@ -6533,7 +6491,7 @@ function showBillsStep(steps, idx){
     G.overdraft=clamp(G.overdraft+totalOut,0,10000);
     G.creditScore=clamp(G.creditScore-20,300,850);
     G.depressionScore=clamp(G.depressionScore+5); G.mood=clamp(G.mood-8);
-    if(G.overdraft>2000 && Math.random()<0.3){ triggerEviction(); return; }
+    // Eviction handled in checkFinancialPressure() — not triggered passively mid-advance
     storyEntry("Bills skipped","The letters stack up.",[{type:"bad",label:`+€${totalOut} arrears`}]); next();
   }});
 
@@ -7092,10 +7050,11 @@ function finaliseEndWeek(){
 
   advanceWeeks(1);
 
-  // Build week summary
+  // Build week summary — capture pantry status before auto-shop may have run
   const postSavings = G.savings;
   const postWeight  = calcWeight();
-  generateWeekSummary(preSavings, postSavings, preWeight, postWeight, preMood, preHealth, preFitness, hadActivities);
+  const pantryWasEmpty = pantryStatus() === 'empty'; // check after advance (auto-shop may have helped)
+  generateWeekSummary(preSavings, postSavings, preWeight, postWeight, preMood, preHealth, preFitness, hadActivities, pantryWasEmpty);
 
   renderCharacter();
   updateStats();
@@ -7106,7 +7065,7 @@ function finaliseEndWeek(){
 }
 
 // ── Week summary ──────────────────────────────────────────────────────
-function generateWeekSummary(preSav, postSav, preW, postW, preMood, preHealth, preFit, hadActs){
+function generateWeekSummary(preSav, postSav, preW, postW, preMood, preHealth, preFit, hadActs, pantryEmpty=false){
   const dateStr = weekToDate(G.weekOfYear, G.year);
   const weekNum = G.week;
   const savDelta = Math.round(postSav - preSav);
@@ -7133,7 +7092,7 @@ function generateWeekSummary(preSav, postSav, preW, postW, preMood, preHealth, p
   lines.push(`Mood: ${moodLabel}`);
 
   if(!hadActs) lines.push('⚠ No activities planned this week');
-  if(pantryStatus() === 'empty') lines.push('⚠ Fridge is empty');
+  if(pantryEmpty) lines.push('⚠ Fridge is empty');
 
   const body = lines.join(' · ');
 
@@ -7222,7 +7181,8 @@ function checkIdleWeekConsequences(hadActivities){
 // Checks whether rent and bills have actually been paid this month.
 function checkFinancialPressure(){
   // Only run on monthly cycle (week 1 of each 4-week month)
-  if(G.weekOfYear % 4 !== 0) return;
+  // Run one week AFTER the monthly salary/bill deduction (which runs on %4===1)
+  if(G.weekOfYear % 4 !== 2) return;
 
   const bills = calcMonthlyBills();
   const totalBills = bills.utilities + bills.transport + bills.subs + bills.debt;
@@ -7796,7 +7756,7 @@ function getPlanSetupSteps(){
           desc:'Buy groceries and cook at home. Cheapest option.',
           tags:[{l:'saves money',c:'pct-good'},{l:'2h shopping',c:'pct-time'},{l:'5h cooking',c:'pct-time'}],
           queue:[
-            {emoji:'🛒',label:'groceries',hours:2,fn:()=>{ _ewState._groceryPending=true; }},
+            {emoji:'🛒',label:'groceries',hours:2,fn:()=>{ if(typeof doDefaultShop==='function') doDefaultShop(); else{ G.pantry={servings:14,key:'mixed'}; gainFat(0,'balanced'); } }},
             {emoji:'🍳',label:'cook at home',hours:5,fn:doHomeCook},
           ]
         },
@@ -7812,7 +7772,7 @@ function getPlanSetupSteps(){
           desc:'Shop for basics, eat out a couple of times.',
           tags:[{l:'balanced',c:'pct-info'},{l:'2h shopping',c:'pct-time'}],
           queue:[
-            {emoji:'🛒',label:'groceries',hours:2,fn:()=>{ _ewState._groceryPending=true; }},
+            {emoji:'🛒',label:'groceries',hours:2,fn:()=>{ if(typeof doDefaultShop==='function') doDefaultShop(); else{ G.pantry={servings:14,key:'mixed'}; gainFat(0,'balanced'); } }},
           ]
         },
         sav<30?null:{
@@ -8026,9 +7986,7 @@ function renderPlanSetupStep(grid, stepIdx){
         addToWeekPlan(q.emoji,q.label,q.hours,q.fn);
       });
       // Handle grocery pending
-      if(ch.queue&&ch.queue.some(q=>q.fn&&q.fn.toString().includes('_groceryPending'))){
-        _ewState._groceryPending=true;
-      }
+      // (grocery fn handles its own effect directly)
       // Advance to next step
       const newGrid=document.getElementById('abar-grid');
       if(newGrid) renderPlanSetupStep(newGrid,stepIdx+1);
